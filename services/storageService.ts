@@ -18,119 +18,69 @@ export const storageService = {
       if (!isConfigured()) return;
       const cutoff = new Date();
       cutoff.setHours(cutoff.getHours() - hours);
-      
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .lt('created_at', cutoff.toISOString());
-        
+      const { error } = await supabase.from('messages').delete().lt('created_at', cutoff.toISOString());
       if (error) console.error("Cleanup error:", error.message);
-    } catch (err) {
-      console.error("Cleanup failed:", err);
-    }
+    } catch (err) { console.error("Cleanup failed:", err); }
   },
 
   async getChannels(): Promise<Channel[]> {
-    try {
-      const { data, error } = await supabase.from('channels').select('*');
-      if (error) throw error;
-      return data as Channel[];
-    } catch (err: any) {
-      throw err;
-    }
+    const { data, error } = await supabase.from('channels').select('*');
+    if (error) throw error;
+    return data as Channel[];
   },
 
   async createChannel(channel: Channel) {
-    try {
-      const { error } = await supabase.from('channels').upsert({
-        name: channel.name,
-        description: channel.description,
-        users: channel.users
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      throw err;
-    }
+    const { error } = await supabase.from('channels').upsert({
+      name: channel.name,
+      description: channel.description,
+      users: channel.users,
+      operators: channel.operators || [],
+      bannedUsers: channel.bannedUsers || []
+    });
+    if (error) throw error;
+  },
+
+  async updateChannel(name: string, updates: Partial<Channel>) {
+    const { error } = await supabase.from('channels').update(updates).eq('name', name);
+    if (error) throw error;
   },
 
   async addUserToChannel(channelName: string, userName: string) {
-    try {
-      const { data: channel } = await supabase
-        .from('channels')
-        .select('users')
-        .eq('name', channelName)
-        .single();
+    const { data: channel } = await supabase.from('channels').select('users').eq('name', channelName).single();
+    if (channel) {
+      const users = Array.from(new Set([...(channel.users || []), userName]));
+      await supabase.from('channels').update({ users }).eq('name', channelName);
+    }
+  },
 
-      if (channel) {
-        const users = channel.users || [];
-        if (!users.includes(userName)) {
-          const newUsers = [...users, userName];
-          await supabase
-            .from('channels')
-            .update({ users: newUsers })
-            .eq('name', channelName);
-        }
-      }
-    } catch (err) {}
+  async removeUserFromChannel(channelName: string, userName: string) {
+    const { data: channel } = await supabase.from('channels').select('users').eq('name', channelName).single();
+    if (channel) {
+      const users = (channel.users || []).filter((u: string) => u !== userName);
+      await supabase.from('channels').update({ users }).eq('name', channelName);
+    }
   },
 
   async getMessagesByChannel(channelName: string): Promise<Message[]> {
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('channel', channelName)
-        .order('created_at', { ascending: true })
-        .limit(100);
-
-      if (error) throw error;
-
-      return data.map(m => ({
-        id: m.id,
-        sender: m.sender,
-        text: m.text,
-        timestamp: new Date(m.created_at),
-        type: m.type as MessageType,
-        channel: m.channel
-      }));
-    } catch (err: any) {
-      throw err;
-    }
+    const { data, error } = await supabase.from('messages').select('*').eq('channel', channelName).order('created_at', { ascending: true }).limit(100);
+    if (error) throw error;
+    return data.map(m => ({
+      id: m.id, sender: m.sender, text: m.text, timestamp: new Date(m.created_at), type: m.type as MessageType, channel: m.channel
+    }));
   },
 
   async saveMessage(message: Omit<Message, 'id' | 'timestamp'>) {
-    try {
-      const { error } = await supabase.from('messages').insert({
-        sender: message.sender,
-        text: message.text,
-        type: message.type,
-        channel: message.channel
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      throw err;
-    }
+    const { error } = await supabase.from('messages').insert({
+      sender: message.sender, text: message.text, type: message.type, channel: message.channel
+    });
+    if (error) throw error;
   },
 
   subscribeToMessages(callback: (payload: any) => void) {
-    return supabase
-      .channel('messages_realtime')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => callback(payload)
-      )
-      .subscribe();
+    return supabase.channel('messages_realtime').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => callback(payload)).subscribe();
   },
 
   subscribeToChannels(callback: (payload: any) => void) {
-    return supabase
-      .channel('channels_realtime')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'channels' },
-        (payload) => callback(payload)
-      )
-      .subscribe();
+    return supabase.channel('channels_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, (payload) => callback(payload)).subscribe();
   }
 };

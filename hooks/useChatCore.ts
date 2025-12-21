@@ -6,6 +6,7 @@ import { storageService, isConfigured } from '../services/storageService';
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('mirc_is_admin') === 'true');
   const [channels, setChannels] = useState<Channel[]>([]);
   const [privateChats, setPrivateChats] = useState<string[]>(['GeminiBot']);
   const [blockedUsers, setBlockedUsers] = useState<string[]>(() => {
@@ -29,10 +30,20 @@ export const useChatCore = (initialUserName: string) => {
     localStorage.setItem('mirc_nick', userName);
   }, [userName]);
 
+  useEffect(() => {
+    localStorage.setItem('mirc_is_admin', isAdmin.toString());
+  }, [isAdmin]);
+
   const getDMChannelName = (otherUser: string) => {
     if (otherUser === 'GeminiBot' || otherUser === 'Status') return otherUser;
     const users = [userName, otherUser].sort();
     return `private:${users[0]}:${users[1]}`;
+  };
+
+  const isOp = (channelName: string) => {
+    if (isAdmin) return true;
+    const chan = channels.find(c => c.name === channelName);
+    return chan?.operators?.includes(userName) || false;
   };
 
   useEffect(() => {
@@ -69,19 +80,35 @@ export const useChatCore = (initialUserName: string) => {
         setError(null);
         const fetchedChannels = await storageService.getChannels();
         let currentChannels = fetchedChannels;
+        
         if (!fetchedChannels.find(c => c.name === 'general')) {
-          const defaultChan = { name: 'general', description: 'Global Lobby', unreadCount: 0, users: [userName] };
+          const defaultChan = { 
+            name: 'general', 
+            description: 'Global Lobby', 
+            unreadCount: 0, 
+            users: [userName],
+            operators: [userName], // İlk kuran Op olur
+            bannedUsers: []
+          };
           await storageService.createChannel(defaultChan);
           currentChannels = [defaultChan, ...fetchedChannels];
         }
         setChannels(currentChannels);
         
-        const targetChannel = channels.some(c => c.name === activeTab) ? activeTab : getDMChannelName(activeTab);
-        const fetchedMessages = await storageService.getMessagesByChannel(targetChannel);
+        const isChannel = currentChannels.find(c => c.name === activeTab);
+        
+        // Ban Kontrolü
+        if (isChannel && isChannel.bannedUsers?.includes(userName) && !isAdmin) {
+          setError(`Bu kanaldan yasaklısınız: #${activeTab}`);
+          setActiveTab('Status');
+          return;
+        }
+
+        const targetChannelName = isChannel ? activeTab : getDMChannelName(activeTab);
+        const fetchedMessages = await storageService.getMessagesByChannel(targetChannelName);
         setMessages(fetchedMessages);
 
         if (!activeTab.includes('GeminiBot') && activeTab !== 'Status') {
-          const isChannel = currentChannels.some(c => c.name === activeTab);
           if (isChannel && !joinedChannelsRef.current.has(activeTab)) {
             await storageService.saveMessage({
               sender: 'System',
@@ -90,18 +117,11 @@ export const useChatCore = (initialUserName: string) => {
               channel: activeTab
             });
             await storageService.addUserToChannel(activeTab, userName);
-            setChannels(prev => prev.map(c => {
-              if (c.name === activeTab) {
-                const updatedUsers = Array.from(new Set([...(c.users || []), userName]));
-                return { ...c, users: updatedUsers };
-              }
-              return c;
-            }));
             joinedChannelsRef.current.add(activeTab);
           }
         }
       } catch (err: any) {
-        setError(`Bağlantı Hatası: ${err.message}`);
+        setError(`Hata: ${err.message}`);
       }
     };
     loadData();
@@ -111,7 +131,8 @@ export const useChatCore = (initialUserName: string) => {
     if (!isConfigured()) return;
     if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
 
-    const targetChannel = channels.some(c => c.name === activeTab) ? activeTab : getDMChannelName(activeTab);
+    const isChannel = channels.some(c => c.name === activeTab);
+    const targetChannel = isChannel ? activeTab : getDMChannelName(activeTab);
 
     try {
       subscriptionRef.current = storageService.subscribeToMessages((payload) => {
@@ -126,6 +147,11 @@ export const useChatCore = (initialUserName: string) => {
             }];
           });
         }
+        // Eğer kicklendiyseniz sekmeyi kapat
+        if (newMessage.type === MessageType.SYSTEM && newMessage.text.includes(`${userName} kanaldan atıldı`) && newMessage.channel === activeTab) {
+          setActiveTab('Status');
+          joinedChannelsRef.current.delete(newMessage.channel);
+        }
       });
     } catch (e) {}
 
@@ -133,6 +159,44 @@ export const useChatCore = (initialUserName: string) => {
       if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
     };
   }, [activeTab, userName, channels]);
+
+  const handleAdminAction = async (action: 'kick' | 'ban' | 'op' | 'deop', target: string) => {
+    if (!isOp(activeTab) && !isAdmin) return;
+    
+    const chan = channels.find(c => c.name === activeTab);
+    if (!chan) return;
+
+    let text = "";
+    switch(action) {
+      case 'kick':
+        text = `${target} kanaldan atıldı. (Admin: ${userName})`;
+        await storageService.removeUserFromChannel(activeTab, target);
+        break;
+      case 'ban':
+        text = `${target} kanaldan yasaklandı. (Admin: ${userName})`;
+        const banned = Array.from(new Set([...(chan.bannedUsers || []), target]));
+        await storageService.updateChannel(activeTab, { bannedUsers: banned });
+        await storageService.removeUserFromChannel(activeTab, target);
+        break;
+      case 'op':
+        text = `${target} artık kanal operatörü.`;
+        const ops = Array.from(new Set([...(chan.operators || []), target]));
+        await storageService.updateChannel(activeTab, { operators: ops });
+        break;
+      case 'deop':
+        text = `${target} operatör yetkileri alındı.`;
+        const remainingOps = (chan.operators || []).filter(o => o !== target);
+        await storageService.updateChannel(activeTab, { operators: remainingOps });
+        break;
+    }
+
+    await storageService.saveMessage({
+      sender: 'System',
+      text,
+      type: MessageType.SYSTEM,
+      channel: activeTab
+    });
+  };
 
   const sendMessage = async (text: string, imageBase64?: string) => {
     if (!text.trim() && !imageBase64) return;
@@ -143,7 +207,8 @@ export const useChatCore = (initialUserName: string) => {
         return;
       }
 
-      const targetChannel = channels.some(c => c.name === activeTab) ? activeTab : getDMChannelName(activeTab);
+      const isChannel = channels.some(c => c.name === activeTab);
+      const targetChannel = isChannel ? activeTab : getDMChannelName(activeTab);
 
       await storageService.saveMessage({
         sender: userName,
@@ -173,60 +238,52 @@ export const useChatCore = (initialUserName: string) => {
     const argStr = args.join(' ');
 
     switch (cmd.toLowerCase()) {
-      case 'nick':
-        if (argStr) {
-          const oldNick = userName;
-          setUserName(argStr);
-          await storageService.saveMessage({
-            sender: 'System',
-            text: `${oldNick} artık ${argStr} olarak biliniyor.`,
-            type: MessageType.SYSTEM,
-            channel: activeTab
-          });
+      case 'admin':
+        if (argStr === 'admin123') {
+          setIsAdmin(true);
+          setError("Admin moduna geçildi.");
+        } else if (argStr === 'off') {
+          setIsAdmin(false);
         }
         break;
-      case 'clear':
-        setMessages([]);
+      case 'kick':
+        if (args[0]) handleAdminAction('kick', args[0]);
+        break;
+      case 'ban':
+        if (args[0]) handleAdminAction('ban', args[0]);
+        break;
+      case 'op':
+        if (args[0]) handleAdminAction('op', args[0]);
+        break;
+      case 'deop':
+        if (args[0]) handleAdminAction('deop', args[0]);
+        break;
+      case 'nick':
+        if (argStr) setUserName(argStr);
         break;
       case 'join':
         const name = argStr.toLowerCase().replace('#', '');
-        if (name) {
-          try {
-            if (!channels.find(c => c.name === name)) {
-              const newChan = { name, description: 'User Channel', unreadCount: 0, users: [userName] };
-              await storageService.createChannel(newChan);
-              setChannels(p => [...p, newChan]);
-            }
-            setActiveTab(name);
-          } catch (e) {}
-        }
-        break;
-      case 'block':
-        if (argStr) toggleBlockUser(argStr);
+        if (name) setActiveTab(name);
         break;
     }
   };
 
   const initiatePrivateChat = (targetName: string) => {
     if (targetName === userName) return;
-    if (!privateChats.includes(targetName)) {
-      setPrivateChats(p => [...p, targetName]);
-    }
+    if (!privateChats.includes(targetName)) setPrivateChats(p => [...p, targetName]);
     setActiveTab(targetName);
   };
 
   const toggleBlockUser = (targetUser: string) => {
     if (targetUser === userName || targetUser === 'GeminiBot') return;
-    setBlockedUsers(prev => 
-      prev.includes(targetUser) 
-        ? prev.filter(u => u !== targetUser) 
-        : [...prev, targetUser]
-    );
+    setBlockedUsers(prev => prev.includes(targetUser) ? prev.filter(u => u !== targetUser) : [...prev, targetUser]);
   };
 
   return {
     userName,
     setUserName,
+    isAdmin,
+    setIsAdmin,
     channels, 
     privateChats, 
     blockedUsers,
@@ -236,7 +293,9 @@ export const useChatCore = (initialUserName: string) => {
     messages, 
     sendMessage, 
     initiatePrivateChat,
+    handleAdminAction,
     isAILoading,
+    isOp,
     error
   };
 };
