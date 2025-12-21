@@ -3,19 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 import { Message, Channel, MessageType } from '../types';
 
 /**
- * ÖNEMLİ: Supabase dashboard (Settings -> API) kısmından 
- * 'Project URL' ve 'anon public' key değerlerini buraya yapıştırın.
+ * Supabase yapılandırması.
  */
 const SUPABASE_URL = 'https://abunbqqxtpugsjfvvikj.supabase.co'; 
-const SUPABASE_ANON_KEY = ''; // Buraya gerçek 'anon public' anahtarınızı yapıştırın.
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFidW5icXF4dHB1Z3NqZnZ2aWtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTcyNzksImV4cCI6MjA4MTg5MzI3OX0.ld29ijoxlkkCC2uNPnvc4aiTiMEhQvu2bfilH6IOIzo';
 
 export const isConfigured = () => 
   SUPABASE_URL.startsWith('https://') && 
   SUPABASE_ANON_KEY.length > 20 &&
   !SUPABASE_ANON_KEY.includes('anon-key');
 
-// İstemciyi sadece yapılandırma varsa oluştur veya hata durumunda boş dön
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY || 'invalid');
+// İstemciyi yapılandırma ile oluştur
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export const storageService = {
   async getChannels(): Promise<Channel[]> {
