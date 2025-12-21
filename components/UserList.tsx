@@ -9,17 +9,15 @@ interface UserListProps {
   onUserBlock?: (username: string) => void;
   onUserContextMenu?: (e: React.MouseEvent, username: string) => void;
   blockedUsers?: string[];
-  operators?: string[];
   isAdmin?: boolean;
 }
 
-const UserList: React.FC<UserListProps> = ({ users, onUserClick, onUserBlock, onUserContextMenu, blockedUsers = [], operators = [], isAdmin }) => {
+const UserList: React.FC<UserListProps> = ({ users, onUserClick, onUserBlock, onUserContextMenu, blockedUsers = [], isAdmin }) => {
   const uniqueUsers = Array.from(new Set(users)).filter(u => u && u.trim() !== "");
 
   const getRank = (user: string) => {
     if (user === 'GeminiBot') return { icon: <ShieldAlert size={13} className="text-red-500" />, prefix: '@', color: 'text-red-600', label: 'Bot' };
-    if (user.includes('Admin') || user === 'Victoria') return { icon: <Crown size={13} className="text-yellow-500 fill-yellow-500" />, prefix: '👑', color: 'text-yellow-600', label: 'Admin' };
-    if (operators.includes(user)) return { icon: <ShieldCheck size={13} className="text-blue-500" />, prefix: '&', color: 'text-blue-600', label: 'Op' };
+    if (user.includes('Admin') || user === 'Victoria' || (isAdmin && user === localStorage.getItem('mirc_nick'))) return { icon: <Crown size={13} className="text-yellow-500 fill-yellow-500" />, prefix: '👑', color: 'text-yellow-600', label: 'Admin' };
     return { icon: <Star size={11} className="text-gray-400" />, prefix: '%', color: 'text-gray-600', label: 'User' };
   };
 

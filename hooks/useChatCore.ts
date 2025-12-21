@@ -4,6 +4,8 @@ import { Message, MessageType, Channel, RadioState, PlaylistItem } from '../type
 import { getGeminiResponse } from '../services/geminiService';
 import { storageService, isConfigured, supabase } from '../services/storageService';
 
+const RADIO_CONFIG_KEY = '__SYSTEM_RADIO__';
+
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('mirc_is_admin') === 'true');
@@ -27,8 +29,7 @@ export const useChatCore = (initialUserName: string) => {
   });
 
   const subscriptionRef = useRef<any>(null);
-  const radioSubRef = useRef<any>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const channelSubRef = useRef<any>(null);
   const notifySound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
 
   useEffect(() => {
@@ -43,50 +44,78 @@ export const useChatCore = (initialUserName: string) => {
     localStorage.setItem('mirc_muted', isMuted.toString());
   }, [isMuted]);
 
-  // Radyo Senkronizasyonu
   useEffect(() => {
-    const fetchRadio = async () => {
-      const { data } = await supabase.from('app_configs').select('value').eq('key', 'radio_config').maybeSingle();
-      if (data) setRadioState(data.value);
-    };
-    fetchRadio();
+    localStorage.setItem('mirc_is_admin', isAdmin.toString());
+  }, [isAdmin]);
 
-    radioSubRef.current = supabase.channel('radio_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_configs', filter: 'key=eq.radio_config' }, 
-      (payload) => {
-        if (payload.new) setRadioState((payload.new as any).value);
-      }).subscribe();
-
-    return () => { radioSubRef.current?.unsubscribe(); };
-  }, []);
+  // Radyo Ayarlarını Çek (Channels Tablosu Üzerinden)
+  const syncRadioFromChannel = (channelsList: Channel[]) => {
+    const radioChannel = channelsList.find(c => c.name === RADIO_CONFIG_KEY);
+    if (radioChannel && radioChannel.description) {
+      try {
+        const config = JSON.parse(radioChannel.description);
+        setRadioState(config);
+      } catch (e) {
+        console.error("Radio config parse error:", e);
+      }
+    }
+  };
 
   const updateRadioConfig = async (newState: Partial<RadioState>) => {
     if (!isAdmin) return;
     const updated = { ...radioState, ...newState };
-    await supabase.from('app_configs').upsert({ key: 'radio_config', value: updated });
+    
+    // UI'ın anında tepki vermesi için yerel state'i güncelle
+    setRadioState(updated);
+    
+    try {
+      await storageService.createChannel({
+        name: RADIO_CONFIG_KEY,
+        description: JSON.stringify(updated),
+        unreadCount: 0,
+        users: []
+      });
+    } catch (err: any) {
+      console.error("Radio config update failed:", err.message);
+      setError("Ayarlar kaydedilemedi.");
+    }
   };
 
   const isOp = (channelName: string) => {
-    if (isAdmin) return true;
-    const chan = channels.find(c => c.name === channelName);
-    return chan?.operators?.includes(userName) || false;
+    // operators kolonu olmadığı için admin olan herkes op sayılır
+    return isAdmin;
   };
 
+  // Kanal ve Radyo Senkronizasyonu
   useEffect(() => {
     if (!isConfigured()) return;
+    
     const loadChannels = async () => {
-      const fetched = await storageService.getChannels();
-      if (fetched.length === 0) {
-        const defaultChan = { name: 'sohbet', description: 'Ana Oda', unreadCount: 0, users: [userName], operators: [userName] };
-        await storageService.createChannel(defaultChan);
-        setChannels([defaultChan]);
-      } else {
-        setChannels(fetched);
+      try {
+        const fetched = await storageService.getChannels();
+        if (fetched.length === 0) {
+          const defaultChan = { name: 'sohbet', description: 'Ana Oda', unreadCount: 0, users: [userName] };
+          await storageService.createChannel(defaultChan);
+          setChannels([defaultChan]);
+        } else {
+          setChannels(fetched.filter(c => !c.name.startsWith('__SYSTEM')));
+          syncRadioFromChannel(fetched);
+        }
+      } catch (e) {
+        console.error("Load channels error:", e);
       }
     };
+
     loadChannels();
+
+    channelSubRef.current = storageService.subscribeToChannels((payload) => {
+      loadChannels();
+    });
+
+    return () => channelSubRef.current?.unsubscribe();
   }, [userName]);
 
+  // Mesaj Senkronizasyonu
   useEffect(() => {
     const fetchMsgs = async () => {
       const fetched = await storageService.getMessagesByChannel(activeTab);
@@ -129,15 +158,6 @@ export const useChatCore = (initialUserName: string) => {
     }
   };
 
-  const handleAdminAction = async (action: string, target: string) => {
-    if (!isAdmin && !isOp(activeTab)) return;
-    // ... admin logic
-  };
-
-  const toggleRadio = () => {
-    setRadioState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
-  };
-
   return {
     userName, setUserName,
     isAdmin, setIsAdmin,
@@ -147,8 +167,8 @@ export const useChatCore = (initialUserName: string) => {
     messages, sendMessage,
     isAILoading, isOp, error,
     isMuted, setIsMuted,
-    radioState, toggleRadio, updateRadioConfig,
-    handleAdminAction,
+    radioState, toggleRadio: () => updateRadioConfig({ isPlaying: !radioState.isPlaying }), 
+    updateRadioConfig,
     initiatePrivateChat: (u: string) => { if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); setActiveTab(u); }
   };
 };

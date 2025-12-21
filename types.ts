@@ -21,8 +21,6 @@ export interface Channel {
   description: string;
   unreadCount: number;
   users: string[];
-  operators?: string[];
-  bannedUsers?: string[];
 }
 
 export interface PlaylistItem {

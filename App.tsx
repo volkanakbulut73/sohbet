@@ -4,7 +4,7 @@ import { useChatCore } from './hooks/useChatCore';
 import MessageList from './components/MessageList';
 import UserList from './components/UserList';
 import { ChatModuleProps, MessageType, PlaylistItem } from './types';
-import { Menu, Settings, X, Send, Volume2, VolumeX, Music, Shield, Hammer, UserX, Crown, Radio, Smile, Plus, Trash2, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Menu, Settings, X, Send, Volume2, VolumeX, Music, Shield, Hammer, UserX, Crown, Radio, Smile, Plus, Trash2, ShieldAlert, ShieldCheck, Loader2, Check } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
   const initialUser = externalUser || `Mobil_${Math.floor(Math.random() * 9999)}`;
@@ -18,14 +18,17 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
     isAILoading, isOp, error: coreError,
     isMuted, setIsMuted,
     radioState, toggleRadio, updateRadioConfig,
-    initiatePrivateChat, handleAdminAction
+    initiatePrivateChat
   } = useChatCore(initialUser);
 
   const [inputText, setInputText] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newNick, setNewNick] = useState(userName);
   const [radioUrlInput, setRadioUrlInput] = useState(radioState.currentUrl);
+  const [isSavingRadio, setIsSavingRadio] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [isRadioLoading, setIsRadioLoading] = useState(false);
   
   // Playlist add states
   const [newSongTitle, setNewSongTitle] = useState('');
@@ -33,30 +36,108 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
   
   const radioAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Radyo Oynatıcı Kontrolü ve Hata Yönetimi
+  // Sync inputs with global state when modal opens or global state changes
+  useEffect(() => {
+    if (isSettingsOpen) {
+      setRadioUrlInput(radioState.currentUrl);
+      setNewNick(userName);
+    }
+  }, [isSettingsOpen, radioState.currentUrl, userName]);
+
+  // Radyo Oynatıcı Kontrolü ve Detaylı Hata Yönetimi
   useEffect(() => {
     const audio = radioAudioRef.current;
     if (!audio) return;
 
+    const handleError = (e: Event) => {
+      const audioTarget = e.target as HTMLAudioElement;
+      const error = audioTarget.error;
+      
+      if (!radioState.isPlaying || !audioTarget.src || audioTarget.src === window.location.href) {
+        return;
+      }
+
+      setIsRadioLoading(false);
+      let displayMsg = "Yayın yüklenemedi.";
+      
+      if (error) {
+        console.error(`Radyo Hatası [Kod: ${error.code}]: ${error.message}`);
+        switch (error.code) {
+          case 1: displayMsg = "Yükleme durduruldu."; break;
+          case 2: displayMsg = "Ağ hatası: Bağlantı kesildi."; break;
+          case 3: displayMsg = "Ses formatı desteklenmiyor."; break;
+          case 4: 
+            displayMsg = "Yayın kaynağına ulaşılamıyor."; 
+            if (window.location.protocol === 'https:' && (audioTarget.src || '').startsWith('http:')) {
+              displayMsg = "Güvenlik Engeli: HTTPS üzerinden HTTP yayını çalınamaz. Lütfen 'https://' kullanın.";
+            }
+            break;
+        }
+      }
+      setPlaybackError(displayMsg);
+    };
+
+    const handleCanPlay = () => {
+      setIsRadioLoading(false);
+      setPlaybackError(null);
+    };
+
+    const handleWaiting = () => setIsRadioLoading(true);
+
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('waiting', handleWaiting);
+
     const handlePlay = async () => {
-      try {
-        setPlaybackError(null);
-        // URL değişmişse veya yeni yükleniyorsa load() şarttır
-        audio.load();
-        if (radioState.isPlaying) {
-          await audio.play();
-        } else {
+      if (radioState.isPlaying) {
+        if (!radioState.currentUrl || radioState.currentUrl.trim() === "") {
+          setPlaybackError("Lütfen bir radyo URL'si girin.");
+          setIsRadioLoading(false);
+          return;
+        }
+
+        if (window.location.protocol === 'https:' && radioState.currentUrl.startsWith('http://')) {
+          setPlaybackError("Güvenlik Engeli: HTTPS üzerinden HTTP yayını dinlenemez.");
+          setIsRadioLoading(false);
           audio.pause();
+          return;
         }
-      } catch (e: any) {
-        console.error("Radyo oynatılamadı:", e);
-        if (radioState.isPlaying) {
-          setPlaybackError("Yayın başlatılamadı. URL hatalı olabilir veya tarayıcı izni gerekiyor.");
+
+        try {
+          setIsRadioLoading(true);
+          setPlaybackError(null);
+          
+          audio.pause();
+          audio.src = radioState.currentUrl;
+          audio.load();
+
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+          }
+        } catch (e: any) {
+          setIsRadioLoading(false);
+          if (e.name === 'NotAllowedError') {
+            setPlaybackError("Tarayıcı engelledi. Lütfen tıklayıp tekrar açın.");
+          } else if (e.name !== 'AbortError') {
+            setPlaybackError(`Oynatma hatası: ${e.message || 'Desteklenmeyen kaynak'}`);
+          }
         }
+      } else {
+        setIsRadioLoading(false);
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
       }
     };
 
     handlePlay();
+
+    return () => {
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('waiting', handleWaiting);
+    };
   }, [radioState.isPlaying, radioState.currentUrl]);
 
   const handleSend = (e: React.FormEvent) => {
@@ -64,6 +145,15 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
     if (!inputText.trim()) return;
     sendMessage(inputText);
     setInputText('');
+  };
+
+  const handleSaveRadioUrl = async () => {
+    if (!isAdmin) return;
+    setIsSavingRadio(true);
+    await updateRadioConfig({ currentUrl: radioUrlInput });
+    setIsSavingRadio(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   const addPlaylistItem = () => {
@@ -88,13 +178,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
 
   return (
     <div className="h-screen w-screen bg-[#eef4fb] flex flex-col font-sans overflow-hidden">
-      {/* Radio Audio Element */}
-      <audio 
-        ref={radioAudioRef} 
-        src={radioState.currentUrl} 
-        crossOrigin="anonymous" 
-        preload="auto"
-      />
+      {/* Audio Element */}
+      <audio ref={radioAudioRef} style={{ display: 'none' }} preload="none" />
 
       {/* Üst Bar */}
       <header className="h-14 bg-gradient-to-b from-[#8ec5f1] to-[#4a80b3] flex items-center justify-between px-3 shrink-0 border-b border-[#3b6ea0] shadow-md z-30">
@@ -105,23 +190,28 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         <div className="flex flex-col items-center">
           <button 
             onClick={toggleRadio}
-            className={`text-sm font-bold animate-pulse flex items-center gap-1 ${radioState.isPlaying ? 'text-green-200' : 'text-red-600'}`}
+            className={`text-sm font-bold flex items-center gap-1 transition-all ${radioState.isPlaying ? (isRadioLoading ? 'text-blue-200' : 'text-green-200 animate-pulse') : 'text-red-600'}`}
           >
-             <Radio size={14} /> {radioState.isPlaying ? 'Radyoyu Kapat' : 'Radyoyu Aç'}
+             {isRadioLoading ? <Loader2 size={14} className="animate-spin" /> : <Radio size={14} />} 
+             {radioState.isPlaying ? (isRadioLoading ? 'Bağlanıyor...' : 'Radyoyu Kapat') : 'Radyoyu Aç'}
           </button>
           <span className="text-[10px] text-white/80 font-medium italic truncate max-w-[150px]">
             {radioState.playlist?.[0] ? `Çalıyor: ${radioState.playlist[0].title}` : 'Yayın: Gemini FM 99.0'}
           </span>
           {playbackError && radioState.isPlaying && (
-            <span className="absolute top-14 left-0 w-full bg-red-600 text-white text-[9px] py-0.5 text-center font-bold z-50 animate-bounce">
-              {playbackError}
-            </span>
+            <div className="absolute top-14 left-0 w-full bg-red-600 text-white text-[10px] py-1.5 px-3 text-center font-bold z-50 shadow-lg border-b border-red-800 flex items-center justify-center gap-2 animate-in slide-in-from-top-2">
+              <span className="shrink-0">⚠️</span> 
+              <span className="truncate">{playbackError}</span>
+              <button onClick={() => setPlaybackError(null)} className="ml-1 opacity-60 hover:opacity-100">×</button>
+            </div>
           )}
         </div>
 
-        <button className="bg-gradient-to-b from-[#7fb3e6] to-[#5a9ad4] text-white font-bold px-4 py-1.5 rounded-md border border-white/20 shadow-lg text-sm flex items-center gap-2">
-           Mesajlarınız
-        </button>
+        <div className="flex items-center gap-2">
+           <button className="bg-gradient-to-b from-[#7fb3e6] to-[#5a9ad4] text-white font-bold px-4 py-1.5 rounded-md border border-white/20 shadow-lg text-sm hidden sm:flex items-center gap-2">
+              Mesajlarınız
+           </button>
+        </div>
       </header>
 
       {/* Kanal Sekmeleri */}
@@ -159,13 +249,13 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
               <span>#{activeTab} - Hoşgeldiniz</span>
               {isAdmin && <span className="text-yellow-200">ADMIN MODU AKTİF</span>}
            </div>
-           <div className="flex-1">
+           <div className="flex-1 overflow-hidden">
               <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} />
            </div>
         </div>
 
         {/* Sağ Liste */}
-        <aside className="w-36 sm:w-48 bg-white border-l border-gray-200 flex flex-col">
+        <aside className="w-36 sm:w-48 bg-white border-l border-gray-200 flex flex-col shrink-0">
           <div className="p-2 border-b bg-gray-50 flex items-center justify-between">
              <span className="text-[10px] font-bold text-gray-400 uppercase">Kullanıcılar</span>
              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 rounded">{activeUsers.length}</span>
@@ -174,7 +264,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             <UserList 
               users={activeUsers} 
               onClose={() => {}} 
-              operators={currentChannel?.operators}
               isAdmin={isAdmin}
               blockedUsers={blockedUsers}
               onUserClick={(e, nick) => initiatePrivateChat(nick)}
@@ -257,19 +346,20 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
                         value={radioUrlInput}
                         onChange={(e) => setRadioUrlInput(e.target.value)}
                         className="flex-1 border p-2 text-xs rounded bg-white text-black font-medium"
-                        placeholder="http://yayin.url/listen"
+                        placeholder="https://yayin.url/listen.mp3"
                       />
                       <button 
-                        onClick={() => {
-                          updateRadioConfig({ currentUrl: radioUrlInput });
-                          setPlaybackError(null);
-                        }}
-                        className="bg-red-600 text-white px-3 py-1 text-xs font-bold rounded hover:bg-red-700 transition-colors"
+                        onClick={handleSaveRadioUrl}
+                        disabled={isSavingRadio}
+                        className="bg-red-600 text-white px-3 py-1 text-xs font-bold rounded hover:bg-red-700 transition-colors flex items-center gap-1 disabled:opacity-50"
                       >
-                        Kaydet
+                        {isSavingRadio ? <Loader2 size={12} className="animate-spin" /> : (saveSuccess ? <Check size={12} /> : 'Kaydet')}
+                        {saveSuccess && 'Kaydedildi!'}
                       </button>
                     </div>
-                    <p className="text-[9px] text-red-400 mt-1 italic">* URL doğrudan bir ses akışı (mp3, aac, vb.) olmalıdır.</p>
+                    <p className="text-[9px] text-red-500 mt-1 italic font-bold">
+                      * Önemli: Tarayıcılar HTTPS sitelerde HTTP (http://) radyoları engeller. Daima HTTPS (https://) kullanın.
+                    </p>
                   </div>
 
                   {/* Müzik Listesi Yönetimi */}
@@ -286,7 +376,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
                       <div className="flex gap-2">
                         <input 
                           type="text" 
-                          placeholder="Ses Dosyası URL (.mp3, .m3u8)" 
+                          placeholder="Ses Dosyası URL (.mp3, .m4a)" 
                           value={newSongUrl} 
                           onChange={(e) => setNewSongUrl(e.target.value)}
                           className="flex-1 text-xs p-2 border rounded text-black"

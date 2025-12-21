@@ -33,9 +33,7 @@ export const storageService = {
     const { error } = await supabase.from('channels').upsert({
       name: channel.name,
       description: channel.description,
-      users: channel.users,
-      operators: channel.operators || [],
-      bannedUsers: channel.bannedUsers || []
+      users: channel.users
     });
     if (error) throw error;
   },
