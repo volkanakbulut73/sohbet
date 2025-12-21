@@ -1,0 +1,7 @@
+{
+  "name": "Gemini-mIRC Connect",
+  "description": "A modern, cross-platform mIRC-inspired chat module with Gemini AI integration, featuring channels, user lists, and slash commands.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

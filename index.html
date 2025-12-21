@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gemini Connect | Modüler Sohbet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Klasik mIRC ve Modern Dark Mode Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.5);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.3);
+    }
+    
+    body {
+      background-color: #020617;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      touch-action: manipulation;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(51, 65, 85, 0.5) transparent;
+    }
+    
+    /* Mobil cihazlarda textarea focus olduğunda zoom yapmasını engellemek için */
+    input, textarea {
+      font-size: 16px !important;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.45.0"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root" class="h-screen w-screen overflow-hidden"></div>
+</body>
+</html>
