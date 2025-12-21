@@ -25,6 +25,19 @@ export interface Channel {
   bannedUsers?: string[];
 }
 
+export interface PlaylistItem {
+  id: string;
+  title: string;
+  url: string;
+  addedBy: string;
+}
+
+export interface RadioState {
+  currentUrl: string;
+  isPlaying: boolean;
+  playlist: PlaylistItem[];
+}
+
 export interface ChatModuleProps {
   externalUser?: string;
   onSendMessage?: (msg: string) => void;

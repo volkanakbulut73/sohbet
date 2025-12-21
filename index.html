@@ -8,66 +8,55 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background-color: #f0f4f8;
+      background-color: #d4dce8;
       color: #000000;
       margin: 0;
       padding: 0;
       overflow: hidden;
-      font-family: 'Tahoma', 'Arial', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       touch-action: manipulation;
     }
 
     /* Genel Scrollbar */
     ::-webkit-scrollbar {
-      width: 12px;
-      height: 8px; /* Yatay scroll için yükseklik */
+      width: 8px;
+      height: 8px;
     }
     ::-webkit-scrollbar-track {
-      background: #e2e8f0;
+      background: #f1f5f9;
     }
     ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
-      border: 2px solid #e2e8f0;
     }
 
-    /* Kanal Barı Özel Scrollbar (Daha ince ve temiz) */
+    /* Kanal Barı Özel Scrollbar */
     .tabs-scrollbar::-webkit-scrollbar {
-      height: 4px;
+      height: 3px;
     }
     .tabs-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 10px;
+      background: rgba(37, 99, 235, 0.2);
     }
 
     .mirc-text {
-      font-size: 13px;
-      line-height: 1.4;
+      font-size: 13.5px;
+      line-height: 1.5;
     }
 
-    /* Mobil focus engelleme */
-    input, textarea {
-      font-size: 16px !important;
+    /* Input Focus Stili */
+    input:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
     }
 
-    .channel-tab-active {
-      color: #2563eb;
-      font-weight: bold;
-      border-bottom: 2px solid #2563eb;
-    }
-
-    /* Kaydırma Göstergesi (Gradyan) */
-    .tabs-container {
-      position: relative;
-    }
-    .tabs-container::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 30px;
-      background: linear-gradient(to right, transparent, rgba(238, 244, 251, 0.8));
-      pointer-events: none;
+    /* Mobil için dokunma alanlarını büyüt */
+    @media (max-width: 640px) {
+      .tabs-scrollbar div {
+        padding: 6px 14px !important;
+      }
     }
   </style>
 <script type="importmap">
