@@ -3,38 +3,33 @@ import { createClient } from '@supabase/supabase-js';
 import { Message, Channel, MessageType } from '../types';
 
 /**
- * ÖNEMLİ: Supabase panelinizden (Settings -> API) aldığınız değerleri buraya yapıştırın.
- * Eğer bu değerler 'your-project' olarak kalırsa uygulama hata modunda çalışacaktır.
+ * ÖNEMLİ: Supabase dashboard (Settings -> API) kısmından 
+ * 'Project URL' ve 'anon public' key değerlerini buraya yapıştırın.
  */
-const SUPABASE_URL = 'https://your-project.supabase.co'; 
-const SUPABASE_ANON_KEY = 'your-anon-key';
+const SUPABASE_URL = 'https://abunbqqxtpugsjfvvikj.supabase.co'; 
+const SUPABASE_ANON_KEY = ''; // Buraya gerçek 'anon public' anahtarınızı yapıştırın.
 
 export const isConfigured = () => 
-  SUPABASE_URL.includes('supabase.co') && 
-  !SUPABASE_URL.includes('your-project') &&
-  SUPABASE_ANON_KEY !== 'your-anon-key';
+  SUPABASE_URL.startsWith('https://') && 
+  SUPABASE_ANON_KEY.length > 20 &&
+  !SUPABASE_ANON_KEY.includes('anon-key');
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// İstemciyi sadece yapılandırma varsa oluştur veya hata durumunda boş dön
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY || 'invalid');
 
 export const storageService = {
-  // Kanalları Getir
   async getChannels(): Promise<Channel[]> {
     try {
-      const { data, error } = await supabase
-        .from('channels')
-        .select('*');
-      
-      if (error) {
-        throw error;
-      }
+      if (!isConfigured()) throw new Error("Supabase anahtarları eksik veya hatalı.");
+      const { data, error } = await supabase.from('channels').select('*');
+      if (error) throw error;
       return data as Channel[];
     } catch (err: any) {
-      console.error("Supabase error fetching channels:", err.message || err);
-      return [];
+      console.error("Supabase Channels Error:", err.message);
+      throw err;
     }
   },
 
-  // Yeni Kanal Oluştur
   async createChannel(channel: Channel) {
     try {
       const { error } = await supabase.from('channels').upsert({
@@ -44,13 +39,14 @@ export const storageService = {
       });
       if (error) throw error;
     } catch (err: any) {
-      console.error("Error creating channel:", err.message);
+      console.error("Create Channel Error:", err.message);
+      throw err;
     }
   },
 
-  // Mesajları Getir
   async getMessagesByChannel(channelName: string): Promise<Message[]> {
     try {
+      if (!isConfigured()) return [];
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -69,12 +65,11 @@ export const storageService = {
         channel: m.channel
       }));
     } catch (err: any) {
-      console.error("Supabase error fetching messages:", err.message);
-      return [];
+      console.error("Get Messages Error:", err.message);
+      throw err;
     }
   },
 
-  // Tek Mesaj Gönder
   async saveMessage(message: Omit<Message, 'id' | 'timestamp'>) {
     try {
       const { error } = await supabase.from('messages').insert({
@@ -85,14 +80,15 @@ export const storageService = {
       });
       if (error) throw error;
     } catch (err: any) {
-      console.error("Error saving message:", err.message);
+      console.error("Save Message Error:", err.message);
+      throw err;
     }
   },
 
-  // Realtime Aboneliği
   subscribeToMessages(callback: (payload: any) => void) {
+    if (!isConfigured()) return { unsubscribe: () => {} };
     return supabase
-      .channel('any')
+      .channel('messages_realtime')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },

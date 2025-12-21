@@ -5,11 +5,12 @@ import Sidebar from './components/Sidebar';
 import MessageList from './components/MessageList';
 import UserList from './components/UserList';
 import { ChatModuleProps } from './types';
-import { Hash, Menu, Users, Bot, Send, User as UserIcon, X, AlertTriangle } from 'lucide-react';
+import { Hash, Menu, Users, Bot, Send, User as UserIcon, X, AlertTriangle, Key } from 'lucide-react';
 
 const ChatModule: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
-  const [currentUser] = useState<string>(externalUser || `User_${Math.floor(Math.random() * 1000)}`);
+  const initialUser = externalUser || `User_${Math.floor(Math.random() * 1000)}`;
   const { 
+    userName,
     channels, 
     privateChats, 
     activeTab, 
@@ -19,7 +20,7 @@ const ChatModule: React.FC<ChatModuleProps> = ({ externalUser, className = "" })
     initiatePrivateChat,
     isAILoading,
     error
-  } = useChatCore(currentUser);
+  } = useChatCore(initialUser);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserListOpen, setIsUserListOpen] = useState(true);
@@ -43,28 +44,40 @@ const ChatModule: React.FC<ChatModuleProps> = ({ externalUser, className = "" })
   return (
     <div className={`flex h-full w-full bg-slate-950 text-slate-200 overflow-hidden font-sans antialiased rounded-lg shadow-2xl border border-slate-800/50 relative ${className}`}>
       
-      {/* 0. HATA PANELİ (Config hatası varsa) */}
+      {/* ⚠️ YAPILANDIRMA HATASI EKRANI */}
       {error && (
-        <div className="absolute inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-6 text-center">
-          <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-amber-500/20 rounded-3xl flex items-center justify-center mx-auto ring-1 ring-amber-500/50">
-              <AlertTriangle size={40} className="text-amber-500" />
+        <div className="absolute inset-0 z-[100] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center p-6 text-center">
+          <div className="max-w-md space-y-8 animate-in fade-in zoom-in duration-500">
+            <div className="w-24 h-24 bg-rose-500/20 rounded-[2.5rem] flex items-center justify-center mx-auto ring-1 ring-rose-500/50 shadow-2xl shadow-rose-500/20">
+              <Key size={48} className="text-rose-500 animate-pulse" />
             </div>
-            <div>
-              <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">Yapılandırma Gerekli</h3>
+            <div className="space-y-4">
+              <h3 className="text-2xl font-black text-white uppercase tracking-tight">Supabase Anahtarı Gerekli</h3>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                {error}
-                <br /><br />
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest bg-slate-900 px-2 py-1 rounded">
-                  SQL Editor: RLS Politikalarını eklemeyi unutmayın!
-                </span>
+                Sohbet modülünün çalışması için Supabase yapılandırmasını tamamlamalısınız.
               </p>
+              
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-left space-y-3">
+                <p className="text-xs font-bold text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                  <AlertTriangle size={12} /> Adımlar:
+                </p>
+                <ol className="text-[11px] text-slate-400 space-y-2 list-decimal list-inside font-mono">
+                  <li>Supabase Dashboard'a gidin.</li>
+                  <li>Settings -> API sekmesini açın.</li>
+                  <li><code className="text-emerald-400 bg-emerald-400/10 px-1 rounded">anon public</code> key değerini kopyalayın.</li>
+                  <li><code className="text-slate-300">services/storageService.ts</code> dosyasındaki <code className="text-sky-400">SUPABASE_ANON_KEY</code> alanına yapıştırın.</li>
+                </ol>
+              </div>
+
+              <div className="pt-4">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Hata Detayı:</p>
+                <p className="text-[10px] text-rose-400/70 font-mono mt-1">{error}</p>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 1. SOL PANEL */}
       <aside className={`
         fixed lg:relative z-50 h-full transition-all duration-300 ease-in-out border-r border-slate-800/40
         ${isSidebarOpen ? 'translate-x-0 w-64 sm:w-72' : '-translate-x-full lg:translate-x-0 w-64 lg:w-72'}
@@ -86,7 +99,6 @@ const ChatModule: React.FC<ChatModuleProps> = ({ externalUser, className = "" })
         </button>
       </aside>
 
-      {/* 2. ANA MERKEZ */}
       <main className="flex-1 flex flex-col min-w-0 bg-slate-900 relative">
         <header className="h-16 border-b border-slate-800/60 flex items-center justify-between px-4 sm:px-6 shrink-0 bg-slate-900/50 backdrop-blur-md z-20">
           <div className="flex items-center gap-3">
@@ -106,17 +118,23 @@ const ChatModule: React.FC<ChatModuleProps> = ({ externalUser, className = "" })
             </div>
           </div>
 
-          <button 
-            onClick={() => setIsUserListOpen(!isUserListOpen)}
-            className={`p-2.5 rounded-xl transition-all ${isUserListOpen ? 'bg-sky-500/20 text-sky-400' : 'hover:bg-slate-800 text-slate-500'}`}
-          >
-            <Users size={22} />
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Nickname</span>
+              <span className="text-xs font-black text-sky-400">{userName}</span>
+            </div>
+            <button 
+              onClick={() => setIsUserListOpen(!isUserListOpen)}
+              className={`p-2.5 rounded-xl transition-all ${isUserListOpen ? 'bg-sky-500/20 text-sky-400' : 'hover:bg-slate-800 text-slate-500'}`}
+            >
+              <Users size={22} />
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 flex overflow-hidden relative">
           <div className="flex-1 overflow-hidden relative flex flex-col bg-gradient-to-b from-slate-900 to-slate-950">
-            <MessageList messages={messages} currentUser={currentUser} />
+            <MessageList messages={messages} currentUser={userName} />
             
             {isAILoading && (
                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-max">
@@ -133,7 +151,7 @@ const ChatModule: React.FC<ChatModuleProps> = ({ externalUser, className = "" })
             ${isUserListOpen ? 'w-64 xl:w-72 translate-x-0' : 'w-0 translate-x-full overflow-hidden'}
           `}>
             <UserList 
-              users={isChannel ? (channels.find(c => c.name === activeTab)?.users || []) : [activeTab, currentUser]} 
+              users={isChannel ? (channels.find(c => c.name === activeTab)?.users || []) : [activeTab, userName]} 
               onClose={() => setIsUserListOpen(false)}
               onUserClick={(u) => {
                 initiatePrivateChat(u);
@@ -156,7 +174,7 @@ const ChatModule: React.FC<ChatModuleProps> = ({ externalUser, className = "" })
                     handleFormSubmit(e);
                   }
                 }}
-                placeholder={isChannel ? `#${activeTab} kanalına yaz...` : `${activeTab} ile sohbete başla...`}
+                placeholder={isChannel ? `#${activeTab} kanalına yaz... (/nick, /join, /clear)` : `${activeTab} ile sohbete başla...`}
                 className="w-full bg-slate-900/50 border border-slate-800 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 rounded-2xl px-4 py-3 sm:py-4 resize-none transition-all text-sm sm:text-base outline-none scrollbar-hide shadow-inner"
               />
             </div>
