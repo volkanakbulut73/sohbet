@@ -1,8 +1,8 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Message, MessageType, Channel } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
-import { storageService } from '../services/storageService';
+import { storageService, isConfigured } from '../services/storageService';
 
 export const useChatCore = (userName: string) => {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -10,29 +10,52 @@ export const useChatCore = (userName: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('general');
   const [isAILoading, setIsAILoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Realtime aboneliğini takip etmek için ref
+  const subscriptionRef = useRef<any>(null);
 
-  // 1. Kanalları ve Aktif Kanalın Mesajlarını Yükle
+  // 1. Veritabanı Yapılandırma ve Başlangıç Verisi
   useEffect(() => {
-    const loadInitialData = async () => {
+    if (!isConfigured()) {
+      setError("Lütfen services/storageService.ts dosyasındaki SUPABASE_URL ve SUPABASE_ANON_KEY değerlerini kendi projenizinkilerle değiştirin.");
+      return;
+    }
+
+    const loadData = async () => {
+      setError(null);
       const fetchedChannels = await storageService.getChannels();
-      setChannels(fetchedChannels);
+      
+      // Eğer 'general' kanalı yoksa oluştur (İlk kurulum yardımı)
+      if (!fetchedChannels.find(c => c.name === 'general')) {
+        const defaultChan = { name: 'general', description: 'Global Lobby', unreadCount: 0, users: [userName] };
+        await storageService.createChannel(defaultChan);
+        setChannels([defaultChan, ...fetchedChannels]);
+      } else {
+        setChannels(fetchedChannels);
+      }
       
       const fetchedMessages = await storageService.getMessagesByChannel(activeTab);
       setMessages(fetchedMessages);
     };
-    loadInitialData();
-  }, [activeTab]);
 
-  // 2. Realtime Aboneliği
+    loadData();
+  }, [activeTab, userName]);
+
+  // 2. Realtime Aboneliği (Abonelik yönetimi optimize edildi)
   useEffect(() => {
-    const subscription = storageService.subscribeToMessages((payload) => {
+    if (!isConfigured()) return;
+
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+    }
+
+    subscriptionRef.current = storageService.subscribeToMessages((payload) => {
       const newMessage = payload.new;
-      
-      // Eğer gelen mesaj şu an açık olan kanala/tab'a aitse listeye ekle
       if (newMessage.channel === activeTab) {
         setMessages(prev => {
-          // Mükerrer kaydı önlemek için (kendi gönderdiğimiz mesaj bazen hızlı gelebilir)
-          if (prev.find(m => m.id === newMessage.id)) return prev;
+          // Çift mesaj gelmesini önle
+          if (prev.some(m => m.id === newMessage.id)) return prev;
           return [...prev, {
             ...newMessage,
             timestamp: new Date(newMessage.created_at),
@@ -43,13 +66,16 @@ export const useChatCore = (userName: string) => {
     });
 
     return () => {
-      subscription.unsubscribe();
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+      }
     };
   }, [activeTab]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
+    // Komut İşleme (IRC Tarzı)
     if (text.startsWith('/')) {
       await handleCommand(text);
       return;
@@ -63,10 +89,10 @@ export const useChatCore = (userName: string) => {
       channel: activeTab
     });
 
-    // AI Yanıtı
+    // AI Yanıtı (Sadece DM ise veya özel tetikleyici varsa)
     if (activeTab === 'GeminiBot') {
       setIsAILoading(true);
-      const res = await getGeminiResponse(text, "Private DM with Gemini");
+      const res = await getGeminiResponse(text, "User DM session");
       await storageService.saveMessage({
         sender: 'GeminiBot',
         text: res,
@@ -81,22 +107,29 @@ export const useChatCore = (userName: string) => {
     const [cmd, ...args] = fullCmd.slice(1).split(' ');
     const argStr = args.join(' ');
 
-    if (cmd === 'join') {
-      const name = argStr.toLowerCase().replace('#', '');
-      if (name) {
-        if (!channels.find(c => c.name === name)) {
-          const newChan = { name, description: 'New Channel', unreadCount: 0, users: [userName] };
-          await storageService.createChannel(newChan);
-          setChannels(p => [...p, newChan]);
+    switch (cmd.toLowerCase()) {
+      case 'join':
+        const name = argStr.toLowerCase().replace('#', '');
+        if (name) {
+          if (!channels.find(c => c.name === name)) {
+            const newChan = { name, description: 'Created by User', unreadCount: 0, users: [userName] };
+            await storageService.createChannel(newChan);
+            setChannels(p => [...p, newChan]);
+          }
+          setActiveTab(name);
         }
-        setActiveTab(name);
-      }
-    } else if (cmd === 'ai') {
-      setIsAILoading(true);
-      await storageService.saveMessage({ sender: userName, text: fullCmd, type: MessageType.USER, channel: activeTab });
-      const res = await getGeminiResponse(argStr, `Channel Context: ${activeTab}`);
-      await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: activeTab });
-      setIsAILoading(false);
+        break;
+      case 'ai':
+        setIsAILoading(true);
+        // Kullanıcı komutunu kanalda göster
+        await storageService.saveMessage({ sender: userName, text: fullCmd, type: MessageType.USER, channel: activeTab });
+        const res = await getGeminiResponse(argStr, `Context: ${activeTab} channel talk`);
+        await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: activeTab });
+        setIsAILoading(false);
+        break;
+      case 'me':
+        await storageService.saveMessage({ sender: userName, text: argStr, type: MessageType.ACTION, channel: activeTab });
+        break;
     }
   };
 
@@ -116,6 +149,7 @@ export const useChatCore = (userName: string) => {
     messages,
     sendMessage,
     initiatePrivateChat,
-    isAILoading
+    isAILoading,
+    error
   };
 };

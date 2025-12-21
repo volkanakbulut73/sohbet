@@ -2,71 +2,97 @@
 import { createClient } from '@supabase/supabase-js';
 import { Message, Channel, MessageType } from '../types';
 
-// Not: Bu değerleri Supabase panelinizden (Settings -> API) alıp buraya yapıştırın.
-// Mimari gereği process.env kullanılması önerilir ancak burada örnek için placeholder bırakılmıştır.
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
+/**
+ * ÖNEMLİ: Supabase panelinizden (Settings -> API) aldığınız değerleri buraya yapıştırın.
+ * Eğer bu değerler 'your-project' olarak kalırsa uygulama hata modunda çalışacaktır.
+ */
+const SUPABASE_URL = 'https://your-project.supabase.co'; 
+const SUPABASE_ANON_KEY = 'your-anon-key';
+
+export const isConfigured = () => 
+  SUPABASE_URL.includes('supabase.co') && 
+  !SUPABASE_URL.includes('your-project') &&
+  SUPABASE_ANON_KEY !== 'your-anon-key';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export const storageService = {
   // Kanalları Getir
   async getChannels(): Promise<Channel[]> {
-    const { data, error } = await supabase
-      .from('channels')
-      .select('*');
-    
-    if (error) {
-      console.error("Error fetching channels:", error);
+    try {
+      const { data, error } = await supabase
+        .from('channels')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      return data as Channel[];
+    } catch (err: any) {
+      console.error("Supabase error fetching channels:", err.message || err);
       return [];
     }
-    return data as Channel[];
   },
 
   // Yeni Kanal Oluştur
   async createChannel(channel: Channel) {
-    await supabase.from('channels').upsert(channel);
+    try {
+      const { error } = await supabase.from('channels').upsert({
+        name: channel.name,
+        description: channel.description,
+        users: channel.users
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Error creating channel:", err.message);
+    }
   },
 
-  // Mesajları Getir (Belli bir kanal için)
+  // Mesajları Getir
   async getMessagesByChannel(channelName: string): Promise<Message[]> {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('channel', channelName)
-      .order('created_at', { ascending: true })
-      .limit(100);
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('channel', channelName)
+        .order('created_at', { ascending: true })
+        .limit(100);
 
-    if (error) {
-      console.error("Error fetching messages:", error);
+      if (error) throw error;
+
+      return data.map(m => ({
+        id: m.id,
+        sender: m.sender,
+        text: m.text,
+        timestamp: new Date(m.created_at),
+        type: m.type as MessageType,
+        channel: m.channel
+      }));
+    } catch (err: any) {
+      console.error("Supabase error fetching messages:", err.message);
       return [];
     }
-
-    return data.map(m => ({
-      id: m.id,
-      sender: m.sender,
-      text: m.text,
-      timestamp: new Date(m.created_at),
-      type: m.type as MessageType,
-      channel: m.channel
-    }));
   },
 
   // Tek Mesaj Gönder
   async saveMessage(message: Omit<Message, 'id' | 'timestamp'>) {
-    const { error } = await supabase.from('messages').insert({
-      sender: message.sender,
-      text: message.text,
-      type: message.type,
-      channel: message.channel
-    });
-    if (error) console.error("Error saving message:", error);
+    try {
+      const { error } = await supabase.from('messages').insert({
+        sender: message.sender,
+        text: message.text,
+        type: message.type,
+        channel: message.channel
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Error saving message:", err.message);
+    }
   },
 
-  // Realtime Aboneliği Başlat
+  // Realtime Aboneliği
   subscribeToMessages(callback: (payload: any) => void) {
     return supabase
-      .channel('schema-db-changes')
+      .channel('any')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
