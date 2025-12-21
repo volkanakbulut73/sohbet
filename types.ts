@@ -3,7 +3,8 @@ export enum MessageType {
   SYSTEM = 'SYSTEM',
   USER = 'USER',
   AI = 'AI',
-  ACTION = 'ACTION'
+  ACTION = 'ACTION',
+  IMAGE = 'IMAGE'
 }
 
 export interface Message {

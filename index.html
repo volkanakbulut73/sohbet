@@ -4,47 +4,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gemini Connect | Modüler Sohbet</title>
+  <title>Gemini Connect | mIRC Style</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Klasik mIRC ve Modern Dark Mode Scrollbar */
-    ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.5);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(51, 65, 85, 0.5);
-      border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(56, 189, 248, 0.3);
-    }
-    
     body {
-      background-color: #020617;
-      color: #f1f5f9;
+      background-color: #f0f4f8;
+      color: #000000;
       margin: 0;
       padding: 0;
       overflow: hidden;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Tahoma', 'Arial', sans-serif;
       touch-action: manipulation;
     }
 
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
+    /* Genel Scrollbar */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 8px; /* Yatay scroll için yükseklik */
+    }
+    ::-webkit-scrollbar-track {
+      background: #e2e8f0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border: 2px solid #e2e8f0;
     }
 
-    .custom-scrollbar {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(51, 65, 85, 0.5) transparent;
+    /* Kanal Barı Özel Scrollbar (Daha ince ve temiz) */
+    .tabs-scrollbar::-webkit-scrollbar {
+      height: 4px;
     }
-    
-    /* Mobil cihazlarda textarea focus olduğunda zoom yapmasını engellemek için */
+    .tabs-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+
+    .mirc-text {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Mobil focus engelleme */
     input, textarea {
       font-size: 16px !important;
+    }
+
+    .channel-tab-active {
+      color: #2563eb;
+      font-weight: bold;
+      border-bottom: 2px solid #2563eb;
+    }
+
+    /* Kaydırma Göstergesi (Gradyan) */
+    .tabs-container {
+      position: relative;
+    }
+    .tabs-container::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 30px;
+      background: linear-gradient(to right, transparent, rgba(238, 244, 251, 0.8));
+      pointer-events: none;
     }
   </style>
 <script type="importmap">

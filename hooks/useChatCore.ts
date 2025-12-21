@@ -5,19 +5,62 @@ import { getGeminiResponse } from '../services/geminiService';
 import { storageService, isConfigured } from '../services/storageService';
 
 export const useChatCore = (initialUserName: string) => {
-  const [userName, setUserName] = useState(initialUserName);
+  const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [privateChats, setPrivateChats] = useState<string[]>(['GeminiBot']);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>(() => {
+    const saved = localStorage.getItem('mirc_blocked');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('general');
   const [isAILoading, setIsAILoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const subscriptionRef = useRef<any>(null);
+  const channelSubRef = useRef<any>(null);
+  const joinedChannelsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    localStorage.setItem('mirc_blocked', JSON.stringify(blockedUsers));
+  }, [blockedUsers]);
+
+  useEffect(() => {
+    localStorage.setItem('mirc_nick', userName);
+  }, [userName]);
+
+  const getDMChannelName = (otherUser: string) => {
+    if (otherUser === 'GeminiBot' || otherUser === 'Status') return otherUser;
+    const users = [userName, otherUser].sort();
+    return `private:${users[0]}:${users[1]}`;
+  };
+
+  useEffect(() => {
+    if (isConfigured()) {
+      storageService.cleanupOldMessages(24);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isConfigured()) return;
+    channelSubRef.current = storageService.subscribeToChannels((payload) => {
+      const updatedChannel = payload.new as Channel;
+      setChannels(prev => {
+        const index = prev.findIndex(c => c.name === updatedChannel.name);
+        if (index === -1) return [...prev, updatedChannel];
+        const newChannels = [...prev];
+        newChannels[index] = { ...newChannels[index], ...updatedChannel };
+        return newChannels;
+      });
+    });
+    return () => {
+      if (channelSubRef.current) channelSubRef.current.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isConfigured()) {
-      setError("Supabase yapılandırması eksik. Lütfen storageService.ts dosyasındaki SUPABASE_ANON_KEY alanını doldurun.");
+      setError("Supabase yapılandırması eksik.");
       return;
     }
 
@@ -25,46 +68,55 @@ export const useChatCore = (initialUserName: string) => {
       try {
         setError(null);
         const fetchedChannels = await storageService.getChannels();
-        
+        let currentChannels = fetchedChannels;
         if (!fetchedChannels.find(c => c.name === 'general')) {
           const defaultChan = { name: 'general', description: 'Global Lobby', unreadCount: 0, users: [userName] };
           await storageService.createChannel(defaultChan);
-          setChannels([defaultChan, ...fetchedChannels]);
-        } else {
-          setChannels(fetchedChannels);
+          currentChannels = [defaultChan, ...fetchedChannels];
         }
+        setChannels(currentChannels);
         
-        const fetchedMessages = await storageService.getMessagesByChannel(activeTab);
-        
-        const welcomeMsg: Message = {
-          id: 'system-' + Date.now(),
-          sender: 'System',
-          text: `* ${activeTab} kanalına bağlandınız. Sunucu: Supabase Cloud.`,
-          timestamp: new Date(),
-          type: MessageType.SYSTEM,
-          channel: activeTab
-        };
-        
-        setMessages([welcomeMsg, ...fetchedMessages]);
+        const targetChannel = channels.some(c => c.name === activeTab) ? activeTab : getDMChannelName(activeTab);
+        const fetchedMessages = await storageService.getMessagesByChannel(targetChannel);
+        setMessages(fetchedMessages);
+
+        if (!activeTab.includes('GeminiBot') && activeTab !== 'Status') {
+          const isChannel = currentChannels.some(c => c.name === activeTab);
+          if (isChannel && !joinedChannelsRef.current.has(activeTab)) {
+            await storageService.saveMessage({
+              sender: 'System',
+              text: `${userName} sohbet odasına girdi.`,
+              type: MessageType.SYSTEM,
+              channel: activeTab
+            });
+            await storageService.addUserToChannel(activeTab, userName);
+            setChannels(prev => prev.map(c => {
+              if (c.name === activeTab) {
+                const updatedUsers = Array.from(new Set([...(c.users || []), userName]));
+                return { ...c, users: updatedUsers };
+              }
+              return c;
+            }));
+            joinedChannelsRef.current.add(activeTab);
+          }
+        }
       } catch (err: any) {
-        setError(`Bağlantı Hatası: ${err.message || "Bilinmeyen bir hata oluştu"}`);
+        setError(`Bağlantı Hatası: ${err.message}`);
       }
     };
-
     loadData();
-  }, [activeTab]);
+  }, [activeTab, userName]);
 
   useEffect(() => {
     if (!isConfigured()) return;
+    if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
 
-    if (subscriptionRef.current) {
-      subscriptionRef.current.unsubscribe();
-    }
+    const targetChannel = channels.some(c => c.name === activeTab) ? activeTab : getDMChannelName(activeTab);
 
     try {
       subscriptionRef.current = storageService.subscribeToMessages((payload) => {
         const newMessage = payload.new;
-        if (newMessage.channel === activeTab) {
+        if (newMessage.channel === targetChannel) {
           setMessages(prev => {
             if (prev.some(m => m.id === newMessage.id)) return prev;
             return [...prev, {
@@ -80,27 +132,29 @@ export const useChatCore = (initialUserName: string) => {
     return () => {
       if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
     };
-  }, [activeTab]);
+  }, [activeTab, userName, channels]);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
-
+  const sendMessage = async (text: string, imageBase64?: string) => {
+    if (!text.trim() && !imageBase64) return;
+    
     try {
       if (text.startsWith('/')) {
         await handleCommand(text);
         return;
       }
 
+      const targetChannel = channels.some(c => c.name === activeTab) ? activeTab : getDMChannelName(activeTab);
+
       await storageService.saveMessage({
         sender: userName,
-        text,
-        type: MessageType.USER,
-        channel: activeTab
+        text: imageBase64 || text,
+        type: imageBase64 ? MessageType.IMAGE : MessageType.USER,
+        channel: targetChannel
       });
 
       if (activeTab === 'GeminiBot') {
         setIsAILoading(true);
-        const res = await getGeminiResponse(text, "User DM session");
+        const res = await getGeminiResponse(text, "User DM session", imageBase64);
         await storageService.saveMessage({
           sender: 'GeminiBot',
           text: res,
@@ -125,7 +179,7 @@ export const useChatCore = (initialUserName: string) => {
           setUserName(argStr);
           await storageService.saveMessage({
             sender: 'System',
-            text: `${oldNick} is now known as ${argStr}`,
+            text: `${oldNick} artık ${argStr} olarak biliniyor.`,
             type: MessageType.SYSTEM,
             channel: activeTab
           });
@@ -147,15 +201,8 @@ export const useChatCore = (initialUserName: string) => {
           } catch (e) {}
         }
         break;
-      case 'ai':
-        setIsAILoading(true);
-        await storageService.saveMessage({ sender: userName, text: fullCmd, type: MessageType.USER, channel: activeTab });
-        const res = await getGeminiResponse(argStr, `Context: ${activeTab}`);
-        await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: activeTab });
-        setIsAILoading(false);
-        break;
-      case 'me':
-        await storageService.saveMessage({ sender: userName, text: argStr, type: MessageType.ACTION, channel: activeTab });
+      case 'block':
+        if (argStr) toggleBlockUser(argStr);
         break;
     }
   };
@@ -168,14 +215,26 @@ export const useChatCore = (initialUserName: string) => {
     setActiveTab(targetName);
   };
 
+  const toggleBlockUser = (targetUser: string) => {
+    if (targetUser === userName || targetUser === 'GeminiBot') return;
+    setBlockedUsers(prev => 
+      prev.includes(targetUser) 
+        ? prev.filter(u => u !== targetUser) 
+        : [...prev, targetUser]
+    );
+  };
+
   return {
     userName,
-    channels,
-    privateChats,
-    activeTab,
-    setActiveTab,
-    messages,
-    sendMessage,
+    setUserName,
+    channels, 
+    privateChats, 
+    blockedUsers,
+    toggleBlockUser,
+    activeTab, 
+    setActiveTab, 
+    messages, 
+    sendMessage, 
     initiatePrivateChat,
     isAILoading,
     error

@@ -1,82 +1,63 @@
 
 import React from 'react';
-import { Users, X, Circle, MessageCircle, ShieldCheck, UserPlus } from 'lucide-react';
+import { UserX, UserCheck } from 'lucide-react';
 
 interface UserListProps {
   users: string[];
   onClose: () => void;
   onUserClick?: (username: string) => void;
+  onUserBlock?: (username: string) => void;
+  onUserContextMenu?: (e: React.MouseEvent, username: string) => void;
+  blockedUsers?: string[];
 }
 
-const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick }) => {
-  return (
-    <div className="w-full h-full flex flex-col select-none bg-slate-950/50">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-800/60 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <Users size={16} className="text-slate-500" />
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kullanıcılar ({users.length})</span>
-        </div>
-        <button onClick={onClose} className="lg:hidden p-1.5 hover:bg-slate-800 rounded-lg text-slate-500">
-          <X size={18} />
-        </button>
-      </div>
+const UserList: React.FC<UserListProps> = ({ users, onUserClick, onUserBlock, onUserContextMenu, blockedUsers = [] }) => {
+  const uniqueUsers = Array.from(new Set(users)).filter(u => u && u.trim() !== "");
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-        {users.map((user, idx) => {
-          const isOp = user === 'Admin' || user === 'GeminiBot';
+  const getPrefix = (idx: number, user: string) => {
+    if (user === 'GeminiBot') return { icon: '🤖', prefix: '@', color: 'text-red-600' };
+    if (idx === 0) return { icon: '👑', prefix: '&', color: 'text-orange-500' };
+    if (idx === 1) return { icon: '🛡️', prefix: '%', color: 'text-gray-700' };
+    if (idx < 5) return { icon: '⚔️', prefix: '+', color: 'text-gray-600' };
+    return { icon: '👑', prefix: '%', color: 'text-gray-600' };
+  };
+
+  return (
+    <div className="w-full h-full flex flex-col bg-[#f8fbff] text-[11px] select-none">
+      <div className="flex-1 overflow-y-auto">
+        {uniqueUsers.map((user, idx) => {
+          const rank = getPrefix(idx, user);
+          const isBlocked = blockedUsers.includes(user);
+          
           return (
             <div 
-              key={idx} 
+              key={`${user}-${idx}`} 
+              className={`flex items-center justify-between gap-1.5 px-2 py-1 hover:bg-blue-100 cursor-pointer group border-b border-transparent ${isBlocked ? 'opacity-40 grayscale' : ''}`}
               onClick={() => onUserClick?.(user)}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-sky-500/5 group cursor-pointer transition-all border border-transparent hover:border-sky-500/10"
+              onContextMenu={(e) => onUserContextMenu?.(e, user)}
             >
-              <div className="relative shrink-0">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs transition-all transform group-hover:scale-105
-                  ${isOp ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-600/5' : 'bg-slate-800 text-slate-400 border border-slate-700/30'}
-                `}>
-                  {isOp ? '@' : user.charAt(0).toUpperCase()}
-                </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-slate-950 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <span className="text-[14px] shrink-0" title="Rank">{rank.icon}</span>
+                <span className={`font-bold ${rank.color} truncate ${isBlocked ? 'line-through' : ''}`}>
+                  {rank.prefix}{user}
+                </span>
               </div>
               
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className={`text-sm truncate font-bold group-hover:text-white transition-colors
-                    ${isOp ? 'text-indigo-400' : 'text-slate-300'}
-                  `}>
-                    {user}
-                  </p>
-                  {isOp && <ShieldCheck size={10} className="text-indigo-500/70" />}
-                </div>
-                <p className="text-[9px] text-slate-600 font-bold uppercase tracking-tighter opacity-60">Çevrimiçi</p>
-              </div>
-              
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">
-                <MessageCircle size={14} className="text-sky-500" />
-              </div>
+              {user !== 'GeminiBot' && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUserBlock?.(user);
+                  }}
+                  className={`opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 transition-all ${isBlocked ? 'text-green-600 opacity-100' : 'text-red-500'}`}
+                  title={isBlocked ? "Engeli Kaldır" : "Engelle"}
+                >
+                  {isBlocked ? <UserCheck size={12} /> : <UserX size={12} />}
+                </button>
+              )}
             </div>
           );
         })}
-      </div>
-
-      {/* Footer Info */}
-      <div className="p-4 border-t border-slate-800/40 bg-slate-900/20 shrink-0">
-        <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800/50 hover:bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors border border-slate-700/30">
-          <UserPlus size={14} />
-          Davet Et
-        </button>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-[9px] font-bold text-slate-600 uppercase">
-          <div className="flex flex-col gap-0.5 p-2 rounded-lg bg-slate-900/50 border border-slate-800/50">
-            <span className="opacity-50">Sesli</span>
-            <span className="text-emerald-500">Aktif</span>
-          </div>
-          <div className="flex flex-col gap-0.5 p-2 rounded-lg bg-slate-900/50 border border-slate-800/50">
-            <span className="opacity-50">Gecikme</span>
-            <span className="text-sky-500">14ms</span>
-          </div>
-        </div>
       </div>
     </div>
   );
