@@ -5,7 +5,7 @@ import { UserX, UserCheck, Shield, ShieldAlert, Crown } from 'lucide-react';
 interface UserListProps {
   users: string[];
   onClose: () => void;
-  onUserClick?: (username: string) => void;
+  onUserClick?: (e: React.MouseEvent | React.TouchEvent, username: string) => void;
   onUserBlock?: (username: string) => void;
   onUserContextMenu?: (e: React.MouseEvent, username: string) => void;
   blockedUsers?: string[];
@@ -33,7 +33,7 @@ const UserList: React.FC<UserListProps> = ({ users, onUserClick, onUserBlock, on
             <div 
               key={`${user}-${idx}`} 
               className={`flex items-center justify-between gap-1.5 px-2 py-1 hover:bg-blue-100 cursor-pointer group border-b border-transparent ${isBlocked ? 'opacity-40 grayscale' : ''}`}
-              onClick={() => onUserClick?.(user)}
+              onClick={(e) => onUserClick?.(e, user)}
               onContextMenu={(e) => onUserContextMenu?.(e, user)}
             >
               <div className="flex items-center gap-1.5 flex-1 min-w-0">

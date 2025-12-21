@@ -6,7 +6,7 @@ interface MessageListProps {
   messages: Message[];
   currentUser: string;
   blockedUsers: string[];
-  onNickClick?: (nick: string) => void;
+  onNickClick?: (e: React.MouseEvent | React.TouchEvent, nick: string) => void;
   onNickContextMenu?: (e: React.MouseEvent, nick: string) => void;
 }
 
@@ -23,9 +23,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
-  const handleNickClick = (sender: string) => {
+  const handleNickClick = (e: React.MouseEvent | React.TouchEvent, sender: string) => {
     if (sender !== currentUser && onNickClick) {
-      onNickClick(sender);
+      onNickClick(e, sender);
     }
   };
 
@@ -55,7 +55,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
             <span className="text-gray-500 mr-2">{time}</span>
             * <span 
                 className="cursor-pointer hover:underline font-bold" 
-                onClick={() => handleNickClick(msg.sender)}
+                onClick={(e) => handleNickClick(e, msg.sender)}
                 onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
               >
                 {msg.sender}
@@ -68,7 +68,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
             <span className="text-gray-500 mr-2">{time}</span>
             <span 
               className="text-red-700 font-bold cursor-pointer hover:underline"
-              onClick={() => handleNickClick('GeminiBot')}
+              onClick={(e) => handleNickClick(e, 'GeminiBot')}
               onContextMenu={(e) => handleNickContextMenu(e, 'GeminiBot')}
             >
               {`<@GeminiBot>`}
@@ -82,7 +82,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
               <span className="text-gray-400 shrink-0 mr-1">{time}</span>
               <span 
                 className={`text-blue-800 shrink-0 mr-1 font-bold cursor-pointer hover:underline`}
-                onClick={() => handleNickClick(msg.sender)}
+                onClick={(e) => handleNickClick(e, msg.sender)}
                 onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
               >
                 {`<${msg.sender}>`}
@@ -108,9 +108,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
             <span className="text-gray-400 shrink-0 mr-1">{time}</span>
             <span 
               className={`${nickColor} shrink-0 mr-1 font-bold cursor-pointer hover:underline active:text-blue-500 transition-colors`}
-              onClick={() => handleNickClick(msg.sender)}
+              onClick={(e) => handleNickClick(e, msg.sender)}
               onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
-              title={`${msg.sender} ile özel sohbet başlat`}
+              title={`${msg.sender} için seçenekleri gör`}
             >
               {`<${msg.sender}>`}
             </span>
