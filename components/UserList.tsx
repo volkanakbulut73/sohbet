@@ -15,7 +15,9 @@ interface UserListProps {
 
 const UserList: React.FC<UserListProps> = ({ users, onUserClick, onAction, blockedUsers = [], isAdmin, currentOps = [], currentUser }) => {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const uniqueUsers = Array.from(new Set(users)).filter(u => u && typeof u === 'string' && u.trim() !== "");
+  
+  // Fix: Use type guard in filter to ensure uniqueUsers is inferred correctly as string[]
+  const uniqueUsers = Array.from(new Set(users)).filter((u): u is string => typeof u === 'string' && u.trim() !== "");
   const canManage = isAdmin || currentOps.includes(currentUser);
 
   const getRank = (user: string) => {

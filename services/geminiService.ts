@@ -1,10 +1,10 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { GoogleGenAI } from "@google/genai";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string) => {
   try {
+    // Fix: Create fresh client instance for each request
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const model = "gemini-3-flash-preview";
     let contents: any;
 
@@ -45,6 +45,8 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
 
 export const summarizeChannel = async (messages: string[]) => {
   try {
+    // Fix: Create fresh client instance for each request
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Summarize the following chat conversation briefly in 1-2 sentences:

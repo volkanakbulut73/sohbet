@@ -1,4 +1,6 @@
 
+// Fix: Import React to resolve 'Cannot find namespace React' error
+import React from 'react';
 import { Channel } from '../types';
 import { Hash, Search, Plus, MessageSquare, User, Circle, Sparkles } from 'lucide-react';
 

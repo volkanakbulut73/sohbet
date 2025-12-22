@@ -78,23 +78,20 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
 
     if (adminPassword === 'password123') {
       setIsLoggingIn(true);
-      // Şifre doğru, admin yetkilerini ayarla
       const fullAdminNick = finalNick.startsWith('Admin_') ? finalNick : `Admin_${finalNick}`;
       
-      // State'leri güncelle
       setUserName(fullAdminNick);
       setIsAdmin(true);
       
-      // Modal'ı kapat ve arayüzü aç
       setTimeout(() => {
         setIsLoggedIn(true);
         setIsAdminModalOpen(false);
         setLoginError('');
         setAdminPassword('');
         setIsLoggingIn(false);
-      }, 500);
+      }, 600);
     } else {
-      alert('Hatalı Yönetici Şifresi! (Lütfen tekrar deneyin)');
+      alert('Hatalı Yönetici Şifresi! (Şifre: password123)');
     }
   };
 
@@ -218,7 +215,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
                 >
                   {isLoggingIn ? 'Giriş Yapılıyor...' : 'Sohbete Yönetici Olarak Gir'}
                 </button>
-                <p className="text-[10px] text-center text-gray-400 italic">Yönetici şifrenizle tüm odaları kontrol edebilirsiniz.</p>
               </form>
             </div>
           </div>
@@ -247,7 +243,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
               <button onClick={() => { setIsSettingsOpen(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 flex items-center gap-3 text-gray-700">
                 <Settings size={16} className="text-gray-500" /> Ayarlar
               </button>
-              <button onClick={() => { setIsLoggedIn(false); setIsMenuOpen(false); setIsAdmin(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-3 text-red-600 font-bold">
+              <button onClick={() => { setIsLoggedIn(false); setIsMenuOpen(false); setIsAdmin(false); localStorage.clear(); }} className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-3 text-red-600 font-bold">
                 <LogIn size={16} className="rotate-180" /> Çıkış Yap
               </button>
             </div>
@@ -262,19 +258,19 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </div>
 
         <div className="flex items-center gap-2">
-           {isOp && currentChannel && (
-             <div className="flex gap-1">
+           {isOp && (
+             <div className="flex gap-1 animate-in zoom-in duration-300">
                 <button 
                   onClick={toggleLock} 
-                  title={currentChannel.isLocked ? "Kilidi Aç" : "Odayı Kilitle"}
-                  className={`p-2 rounded-md border border-white/20 transition-all ${currentChannel.isLocked ? 'bg-red-500 text-white' : 'bg-white/20 text-white'}`}
+                  title={currentChannel?.isLocked ? "Kilidi Aç" : "Bu Odayı Kilitle"}
+                  className={`p-2 rounded-md border border-white/20 transition-all ${currentChannel?.isLocked ? 'bg-red-600 text-white shadow-lg scale-110' : 'bg-white/20 text-white hover:bg-white/40'}`}
                 >
-                  {currentChannel.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                  {currentChannel?.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
                 </button>
                 <button 
                   onClick={clearScreen} 
-                  title="Ekranı Temizle"
-                  className="p-2 bg-white/20 text-white rounded-md border border-white/20 hover:bg-red-400"
+                  title="Bu Odayı Temizle"
+                  className="p-2 bg-white/20 text-white rounded-md border border-white/20 hover:bg-red-500 hover:border-red-400 transition-all active:scale-90"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -312,15 +308,18 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
 
       <main className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200 relative">
-           <div className={`text-white text-[11px] font-bold px-3 py-0.5 uppercase tracking-wider flex justify-between ${currentChannel?.isLocked ? 'bg-red-600' : 'bg-[#ff00ff]'}`}>
+           <div className={`text-white text-[11px] font-bold px-3 py-0.5 uppercase tracking-wider flex justify-between shadow-sm z-10 ${currentChannel?.isLocked ? 'bg-red-600' : 'bg-[#ff00ff]'}`}>
               <span>#{activeTab} {currentChannel?.isLocked && "(KİLİTLİ)"}</span>
-              {isAdmin && <span className="text-yellow-200">YÖNETİCİ ERİŞİMİ</span>}
+              {isAdmin && <span className="text-yellow-200 font-black flex items-center gap-1"><Shield size={10} /> YÖNETİCİ AKTİF</span>}
            </div>
+           
            {coreError && (
-             <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-red-600 text-white text-xs px-4 py-2 rounded-full shadow-lg z-50 animate-bounce max-w-[80%] text-center">
-                {String(coreError)}
+             <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[11px] font-bold px-5 py-3 rounded-lg shadow-2xl z-50 animate-in slide-in-from-top duration-300 border-2 border-red-500 max-w-[85%] text-center">
+                <div className="flex items-center gap-2 mb-1 text-red-500"><ShieldAlert size={14} /> SİSTEM HATASI</div>
+                <div className="font-medium text-gray-200">{String(coreError)}</div>
              </div>
            )}
+
            <div className="flex-1 overflow-hidden">
               <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} />
            </div>
@@ -357,7 +356,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             onChange={(e) => setInputText(e.target.value)}
             disabled={currentChannel?.isLocked && !isOp}
             placeholder={currentChannel?.isLocked && !isOp ? "Oda kilitli, sadece operatörler yazabilir..." : "Mesajınızı buraya yazın..."}
-            className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed disabled:placeholder:text-red-400"
           />
           <button type="submit" className="bg-[#4a80b3] text-white px-6 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#3b6ea0] active:scale-95 transition-all">
             Gönder

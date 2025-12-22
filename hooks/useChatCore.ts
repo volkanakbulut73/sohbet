@@ -25,10 +25,23 @@ export const useChatCore = (initialUserName: string) => {
   const notifySound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
 
   const handleError = (err: any) => {
-    console.error("Chat Error:", err);
-    const msg = err?.message || err?.error_description || (typeof err === 'string' ? err : JSON.stringify(err));
+    console.error("Chat Error Detail:", err);
+    let msg = "Bir hata oluştu.";
+    
+    if (typeof err === 'string') {
+      msg = err;
+    } else if (err && typeof err === 'object') {
+      // Supabase veya standart Error nesnelerinden mesajı ayıkla
+      msg = err.message || err.error_description || err.details || (err.error && err.error.message) || JSON.stringify(err);
+    }
+    
+    // Eğer sütun eksik hatasıysa daha açıklayıcı yap
+    if (msg.includes("isLocked") && msg.includes("column")) {
+      msg = "Veritabanı Hatası: 'channels' tablosunda 'isLocked' sütunu eksik. Lütfen veritabanı yöneticisine başvurun.";
+    }
+
     setError(msg);
-    setTimeout(() => setError(null), 5000);
+    setTimeout(() => setError(null), 7000);
   };
 
   useEffect(() => {
@@ -50,13 +63,12 @@ export const useChatCore = (initialUserName: string) => {
   }, [isAdmin]);
 
   const currentChannel = channels.find(c => c.name === activeTab);
-  const isOp = (currentChannel?.ops || []).includes(userName) || isAdmin;
+  
+  // Admin ise veya kanal ops listesindeyse yetkilidir
+  const isOp = isAdmin || (currentChannel?.ops || []).includes(userName);
 
-  // Kanal Senkronizasyonu
   const loadChannels = async () => {
-    // Nickname yoksa kanalları yükleme (Giriş ekranındayız)
     if (!userName || userName.trim() === '') return;
-
     try {
       const fetched = await storageService.getChannels();
       if (fetched.length === 0) {
@@ -74,13 +86,12 @@ export const useChatCore = (initialUserName: string) => {
   useEffect(() => {
     if (!isConfigured() || !userName || userName.trim() === '') return;
     loadChannels();
-    channelSubRef.current = storageService.subscribeToChannels((payload) => {
+    channelSubRef.current = storageService.subscribeToChannels(() => {
       loadChannels();
     });
     return () => channelSubRef.current?.unsubscribe();
   }, [userName]);
 
-  // Mesaj Senkronizasyonu
   const fetchMsgs = async () => {
     if (!userName || userName.trim() === '') return;
     try {
@@ -96,6 +107,7 @@ export const useChatCore = (initialUserName: string) => {
     fetchMsgs();
     subscriptionRef.current = storageService.subscribeToMessages((payload) => {
       if (payload.eventType === 'DELETE') {
+        // Eğer tüm mesajlar silindiyse veya bu kanaldan mesaj silindiyse listeyi yenile
         fetchMsgs();
         return;
       }
@@ -103,7 +115,9 @@ export const useChatCore = (initialUserName: string) => {
       if (newMessage && newMessage.channel === activeTab) {
         setMessages(prev => {
           if (prev.some(m => m.id === newMessage.id)) return prev;
-          if (!isMuted && newMessage.sender !== userName) notifySound.current.play().catch(() => {});
+          if (!isMuted && newMessage.sender !== userName) {
+             notifySound.current.play().catch(() => {});
+          }
           return [...prev, { ...newMessage, timestamp: new Date(newMessage.created_at) }];
         });
       }
@@ -115,13 +129,12 @@ export const useChatCore = (initialUserName: string) => {
   const sendMessage = async (text: string, imageBase64?: string) => {
     if (!text.trim() && !imageBase64) return;
     
-    // Lock Check
+    // Kilit Kontrolü: Admin her zaman yazabilir
     if (currentChannel?.isLocked && !isOp) {
       handleError("Bu oda kilitli. Sadece operatörler yazabilir.");
       return;
     }
 
-    // Ban Check
     if (currentChannel?.bannedUsers?.includes(userName)) {
       handleError("Bu odadan yasaklandınız.");
       return;
@@ -183,12 +196,20 @@ export const useChatCore = (initialUserName: string) => {
   const toggleLock = async () => {
     if (!isOp) return;
     const chan = channels.find(c => c.name === activeTab);
-    if (!chan) return;
+    // Sadece kanallar kilitlenebilir, özel sohbetler değil
+    if (!chan) {
+      handleError("Bu sekme bir kanal değil, kilitleme yapılamaz.");
+      return;
+    }
+    
     try {
-      await storageService.updateChannel(activeTab, { isLocked: !chan.isLocked });
+      const nextLockState = !chan.isLocked;
+      await storageService.updateChannel(activeTab, { isLocked: nextLockState });
+      
+      // Herkese duyur
       await storageService.saveMessage({ 
         sender: 'SYSTEM', 
-        text: chan.isLocked ? "Oda kilidi açıldı." : "Oda kilitlendi. Sadece operatörler yazabilir.", 
+        text: nextLockState ? "Kanal kilitlendi. Sadece operatörler yazabilir." : "Kanal kilidi açıldı.", 
         type: MessageType.SYSTEM, 
         channel: activeTab 
       });
@@ -199,8 +220,22 @@ export const useChatCore = (initialUserName: string) => {
 
   const clearScreen = async () => {
     if (!isOp) return;
+    if (activeTab === 'Status') return;
+    
     try {
+      // Önce veritabanından sil
       await storageService.clearChannelMessages(activeTab);
+      
+      // Yerel mesajları anında temizle (UX için)
+      setMessages([]);
+      
+      // Diğer kullanıcıların ekranının da yenilenmesi için bir sistem mesajı at
+      await storageService.saveMessage({
+        sender: 'SYSTEM',
+        text: `Kanal içeriği ${userName} tarafından temizlendi.`,
+        type: MessageType.SYSTEM,
+        channel: activeTab
+      });
     } catch (err) {
       handleError(err);
     }
