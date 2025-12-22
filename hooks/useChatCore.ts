@@ -1,10 +1,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Message, MessageType, Channel, RadioState, PlaylistItem } from '../types';
+import { Message, MessageType, Channel } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
 import { storageService, isConfigured, supabase } from '../services/storageService';
-
-const RADIO_CONFIG_KEY = '__SYSTEM_RADIO__';
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
@@ -20,24 +18,27 @@ export const useChatCore = (initialUserName: string) => {
   const [isAILoading, setIsAILoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Radyo ve Ses Ayarları
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('mirc_muted') === 'true');
-  const [radioState, setRadioState] = useState<RadioState>({
-    currentUrl: 'https://streaming.radio.co/s647d78018/listen', // Varsayılan radyo
-    isPlaying: false,
-    playlist: []
-  });
 
   const subscriptionRef = useRef<any>(null);
   const channelSubRef = useRef<any>(null);
   const notifySound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
+
+  const handleError = (err: any) => {
+    console.error("Chat Error:", err);
+    const msg = err?.message || err?.error_description || (typeof err === 'string' ? err : JSON.stringify(err));
+    setError(msg);
+    setTimeout(() => setError(null), 5000);
+  };
 
   useEffect(() => {
     localStorage.setItem('mirc_blocked', JSON.stringify(blockedUsers));
   }, [blockedUsers]);
 
   useEffect(() => {
-    localStorage.setItem('mirc_nick', userName);
+    if (userName && userName.trim() !== '') {
+      localStorage.setItem('mirc_nick', String(userName));
+    }
   }, [userName]);
 
   useEffect(() => {
@@ -48,84 +49,58 @@ export const useChatCore = (initialUserName: string) => {
     localStorage.setItem('mirc_is_admin', isAdmin.toString());
   }, [isAdmin]);
 
-  // Radyo Ayarlarını Çek (Channels Tablosu Üzerinden)
-  const syncRadioFromChannel = (channelsList: Channel[]) => {
-    const radioChannel = channelsList.find(c => c.name === RADIO_CONFIG_KEY);
-    if (radioChannel && radioChannel.description) {
-      try {
-        const config = JSON.parse(radioChannel.description);
-        setRadioState(config);
-      } catch (e) {
-        console.error("Radio config parse error:", e);
-      }
-    }
-  };
+  const currentChannel = channels.find(c => c.name === activeTab);
+  const isOp = (currentChannel?.ops || []).includes(userName) || isAdmin;
 
-  const updateRadioConfig = async (newState: Partial<RadioState>) => {
-    if (!isAdmin) return;
-    const updated = { ...radioState, ...newState };
-    
-    // UI'ın anında tepki vermesi için yerel state'i güncelle
-    setRadioState(updated);
-    
+  // Kanal Senkronizasyonu
+  const loadChannels = async () => {
+    // Nickname yoksa kanalları yükleme (Giriş ekranındayız)
+    if (!userName || userName.trim() === '') return;
+
     try {
-      await storageService.createChannel({
-        name: RADIO_CONFIG_KEY,
-        description: JSON.stringify(updated),
-        unreadCount: 0,
-        users: []
-      });
-    } catch (err: any) {
-      console.error("Radio config update failed:", err.message);
-      setError("Ayarlar kaydedilemedi.");
+      const fetched = await storageService.getChannels();
+      if (fetched.length === 0) {
+        const defaultChan = { name: 'sohbet', description: 'Ana Oda', unreadCount: 0, users: [userName] };
+        await storageService.createChannel(defaultChan);
+        setChannels([defaultChan]);
+      } else {
+        setChannels(fetched.filter(c => !c.name.startsWith('__SYSTEM')));
+      }
+    } catch (e) {
+      handleError(e);
     }
   };
 
-  const isOp = (channelName: string) => {
-    // operators kolonu olmadığı için admin olan herkes op sayılır
-    return isAdmin;
-  };
-
-  // Kanal ve Radyo Senkronizasyonu
   useEffect(() => {
-    if (!isConfigured()) return;
-    
-    const loadChannels = async () => {
-      try {
-        const fetched = await storageService.getChannels();
-        if (fetched.length === 0) {
-          const defaultChan = { name: 'sohbet', description: 'Ana Oda', unreadCount: 0, users: [userName] };
-          await storageService.createChannel(defaultChan);
-          setChannels([defaultChan]);
-        } else {
-          setChannels(fetched.filter(c => !c.name.startsWith('__SYSTEM')));
-          syncRadioFromChannel(fetched);
-        }
-      } catch (e) {
-        console.error("Load channels error:", e);
-      }
-    };
-
+    if (!isConfigured() || !userName || userName.trim() === '') return;
     loadChannels();
-
     channelSubRef.current = storageService.subscribeToChannels((payload) => {
       loadChannels();
     });
-
     return () => channelSubRef.current?.unsubscribe();
   }, [userName]);
 
   // Mesaj Senkronizasyonu
-  useEffect(() => {
-    const fetchMsgs = async () => {
+  const fetchMsgs = async () => {
+    if (!userName || userName.trim() === '') return;
+    try {
       const fetched = await storageService.getMessagesByChannel(activeTab);
       setMessages(fetched);
-    };
-    fetchMsgs();
+    } catch (e) {
+      handleError(e);
+    }
+  };
 
+  useEffect(() => {
+    if (!userName || userName.trim() === '') return;
+    fetchMsgs();
     subscriptionRef.current = storageService.subscribeToMessages((payload) => {
+      if (payload.eventType === 'DELETE') {
+        fetchMsgs();
+        return;
+      }
       const newMessage = payload.new;
-      if (newMessage.channel === activeTab) {
+      if (newMessage && newMessage.channel === activeTab) {
         setMessages(prev => {
           if (prev.some(m => m.id === newMessage.id)) return prev;
           if (!isMuted && newMessage.sender !== userName) notifySound.current.play().catch(() => {});
@@ -139,6 +114,19 @@ export const useChatCore = (initialUserName: string) => {
 
   const sendMessage = async (text: string, imageBase64?: string) => {
     if (!text.trim() && !imageBase64) return;
+    
+    // Lock Check
+    if (currentChannel?.isLocked && !isOp) {
+      handleError("Bu oda kilitli. Sadece operatörler yazabilir.");
+      return;
+    }
+
+    // Ban Check
+    if (currentChannel?.bannedUsers?.includes(userName)) {
+      handleError("Bu odadan yasaklandınız.");
+      return;
+    }
+
     try {
       await storageService.saveMessage({
         sender: userName,
@@ -149,12 +137,72 @@ export const useChatCore = (initialUserName: string) => {
 
       if (activeTab === 'GeminiBot') {
         setIsAILoading(true);
-        const res = await getGeminiResponse(text, "Direct message context");
+        const res = await getGeminiResponse(text, activeTab);
         await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: 'GeminiBot' });
         setIsAILoading(false);
       }
     } catch (err: any) {
-      setError(err.message);
+      handleError(err);
+    }
+  };
+
+  const manageUser = async (targetUser: string, action: 'op' | 'deop' | 'kick' | 'ban') => {
+    if (!isOp) return;
+    const chan = channels.find(c => c.name === activeTab);
+    if (!chan) return;
+
+    try {
+      let updates: Partial<Channel> = {};
+      const ops = chan.ops || [];
+      const banned = chan.bannedUsers || [];
+
+      switch (action) {
+        case 'op':
+          updates.ops = Array.from(new Set([...ops, targetUser]));
+          break;
+        case 'deop':
+          updates.ops = ops.filter(u => u !== targetUser);
+          break;
+        case 'kick':
+          await storageService.saveMessage({ sender: 'SYSTEM', text: `${targetUser} kanaldan atıldı.`, type: MessageType.SYSTEM, channel: activeTab });
+          break;
+        case 'ban':
+          updates.bannedUsers = Array.from(new Set([...banned, targetUser]));
+          await storageService.saveMessage({ sender: 'SYSTEM', text: `${targetUser} kanaldan yasaklandı.`, type: MessageType.SYSTEM, channel: activeTab });
+          break;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await storageService.updateChannel(activeTab, updates);
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const toggleLock = async () => {
+    if (!isOp) return;
+    const chan = channels.find(c => c.name === activeTab);
+    if (!chan) return;
+    try {
+      await storageService.updateChannel(activeTab, { isLocked: !chan.isLocked });
+      await storageService.saveMessage({ 
+        sender: 'SYSTEM', 
+        text: chan.isLocked ? "Oda kilidi açıldı." : "Oda kilitlendi. Sadece operatörler yazabilir.", 
+        type: MessageType.SYSTEM, 
+        channel: activeTab 
+      });
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const clearScreen = async () => {
+    if (!isOp) return;
+    try {
+      await storageService.clearChannelMessages(activeTab);
+    } catch (err) {
+      handleError(err);
     }
   };
 
@@ -167,8 +215,7 @@ export const useChatCore = (initialUserName: string) => {
     messages, sendMessage,
     isAILoading, isOp, error,
     isMuted, setIsMuted,
-    radioState, toggleRadio: () => updateRadioConfig({ isPlaying: !radioState.isPlaying }), 
-    updateRadioConfig,
+    manageUser, toggleLock, clearScreen,
     initiatePrivateChat: (u: string) => { if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); setActiveTab(u); }
   };
 };

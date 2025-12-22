@@ -21,19 +21,9 @@ export interface Channel {
   description: string;
   unreadCount: number;
   users: string[];
-}
-
-export interface PlaylistItem {
-  id: string;
-  title: string;
-  url: string;
-  addedBy: string;
-}
-
-export interface RadioState {
-  currentUrl: string;
-  isPlaying: boolean;
-  playlist: PlaylistItem[];
+  isLocked?: boolean;
+  ops?: string[];
+  bannedUsers?: string[];
 }
 
 export interface ChatModuleProps {

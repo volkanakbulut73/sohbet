@@ -39,6 +39,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     if (blockedUsers.includes(msg.sender)) return null;
 
     const time = `[${formatTime(msg.timestamp)}]`;
+    const displayText = typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text);
 
     switch (msg.type) {
       case MessageType.SYSTEM:
@@ -46,7 +47,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
           <div className="mirc-text py-0.5 animate-in slide-in-from-left-1 duration-200">
             <span className="text-gray-500 mr-2">{time}</span>
             <span className="text-blue-700 font-bold">-- </span>
-            <span className="text-blue-700 italic">{msg.text}</span>
+            <span className="text-blue-700 italic">{displayText}</span>
           </div>
         );
       case MessageType.ACTION:
@@ -59,7 +60,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
                 onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
               >
                 {msg.sender}
-              </span> {msg.text}
+              </span> {displayText}
           </div>
         );
       case MessageType.AI:
@@ -72,7 +73,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
               onContextMenu={(e) => handleNickContextMenu(e, 'GeminiBot')}
             >
               {`<@GeminiBot>`}
-            </span> {msg.text}
+            </span> {displayText}
           </div>
         );
       case MessageType.IMAGE:
@@ -91,11 +92,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
             </div>
             <div className="ml-14 mt-1 border-4 border-gray-200 shadow-sm inline-block rounded max-w-[80%] overflow-hidden bg-black/5">
               <img 
-                src={msg.text} 
+                src={displayText} 
                 alt="Shared content" 
                 className="max-h-64 object-contain hover:scale-105 transition-transform cursor-zoom-in"
                 loading="lazy"
-                onClick={() => window.open(msg.text, '_blank')}
+                onClick={() => window.open(displayText, '_blank')}
               />
             </div>
           </div>
@@ -114,7 +115,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
             >
               {`<${msg.sender}>`}
             </span>
-            <span className="text-black break-words selection:bg-blue-200">{msg.text}</span>
+            <span className="text-black break-words selection:bg-blue-200">{displayText}</span>
           </div>
         );
     }
