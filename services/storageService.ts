@@ -24,9 +24,9 @@ export const storageService = {
       name: channel.name,
       description: channel.description,
       users: channel.users,
-      isLocked: false,
+      islocked: false,
       ops: [],
-      bannedUsers: []
+      bannedusers: []
     });
     if (error) throw error;
   },

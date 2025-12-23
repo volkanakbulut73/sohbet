@@ -21,9 +21,9 @@ export interface Channel {
   description: string;
   unreadCount: number;
   users: string[];
-  isLocked?: boolean;
+  islocked?: boolean;
   ops?: string[];
-  bannedUsers?: string[];
+  bannedusers?: string[];
 }
 
 export interface ChatModuleProps {

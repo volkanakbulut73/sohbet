@@ -26,22 +26,22 @@ export const useChatCore = (initialUserName: string) => {
 
   const handleError = (err: any) => {
     console.error("Chat Error Detail:", err);
-    let msg = "Beklenmedik bir hata oluştu.";
+    let rawMsg = "";
     
     if (typeof err === 'string') {
-      msg = err;
+      rawMsg = err;
     } else if (err && typeof err === 'object') {
-      // Supabase hata nesnelerini veya standart hataları ayıkla
-      msg = err.message || err.error_description || err.details || (err.error && err.error.message) || JSON.stringify(err);
+      rawMsg = err.message || err.error_description || err.details || (err.error && err.error.message) || JSON.stringify(err);
     }
     
-    // Sütun eksik hatası için özel yönlendirme
-    if (msg.includes("isLocked") && msg.includes("column")) {
-      msg = "Sistem Hatası: 'isLocked' özelliği veritabanında aktifleşmemiş görünüyor. Lütfen sayfayı yenileyin veya yöneticiye bildirin.";
+    // Eğer hata islocked sütunuyla ilgiliyse kullanıcıya gerçek durumu göster
+    if (rawMsg.toLowerCase().includes("islocked") || rawMsg.toLowerCase().includes("column")) {
+      setError(`Veritabanı Hatası: ${rawMsg}. Eğer 'islocked' sütunu yok diyorsa, lütfen SQL kısmından 'ALTER TABLE channels ADD COLUMN islocked boolean DEFAULT false;' komutunu (küçük harflerle) çalıştırdığınızdan emin olun.`);
+    } else {
+      setError(rawMsg);
     }
 
-    setError(msg);
-    setTimeout(() => setError(null), 6000);
+    setTimeout(() => setError(null), 8000);
   };
 
   useEffect(() => {
@@ -63,8 +63,6 @@ export const useChatCore = (initialUserName: string) => {
   }, [isAdmin]);
 
   const currentChannel = channels.find(c => c.name === activeTab);
-  
-  // ÖNEMLİ: Admin her kanalda OP (Yönetici) sayılır
   const isOp = isAdmin || (currentChannel?.ops || []).includes(userName);
 
   const loadChannels = async () => {
@@ -126,13 +124,13 @@ export const useChatCore = (initialUserName: string) => {
   const sendMessage = async (text: string, imageBase64?: string) => {
     if (!text.trim() && !imageBase64) return;
     
-    // Kilit Kontrolü: Eğer kanal kilitliyse ve kullanıcı Op değilse göndermeyi engelle
-    if (currentChannel?.isLocked && !isOp) {
+    // Kilit Kontrolü
+    if (currentChannel?.islocked && !isOp) {
       handleError("Bu oda kilitli. Sadece operatörler yazabilir.");
       return;
     }
 
-    if (currentChannel?.bannedUsers?.includes(userName)) {
+    if (currentChannel?.bannedusers?.includes(userName)) {
       handleError("Bu odadan yasaklandınız.");
       return;
     }
@@ -164,7 +162,7 @@ export const useChatCore = (initialUserName: string) => {
     try {
       let updates: Partial<Channel> = {};
       const ops = chan.ops || [];
-      const banned = chan.bannedUsers || [];
+      const banned = chan.bannedusers || [];
 
       switch (action) {
         case 'op':
@@ -177,7 +175,7 @@ export const useChatCore = (initialUserName: string) => {
           await storageService.saveMessage({ sender: 'SYSTEM', text: `${targetUser} kanaldan atıldı.`, type: MessageType.SYSTEM, channel: activeTab });
           break;
         case 'ban':
-          updates.bannedUsers = Array.from(new Set([...banned, targetUser]));
+          updates.bannedusers = Array.from(new Set([...banned, targetUser]));
           await storageService.saveMessage({ sender: 'SYSTEM', text: `${targetUser} kanaldan yasaklandı.`, type: MessageType.SYSTEM, channel: activeTab });
           break;
       }
@@ -191,7 +189,6 @@ export const useChatCore = (initialUserName: string) => {
   };
 
   const toggleLock = async () => {
-    // Sadece admin veya op olan odayı kilitleyebilir
     if (!isOp) return;
     
     const chan = channels.find(c => c.name === activeTab);
@@ -201,13 +198,15 @@ export const useChatCore = (initialUserName: string) => {
     }
 
     try {
-      const newLockState = !chan.isLocked;
-      // Aktif olan kanalı hedef al
-      await storageService.updateChannel(activeTab, { isLocked: newLockState });
+      const currentLock = !!chan.islocked;
+      const nextLockState = !currentLock;
       
+      await storageService.updateChannel(activeTab, { islocked: nextLockState });
+      await loadChannels();
+
       await storageService.saveMessage({ 
         sender: 'SYSTEM', 
-        text: newLockState ? "Bu kanal kilitlendi. Mesaj gönderimi kapatıldı." : "Kanal kilidi açıldı. Herkes yazabilir.", 
+        text: nextLockState ? "Kanal kilitlendi. Sadece yönetici yazabilir." : "Kanal kilidi açıldı. Herkes yazabilir.", 
         type: MessageType.SYSTEM, 
         channel: activeTab 
       });
@@ -221,13 +220,8 @@ export const useChatCore = (initialUserName: string) => {
     if (activeTab === 'Status') return;
     
     try {
-      // Veritabanından mesajları sil
       await storageService.clearChannelMessages(activeTab);
-      
-      // Yerel mesajları temizle
       setMessages([]);
-      
-      // Sistem mesajı göndererek senkronizasyonu başlat
       await storageService.saveMessage({
         sender: 'SYSTEM',
         text: `Kanal içeriği ${userName} tarafından temizlendi.`,

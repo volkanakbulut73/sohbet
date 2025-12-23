@@ -262,10 +262,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
              <div className="flex gap-1 animate-in zoom-in duration-300">
                 <button 
                   onClick={toggleLock} 
-                  title={currentChannel?.isLocked ? "Kilidi Aç" : "Bu Odayı Kilitle"}
-                  className={`p-2 rounded-md border border-white/20 transition-all ${currentChannel?.isLocked ? 'bg-red-600 text-white shadow-lg scale-110' : 'bg-white/20 text-white hover:bg-white/40'}`}
+                  title={currentChannel?.islocked ? "Kilidi Aç" : "Bu Odayı Kilitle"}
+                  className={`p-2 rounded-md border border-white/20 transition-all ${currentChannel?.islocked ? 'bg-red-600 text-white shadow-lg scale-110' : 'bg-white/20 text-white hover:bg-white/40'}`}
                 >
-                  {currentChannel?.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                  {currentChannel?.islocked ? <Lock size={16} /> : <Unlock size={16} />}
                 </button>
                 <button 
                   onClick={clearScreen} 
@@ -292,7 +292,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             onClick={() => setActiveTab(chan.name)}
             className={`px-3 py-1 text-xs cursor-pointer rounded-full flex items-center gap-2 border transition-all ${activeTab === chan.name ? 'bg-[#2563eb] text-white border-[#2563eb] shadow-sm' : 'bg-white text-blue-600 border-gray-200 hover:border-blue-300'}`}
           >
-            {chan.isLocked && <Lock size={10} />} #{chan.name} <X size={10} className="opacity-50" />
+            {chan.islocked && <Lock size={10} />} #{chan.name} <X size={10} className="opacity-50" />
           </div>
         ))}
         {privateChats.filter(n => n !== 'GeminiBot').map(nick => (
@@ -308,8 +308,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
 
       <main className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200 relative">
-           <div className={`text-white text-[11px] font-bold px-3 py-0.5 uppercase tracking-wider flex justify-between shadow-sm z-10 ${currentChannel?.isLocked ? 'bg-red-600' : 'bg-[#ff00ff]'}`}>
-              <span>#{activeTab} {currentChannel?.isLocked && "(KİLİTLİ)"}</span>
+           <div className={`text-white text-[11px] font-bold px-3 py-0.5 uppercase tracking-wider flex justify-between shadow-sm z-10 ${currentChannel?.islocked ? 'bg-red-600' : 'bg-[#ff00ff]'}`}>
+              <span>#{activeTab} {currentChannel?.islocked && "(KİLİTLİ)"}</span>
               {isAdmin && <span className="text-yellow-200 font-black flex items-center gap-1"><Shield size={10} /> YÖNETİCİ AKTİF</span>}
            </div>
            
@@ -354,8 +354,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             type="text" 
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            disabled={currentChannel?.isLocked && !isOp}
-            placeholder={currentChannel?.isLocked && !isOp ? "Oda kilitli, sadece operatörler yazabilir..." : "Mesajınızı buraya yazın..."}
+            disabled={currentChannel?.islocked && !isOp}
+            placeholder={currentChannel?.islocked && !isOp ? "Oda kilitli, sadece operatörler yazabilir..." : "Mesajınızı buraya yazın..."}
             className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed disabled:placeholder:text-red-400"
           />
           <button type="submit" className="bg-[#4a80b3] text-white px-6 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#3b6ea0] active:scale-95 transition-all">
