@@ -7,26 +7,12 @@ import { CHAT_MODULE_CONFIG } from '../config';
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('mirc_is_admin') === 'true');
   const [channels, setChannels] = useState<Channel[]>([]);
   const [privateChats, setPrivateChats] = useState<string[]>(['GeminiBot']);
-  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
-  const [allowPrivate, setAllowPrivate] = useState(true);
-  const [botInstruction, setBotInstruction] = useState(CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION);
-  
   const [messages, setMessages] = useState<Message[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('sohbet');
+  const [activeTab, setActiveTab] = useState<string>('#sohbet');
   const [isAILoading, setIsAILoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(() => localStorage.getItem('mirc_muted') === 'true');
-
-  const subscriptionRef = useRef<any>(null);
-
-  const handleError = (err: any) => {
-    let rawMsg = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
-    setError(rawMsg);
-    setTimeout(() => setError(null), 4000);
-  };
 
   const handleCommand = async (text: string) => {
     const parts = text.split(' ');
@@ -39,7 +25,7 @@ export const useChatCore = (initialUserName: string) => {
           const old = userName;
           setUserName(args[0]);
           localStorage.setItem('mirc_nick', args[0]);
-          await storageService.saveMessage({ sender: 'SYSTEM', text: `* ${old} is now known as ${args[0]}`, type: MessageType.SYSTEM, channel: activeTab });
+          await storageService.saveMessage({ sender: 'SYSTEM', text: `* ${old} artık ${args[0]} olarak biliniyor.`, type: MessageType.SYSTEM, channel: activeTab });
         }
         break;
       case '/join':
@@ -48,14 +34,6 @@ export const useChatCore = (initialUserName: string) => {
           setActiveTab(cname);
         }
         break;
-      case '/me':
-        if (args.length > 0) {
-          await storageService.saveMessage({ sender: userName, text: args.join(' '), type: MessageType.ACTION, channel: activeTab });
-        }
-        break;
-      case '/clear':
-        setMessages([]);
-        break;
       case '/query':
         if (args[0]) {
           const target = args[0];
@@ -63,8 +41,15 @@ export const useChatCore = (initialUserName: string) => {
           setActiveTab(target);
         }
         break;
+      case '/clear':
+        setMessages([]);
+        break;
+      case '/yardim':
+        const helpMsg = "Komutlar: /nick <isim>, /join <kanal>, /query <kullanıcı>, /clear, /me <eylem>";
+        setMessages(prev => [...prev, { id: 'help', sender: 'SYSTEM', text: helpMsg, type: MessageType.SYSTEM, channel: activeTab, timestamp: new Date() }]);
+        break;
       default:
-        handleError(`Unknown command: ${cmd}`);
+        setError(`Bilinmeyen komut: ${cmd}`);
     }
   };
 
@@ -76,8 +61,6 @@ export const useChatCore = (initialUserName: string) => {
       return;
     }
 
-    const isPrivate = !activeTab.startsWith('#') && activeTab !== 'sohbet';
-    
     try {
       await storageService.saveMessage({
         sender: userName,
@@ -88,15 +71,13 @@ export const useChatCore = (initialUserName: string) => {
 
       if (activeTab === 'GeminiBot') {
         setIsAILoading(true);
-        const context = messages.slice(-5).map(m => `${m.sender}: ${m.text}`).join('\n');
-        const res = await getGeminiResponse(text, context, undefined, botInstruction);
+        const res = await getGeminiResponse(text, "Sohbet", undefined);
         await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: 'GeminiBot' });
         setIsAILoading(false);
       }
-    } catch (err: any) { handleError(err); }
+    } catch (err: any) { setError(err.message); }
   };
 
-  // Sync logic
   useEffect(() => {
     if (!userName) return;
     storageService.getMessagesByChannel(activeTab).then(setMessages);
@@ -104,10 +85,7 @@ export const useChatCore = (initialUserName: string) => {
     const sub = storageService.subscribeToMessages((payload) => {
       if (payload.new && payload.new.channel === activeTab) {
         const newMessage = { ...payload.new, timestamp: new Date(payload.new.created_at) };
-        setMessages(prev => {
-          if (prev.find(m => m.id === newMessage.id)) return prev;
-          return [...prev, newMessage];
-        });
+        setMessages(prev => [...prev.filter(m => m.id !== newMessage.id), newMessage]);
       }
     });
     
@@ -116,13 +94,13 @@ export const useChatCore = (initialUserName: string) => {
 
   return {
     userName, setUserName,
-    isAdmin, setIsAdmin,
     channels, privateChats, 
-    blockedUsers,
     activeTab, setActiveTab,
     messages, sendMessage,
     isAILoading, error,
-    botInstruction, setBotInstruction,
-    initiatePrivateChat: (u: string) => { if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); setActiveTab(u); }
+    initiatePrivateChat: (u: string) => { 
+      if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); 
+      setActiveTab(u); 
+    }
   };
 };
