@@ -1,33 +1,29 @@
-WORKIGOM SOHBET MODÜLÜ - YERLEŞTİRME VE GÜVENLİK REHBERİ (GÜNCELLENDİ)
 
-GÜNCELLEME NOTU: 
-Eğer daha önce "event_type sütunu mevcut değil" hatası aldıysanız, 
-yeni `supabase_setup.txt` içeriği bu sütunu mevcut tablonuza otomatik olarak ekleyecektir.
+WORKIGOM CHAT - GITHUB & HOSTINGER DEPLOYMENT REHBERİ (v1.0.8)
 
-MODÜLÜ UYGULAMAYA YERLEŞTİRME ADIMLARI:
+Bu proje şu an Otomatik Dağıtım (Auto-Deploy) için hazır hale getirilmiştir.
 
-1. ADIM: VERİTABANI ONARIMI VE KURULUMU
+ADIM 1: GITHUB WEBHOOK AYARI (KRİTİK)
+-------------------------------------
+GitHub reponuzda (https://github.com/volkanakbulut73/sohbet) şu adımları takip edin:
+1. Reponuzun "Settings" -> "Webhooks" sekmesine gidin.
+2. "Add webhook" butonuna tıklayın.
+3. "Payload URL" kısmına şu adresi yapıştırın:
+   https://webhooks.hostinger.com/deploy/4c6b71374c5b525227208722f38ac5f5
+4. "Content type" olarak "application/json" seçin.
+5. "Which events..." kısmında "Just the push event" seçili kalsın.
+6. "Add webhook" diyerek kaydedin.
+
+ADIM 2: HOSTINGER HPANEL YAPILANDIRMASI
 ---------------------------------------
-- Supabase SQL Editor'e gidin.
-- `supabase_setup.txt` içindeki tüm kodları kopyalayıp çalıştırın.
-- Bu işlem eksik sütunları oluşturur, RLS ayarlarını yapar ve sistem versiyonunu günceller.
+1. Hostinger hPanel -> Websites -> www.workigomchat.online -> Manage.
+2. "Advanced" -> "GIT" sekmesine gidin (Veya "Front-end" deployment aracını kullanın).
+3. "Deployment Directory" olarak "/" (veya build alıyorsanız "/dist") belirleyin.
+4. Artık bilgisayarınızdan reponuza kod gönderdiğinizde, Hostinger bu değişikliği algılayıp siteyi güncelleyecektir.
 
-2. ADIM: WEB ENTEGRASYONU
--------------------------
-Aşağıdaki HTML yapısını kullanın:
-<div id="chat-widget"></div>
-<script type="module">
-  import { initWorkigomChat } from './index.js';
-  initWorkigomChat('chat-widget', {
-    externalUser: 'Kullanici_Adi'
-  });
-</script>
+ADIM 3: BUILD İŞLEMİ (Opsiyonel)
+-------------------------------
+Eğer Hostinger'da "Front-end" aracını kullanıyorsanız, Hostinger sizin yerinize "npm install && npm run build" komutlarını çalıştıracaktır. Eğer manuel FTP kullanacaksanız, sadece "dist" klasörünün içindekileri yükleyin.
 
-3. ADIM: MOBİL KULLANIM (WebView)
----------------------------------
-URL: `https://chat.siteniz.com/?nick=KullaniciAdi`
-
-GÜVENLİK KONTROLÜ:
-------------------
-`message_logs` tablosu "service_role" dışındaki tüm rollere (anon, authenticated) tamamen kapalıdır. 
-Kullanıcılarınız bu tablonun varlığını görseler dahi içeriğine hiçbir şekilde erişemezler.
+DİKKAT:
+Herhangi bir hata durumunda Hostinger hPanel -> "Log Files" kısmından webhook'un başarıyla tetiklenip tetiklenmediğini görebilirsiniz.

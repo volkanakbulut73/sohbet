@@ -3,60 +3,42 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gemini Connect | mIRC Style</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Workigom Chat | www.workigomchat.online</title>
+  <meta name="description" content="Workigom Chat - Kurumsal ve modern mIRC tabanlı sohbet platformu.">
+  <meta name="theme-color" content="#000080">
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968804.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    :root {
+      --mirc-navy: #000080;
+      --mirc-bg: #d4dce8;
+    }
     body {
-      background-color: #d4dce8;
-      color: #000000;
+      background-color: var(--mirc-navy); /* Yüklenirken siyah yerine kurumsal navy */
+      color: #000;
       margin: 0;
       padding: 0;
       overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      touch-action: manipulation;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
-
-    /* Genel Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    #root:empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+      font-family: monospace;
+      font-weight: bold;
     }
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
+    #root:empty::after {
+      content: "CONNECTING TO WORKIGOM NETWORK...";
+      animation: blink 1s infinite;
     }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-
-    /* Kanal Barı Özel Scrollbar */
-    .tabs-scrollbar::-webkit-scrollbar {
-      height: 2px;
-    }
-    .tabs-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(37, 99, 235, 0.2);
-    }
-
-    .mirc-text {
-      font-size: 11.5px;
-      line-height: 1.4;
-    }
-
-    /* Input Focus Stili */
-    input:focus {
-      border-color: #2563eb !important;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-    }
-
-    /* Mobil için dokunma alanlarını düzenle */
-    @media (max-width: 640px) {
-      .tabs-scrollbar div {
-        padding: 4px 10px !important;
-      }
+    @keyframes blink { 
+      0% { opacity: 1; } 
+      50% { opacity: 0.3; } 
+      100% { opacity: 1; } 
     }
   </style>
 <script type="importmap">
@@ -73,6 +55,19 @@
 </script>
 </head>
 <body>
-  <div id="root" class="h-screen w-screen overflow-hidden"></div>
+  <div id="root" class="h-screen w-screen overflow-hidden flex flex-col"></div>
+  
+  <!-- Uygulamanın çalışmasını sağlayan ana script etiketi -->
+  <script type="module" src="./index.tsx"></script>
+
+  <script>
+    // Hostinger üzerinde yükleme hatalarını yakalamak için
+    window.onerror = function(msg, url, line) {
+      console.error("Yükleme Hatası:", msg, "URL:", url, "Satır:", line);
+      if (msg.includes("Script error")) {
+        alert("Bağlantı hatası: Lütfen sayfayı yenileyin.");
+      }
+    };
+  </script>
 </body>
 </html>

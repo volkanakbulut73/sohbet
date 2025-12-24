@@ -22,13 +22,21 @@ const initChat = (elementId: string, props: ChatModuleProps = {}) => {
     </React.StrictMode>
   );
   
-  return root; // Gerektiğinde unmount etmek için
+  return root;
 };
 
-// Global erişim sağla (Bağımsız entegrasyon için kritik)
+// Global erişim sağla
 (window as any).initWorkigomChat = initChat;
 
-// Eğer bir root elementi varsa otomatik başlat (Standalone mod)
-if (document.getElementById('root')) {
-  initChat('root');
+// Sayfa yüklendiğinde root varsa otomatik başlat
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  if (document.getElementById('root')) {
+    initChat('root');
+  }
+} else {
+  window.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('root')) {
+      initChat('root');
+    }
+  });
 }

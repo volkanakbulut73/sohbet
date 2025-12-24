@@ -1,8 +1,9 @@
 {
-  "name": "Gemini-mIRC Connect",
-  "description": "A modern, cross-platform mIRC-inspired chat module with Gemini AI integration, featuring channels, user lists, and slash commands.",
+  "name": "Workigom Chat Online",
+  "description": "Professional enterprise chat module for www.workigomchat.online",
   "requestFramePermissions": [
     "microphone",
-    "camera"
+    "camera",
+    "geolocation"
   ]
 }
