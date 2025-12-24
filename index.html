@@ -33,7 +33,7 @@
       padding: 20px;
     }
     #root:empty::after {
-      content: "INITIALIZING WORKIGOM ENGINE...\nPLEASE WAIT";
+      content: "WORKIGOM MOTORU BAŞLATILIYOR...\nLÜTFEN BEKLEYİN";
       white-space: pre;
       animation: blink 1s infinite;
     }
@@ -60,10 +60,7 @@
 </head>
 <body>
   <div id="root"></div>
-  <!-- 
-    DİKKAT: Tarayıcı .tsx dosyasını doğrudan açamaz. 
-    Build aldığınızda Vite bu satırı derlenmiş .js dosyası ile otomatik değiştirecektir.
-  -->
-  <script type="module" src="./index.tsx"></script>
+  <!-- Vite build sırasında bu .tsx dosyasını .js'ye çevirecek -->
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // Dosya yollarını göreceli yaparak ./assets/... şeklinde ayarlar
+  base: '/', // Veya Hostinger'da bir alt klasördeyseniz './' yapın
   define: {
     'process.env': {}
   },
@@ -13,11 +13,12 @@ export default defineConfig({
     assetsDir: 'assets',
     emptyOutDir: true,
     sourcemap: false,
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          libs: ['@supabase/supabase-js', '@google/genai', 'lucide-react']
+          react: ['react', 'react-dom'],
+          vendor: ['@supabase/supabase-js', '@google/genai', 'lucide-react']
         }
       }
     }
