@@ -13,35 +13,24 @@
     :root {
       --mirc-navy: #000080;
       --mirc-bg: #d4dce8;
+      --mirc-text: #000000;
     }
     body {
       background-color: var(--mirc-navy);
-      color: #000;
+      color: var(--mirc-text);
       margin: 0;
       padding: 0;
       overflow: hidden;
+      font-family: 'Courier New', Courier, monospace;
     }
-    #root:empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    #root {
       height: 100vh;
-      color: white;
-      font-family: monospace;
-      font-weight: bold;
-      text-align: center;
-      padding: 20px;
+      width: 100vw;
     }
-    #root:empty::after {
-      content: "WORKIGOM MOTORU BAŞLATILIYOR...\nLÜTFEN BEKLEYİN";
-      white-space: pre;
-      animation: blink 1s infinite;
-    }
-    @keyframes blink { 
-      0% { opacity: 1; } 
-      50% { opacity: 0.3; } 
-      100% { opacity: 1; } 
-    }
+    /* mIRC scrollbar style */
+    ::-webkit-scrollbar { width: 12px; height: 12px; }
+    ::-webkit-scrollbar-track { background: #d4dce8; border: 1px solid #888; }
+    ::-webkit-scrollbar-thumb { background: #c0c0c0; border: 2px solid #eee; border-right-color: #555; border-bottom-color: #555; }
   </style>
 <script type="importmap">
 {
@@ -60,7 +49,6 @@
 </head>
 <body>
   <div id="root"></div>
-  <!-- Vite build sırasında bu .tsx dosyasını .js'ye çevirecek -->
   <script type="module" src="/index.tsx"></script>
 </body>
 </html>

@@ -5,77 +5,31 @@ import MessageList from './components/MessageList';
 import UserList from './components/UserList';
 import { ChatModuleProps, MessageType } from './types';
 import { CHAT_MODULE_CONFIG } from './config';
-import { storageService } from './services/storageService';
-import { Menu, Settings, X, Send, Shield, Smile, Lock, Unlock, Trash2, Hash, MessageSquare, UserX, UserCheck, ToggleLeft, ToggleRight, Sparkles, Save, Key, User, Share2, Check, ExternalLink } from 'lucide-react';
+import { Menu, Settings, X, Send, Hash, MessageSquare, Users, Globe, Terminal, LogOut, ChevronRight } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [tempNick, setTempNick] = useState('');
-  const [tempPass, setTempPass] = useState('');
-  const [showPasswordField, setShowPasswordField] = useState(false);
-  const [loginError, setLoginError] = useState('');
-  const [showShareToast, setShowShareToast] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showUsers, setShowUsers] = useState(false);
   
   const { 
     userName, setUserName,
     isAdmin, setIsAdmin,
     channels, privateChats, 
-    blockedUsers, blockUser, unblockUser,
-    allowPrivate, toggleAllowPrivate,
     activeTab, setActiveTab, 
     messages, sendMessage, 
-    isAILoading, isOp, error: coreError,
-    isMuted, setIsMuted,
-    botInstruction, setBotInstruction, saveBotInstruction,
-    initiatePrivateChat, closeTab, clearScreen
+    isAILoading, error: coreError,
+    initiatePrivateChat
   } = useChatCore(externalUser || '');
 
   const [inputText, setInputText] = useState('');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [adminInstructionText, setAdminInstructionText] = useState(botInstruction);
-  const [storedAdminCreds, setStoredAdminCreds] = useState({ user: 'admin', pass: 'admin123' });
-
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    storageService.getAdminCredentials().then(setStoredAdminCreds);
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomParam = urlParams.get('room');
-    if (roomParam) {
-      setActiveTab(roomParam);
-    }
-  }, []);
-
-  useEffect(() => {
-    setAdminInstructionText(botInstruction);
-  }, [botInstruction]);
-
-  useEffect(() => {
-    if (tempNick.toLowerCase() === storedAdminCreds.user.toLowerCase()) {
-      setShowPasswordField(true);
-    } else {
-      setShowPasswordField(false);
-      setTempPass('');
-    }
-  }, [tempNick, storedAdminCreds]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tempNick.trim()) return setLoginError('Lütfen bir isim girin.');
-    if (showPasswordField && tempPass !== storedAdminCreds.pass) return setLoginError('Hatalı admin şifresi!');
-    
-    setIsAdmin(showPasswordField);
+    if (!tempNick.trim()) return;
     setUserName(tempNick);
     setIsLoggedIn(true);
-  };
-
-  const handleShareRoom = () => {
-    const url = `${CHAT_MODULE_CONFIG.BASE_URL}/?room=${encodeURIComponent(activeTab)}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setShowShareToast(true);
-      setTimeout(() => setShowShareToast(false), 2000);
-    });
   };
 
   const handleSend = (e: React.FormEvent) => {
@@ -87,163 +41,146 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
 
   if (!isLoggedIn) {
     return (
-      <div className="fixed inset-0 bg-[#000080] flex flex-col items-center justify-center p-4 overflow-hidden">
-        <div className="w-full max-w-sm bg-[#d4dce8] p-1 border-2 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] transform scale-100 sm:scale-110">
-          <div className="bg-[#000080] text-white px-3 py-1.5 text-xs font-bold flex justify-between items-center mb-4 select-none">
-            <span className="tracking-widest">WORKIGOM LOGIN SYSTEM</span>
-            <div className="flex gap-1">
-              <div className="w-3 h-3 bg-[#d4dce8] border border-black"></div>
-              <div className="w-3 h-3 bg-[#d4dce8] border border-black"></div>
-            </div>
+      <div className="fixed inset-0 bg-[#000080] flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-[#d4dce8] border-2 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
+          <div className="bg-[#000080] text-white px-2 py-1 text-xs font-bold flex justify-between items-center">
+            <span>mIRC Setup</span>
+            <X size={14} className="cursor-pointer" />
           </div>
-          
-          <div className="px-6 py-6 space-y-6">
-            <div className="text-center">
-              <h1 className="text-3xl font-black text-[#000080] italic tracking-tighter leading-none">WORKIGOM</h1>
-              <div className="h-0.5 bg-[#000080] mt-1 w-2/3 mx-auto opacity-20"></div>
-              <p className="text-[10px] uppercase font-bold text-gray-600 mt-2 tracking-[0.25em]">www.workigomchat.online</p>
+          <div className="p-6 space-y-4">
+            <div className="text-center space-y-1">
+              <h1 className="text-2xl font-black italic text-[#000080]">WORKIGOM</h1>
+              <p className="text-[10px] font-bold text-gray-600 uppercase">v{CHAT_MODULE_CONFIG.VERSION} Connect</p>
             </div>
-
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-[#000080] uppercase tracking-wide">Takma Adınız:</label>
+                <label className="text-[10px] font-bold text-[#000080]">FULL NAME:</label>
                 <input 
                   type="text" 
-                  autoFocus
-                  placeholder="örn: Ahmet"
                   value={tempNick}
                   onChange={e => setTempNick(e.target.value)}
-                  className="w-full border-2 border-gray-400 p-3 text-sm bg-white outline-none focus:border-[#000080] shadow-inner font-bold"
+                  className="w-full border-2 border-gray-400 p-2 text-sm bg-white outline-none focus:border-[#000080] font-mono"
+                  placeholder="Guest"
+                  autoFocus
                 />
               </div>
-
-              {showPasswordField && (
-                <div className="space-y-1 animate-in zoom-in-95">
-                  <label className="text-[10px] font-black text-red-700 uppercase tracking-wide">Yönetici Şifresi:</label>
-                  <input 
-                    type="password" 
-                    value={tempPass}
-                    onChange={e => setTempPass(e.target.value)}
-                    className="w-full border-2 border-red-500 p-3 text-sm bg-white outline-none focus:border-red-700 shadow-inner"
-                  />
-                </div>
-              )}
-
-              {loginError && <p className="text-red-600 text-[10px] font-black bg-red-50 p-2 border-l-4 border-red-600 uppercase animate-bounce">{loginError}</p>}
-
-              <button type="submit" className="w-full bg-[#d4dce8] hover:bg-white border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-[#000080] font-black py-3 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase tracking-widest text-xs">
-                SUNUCUYA BAĞLAN
+              <button type="submit" className="w-full bg-[#c0c0c0] border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-2 text-xs font-bold active:shadow-none translate-y-0 active:translate-y-0.5">
+                CONNECT TO SERVER
               </button>
             </form>
-          </div>
-          
-          <div className="mt-4 p-2 text-center text-[9px] text-gray-500 font-bold opacity-50 select-none">
-            v{CHAT_MODULE_CONFIG.VERSION} | Secured by SSL
           </div>
         </div>
       </div>
     );
   }
 
-  const currentChannel = channels.find(c => c.name === activeTab);
-
   return (
-    <div className={`h-screen w-screen bg-white flex flex-col font-mono overflow-hidden ${className}`}>
-      {/* Header */}
-      <header className="h-10 bg-[#000080] flex items-center justify-between px-3 shrink-0 text-white z-40">
-        <div className="relative" ref={menuRef}>
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-[11px] font-black border border-white/20 flex items-center gap-2 transition-colors">
-            <Menu size={14} /> MENU
+    <div className={`h-screen w-screen flex flex-col bg-white overflow-hidden ${className}`}>
+      {/* Top Header */}
+      <div className="h-8 bg-[#000080] flex items-center justify-between px-2 text-white shrink-0 z-50">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIsDrawerOpen(!isDrawerOpen)} className="p-1 hover:bg-white/20 rounded">
+            <Menu size={16} />
           </button>
-          {isMenuOpen && (
-            <div className="absolute top-9 left-0 w-56 bg-[#d4dce8] shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] border border-white py-1 z-50 text-black animate-in slide-in-from-top-1">
-              <button onClick={() => { setIsSettingsOpen(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[12px] font-bold hover:bg-[#000080] hover:text-white flex items-center gap-3">
-                <Settings size={16} /> Sistem Ayarları
-              </button>
-              <button onClick={() => { handleShareRoom(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[12px] font-bold hover:bg-[#000080] hover:text-white flex items-center gap-3">
-                <Share2 size={16} /> Davet Linki Kopyala
-              </button>
-              <div className="border-t border-gray-400 my-1 mx-2"></div>
-              <button onClick={() => window.location.reload()} className="w-full text-left px-4 py-3 text-[12px] font-black hover:bg-red-700 hover:text-white text-red-700 flex items-center gap-3">
-                <X size={16} /> Bağlantıyı Kes
-              </button>
-            </div>
-          )}
+          <span className="text-[11px] font-bold truncate">Workigom - [{activeTab}]</span>
         </div>
-
-        <div className="flex items-center gap-3">
-          {showShareToast && (
-            <div className="bg-green-600 text-white text-[10px] px-3 py-1 border border-white flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
-              <Check size={12} /> Link Panoya Kopyalandı!
-            </div>
-          )}
-          <div className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded border border-white/20">
-            <span className="text-[11px] font-black tracking-wider truncate max-w-[100px]">{activeTab}</span>
-            <button onClick={handleShareRoom} className="hover:text-sky-300 transition-colors">
-              <ExternalLink size={14} />
-            </button>
-          </div>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setShowUsers(!showUsers)} className="p-1 hover:bg-white/20 rounded lg:hidden">
+            <Users size={16} />
+          </button>
+          <LogOut size={16} className="cursor-pointer" onClick={() => window.location.reload()} />
         </div>
-      </header>
+      </div>
 
       {/* Tabs */}
-      <nav className="h-10 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-1 px-2 shrink-0 overflow-x-auto scrollbar-hide">
-        {channels.map(chan => (
+      <div className="h-7 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-0.5 px-1 shrink-0 overflow-x-auto scrollbar-hide">
+        {['sohbet', ...channels.map(c => c.name), ...privateChats].map(tab => (
           <button 
-            key={chan.name}
-            onClick={() => setActiveTab(chan.name)}
-            className={`px-4 py-1.5 text-[11px] font-black border-t border-l border-r border-gray-400 transition-all truncate min-w-[80px] max-w-[140px] uppercase tracking-tighter ${activeTab === chan.name ? 'bg-white -mb-[1px] border-b-white z-10 shadow-sm' : 'bg-gray-300 mt-1 opacity-70 hover:opacity-100'}`}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3 h-full text-[10px] font-bold border-t border-l border-r border-gray-500 transition-colors flex items-center gap-1 shrink-0 ${activeTab === tab ? 'bg-white border-b-white z-10' : 'bg-gray-300 opacity-80 hover:bg-white/50'}`}
           >
-            {chan.name}
+            {tab.startsWith('#') ? <Hash size={10} /> : <Terminal size={10} />}
+            {tab}
           </button>
         ))}
-        {privateChats.map(nick => (
-          <button 
-            key={nick}
-            onClick={() => setActiveTab(nick)}
-            className={`px-4 py-1.5 text-[11px] font-black border-t border-l border-r border-gray-400 transition-all truncate min-w-[80px] max-w-[140px] uppercase tracking-tighter ${activeTab === nick ? 'bg-purple-50 -mb-[1px] border-b-purple-50 text-purple-900 z-10 shadow-sm' : 'bg-purple-200/50 mt-1 opacity-70 hover:opacity-100'}`}
-          >
-            @{nick}
-          </button>
-        ))}
-      </nav>
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col relative border-r border-gray-300">
-          <div className="flex-1 overflow-hidden">
-            <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
-          </div>
-          {coreError && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[11px] font-black px-4 py-2 rounded shadow-2xl z-50 animate-in bounce-in">
-              HATA: {String(coreError)}
+      {/* Content */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Navigation Drawer (Left) */}
+        <div className={`absolute lg:relative lg:translate-x-0 inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-40 transition-transform duration-300 ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="p-2 space-y-4">
+            <div className="bg-white border border-gray-500 p-2">
+              <h3 className="text-[10px] font-black border-b border-gray-200 mb-2 pb-1 flex items-center gap-1">
+                <Globe size={12} /> CHANNELS
+              </h3>
+              <div className="space-y-1">
+                {channels.map(c => (
+                  <button key={c.name} onClick={() => { setActiveTab(c.name); setIsDrawerOpen(false); }} className={`w-full text-left px-2 py-1 text-[11px] hover:bg-blue-600 hover:text-white rounded ${activeTab === c.name ? 'bg-blue-800 text-white' : ''}`}>
+                    #{c.name}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
         </div>
-        <aside className="w-32 sm:w-44 bg-[#f0f0f0] shrink-0 border-l border-gray-200">
-          <UserList users={currentChannel?.users || [userName, 'GeminiBot']} currentUser={userName} onUserClick={(e, n) => initiatePrivateChat(n)} blockedUsers={blockedUsers} currentOps={currentChannel?.ops || []} isAdmin={isAdmin} onClose={() => {}} />
-        </aside>
-      </main>
 
-      {/* Footer */}
-      <footer className="p-3 bg-[#d4dce8] border-t border-gray-400 shrink-0 safe-pb">
-        <form onSubmit={handleSend} className="flex gap-2">
-          <div className="flex-1 bg-white border-2 border-gray-400 p-2 flex items-center shadow-inner">
-            <span className="text-[11px] font-black text-[#000080] mr-3 shrink-0 select-none uppercase tracking-tighter">[{userName}]:</span>
-            <input 
+        {/* Message Area */}
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          <div className="flex-1 overflow-hidden">
+            <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
+          </div>
+        </div>
+
+        {/* User List Drawer (Right) */}
+        <div className={`absolute lg:relative lg:translate-x-0 inset-y-0 right-0 w-48 bg-[#d4dce8] border-l border-gray-400 z-40 transition-transform duration-300 ${showUsers ? 'translate-x-0' : 'translate-x-full'}`}>
+           <UserList 
+            users={[userName, 'GeminiBot', 'Admin', 'User1', 'User2']} 
+            currentUser={userName} 
+            onUserClick={(e, n) => { initiatePrivateChat(n); setShowUsers(false); }}
+            onClose={() => setShowUsers(false)} 
+            currentOps={['Admin', 'GeminiBot']}
+           />
+        </div>
+      </div>
+
+      {/* Input Bar */}
+      <div className="p-1 bg-[#d4dce8] border-t border-gray-400 shrink-0">
+        <form onSubmit={handleSend} className="flex gap-1">
+          <div className="flex-1 bg-white border border-gray-600 px-2 py-1 flex items-center shadow-inner">
+             <span className="text-[11px] font-bold text-blue-900 mr-2">[{userName}]</span>
+             <input 
               type="text" 
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              disabled={isAILoading}
-              placeholder={isAILoading ? "Yapay zeka analiz ediyor..." : "Buraya yazın..."}
-              className="flex-1 text-[12px] font-bold outline-none disabled:bg-gray-100"
-            />
+              onChange={e => setInputText(e.target.value)}
+              className="flex-1 text-xs outline-none bg-transparent font-mono"
+              placeholder="Type message or /command..."
+             />
           </div>
-          <button type="submit" disabled={isAILoading} className="bg-[#d4dce8] border-2 border-white px-6 py-2 text-[11px] font-black text-[#000080] hover:bg-white active:bg-gray-400 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[1px] active:translate-y-[1px] transition-all uppercase tracking-widest">
-            {isAILoading ? '...' : 'GÖNDER'}
+          <button type="submit" className="bg-[#c0c0c0] border-2 border-white shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] px-4 py-1 text-[10px] font-bold active:shadow-none">
+            SEND
           </button>
         </form>
-      </footer>
+      </div>
+
+      {/* Status Bar */}
+      <div className="h-5 bg-[#d4dce8] border-t border-gray-300 flex items-center justify-between px-2 text-[9px] font-bold text-gray-600 shrink-0">
+        <div className="flex gap-4">
+          <span>{new Date().toLocaleDateString()}</span>
+          <span>ONLINE: 5</span>
+          <span>SERVER: workigomchat.online</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+          CONNECTED
+        </div>
+      </div>
+
+      {/* Overlays */}
+      {(isDrawerOpen || showUsers) && (
+        <div className="fixed inset-0 bg-black/20 lg:hidden z-30" onClick={() => { setIsDrawerOpen(false); setShowUsers(false); }} />
+      )}
     </div>
   );
 };
