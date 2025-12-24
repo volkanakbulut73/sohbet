@@ -115,7 +115,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
   if (!isLoggedIn) {
     return (
       <div className="h-screen w-screen bg-[#f4f7ff] flex flex-col items-center justify-center p-6 font-sans">
-        <div className="w-full max-w-sm space-y-6 bg-white p-8 rounded-xl shadow-2xl border border-gray-200 animate-in fade-in zoom-in duration-300">
+        <div className="w-full max-sm space-y-6 bg-white p-8 rounded-xl shadow-2xl border border-gray-200 animate-in fade-in zoom-in duration-300">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-black text-[#1a1c2c]">mIRC Connect</h1>
             <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">GÜVENLİ ERİŞİM PANELİ v{CHAT_MODULE_CONFIG.VERSION}</p>
@@ -221,10 +221,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <nav className="h-8 bg-[#f0f4f8] border-b border-gray-300 flex items-center gap-1 px-2 overflow-x-auto no-scrollbar shrink-0">
+      {/* Navigation Tabs - Updated to support 3 rows wrap */}
+      <nav className="min-h-[32px] max-h-[100px] overflow-y-auto bg-[#f0f4f8] border-b border-gray-300 flex flex-wrap items-center gap-1 px-2 py-1 shrink-0 scrollbar-hide">
         {channels.map(chan => (
-          <div key={chan.name} className={`px-3 py-0.5 text-[10px] cursor-pointer rounded-t-sm border flex items-center gap-1.5 shrink-0 transition-all ${activeTab === chan.name ? 'bg-[#000080] text-white border-[#000080]' : 'bg-white text-blue-800 border-gray-200 hover:bg-blue-50'}`}>
+          <div key={chan.name} className={`px-3 py-1 text-[10px] cursor-pointer rounded border flex items-center gap-1.5 shrink-0 transition-all ${activeTab === chan.name ? 'bg-[#000080] text-white border-[#000080]' : 'bg-white text-blue-800 border-gray-200 hover:bg-blue-50'}`}>
             <div className="flex items-center gap-1" onClick={() => setActiveTab(chan.name)}>
               <Hash size={10} /> {chan.name}
             </div>
@@ -232,7 +232,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
           </div>
         ))}
         {privateChats.map(nick => (
-          <div key={nick} className={`px-3 py-0.5 text-[10px] cursor-pointer rounded-t-sm border flex items-center gap-1.5 shrink-0 transition-all ${activeTab === nick ? 'bg-purple-700 text-white border-purple-700' : 'bg-white text-purple-700 border-gray-200 hover:bg-purple-50'}`}>
+          <div key={nick} className={`px-3 py-1 text-[10px] cursor-pointer rounded border flex items-center gap-1.5 shrink-0 transition-all ${activeTab === nick ? 'bg-purple-700 text-white border-purple-700' : 'bg-white text-purple-700 border-gray-200 hover:bg-purple-50'}`}>
             <div className="flex items-center gap-1" onClick={() => setActiveTab(nick)}>
               <MessageSquare size={10} /> {nick}
             </div>
@@ -358,4 +358,13 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
                 </button>
               </div>
 
-              <button onClick={() => setIsSettingsOpen(false)} className="w-full bg-[#000080] text
+              <button onClick={() => setIsSettingsOpen(false)} className="w-full bg-[#000080] text-white py-2 rounded font-bold text-xs mt-2">KAPAT</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;

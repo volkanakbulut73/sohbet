@@ -127,7 +127,14 @@ export const useChatCore = (initialUserName: string) => {
     if (!userName) return;
     try {
       const fetched = await storageService.getChannels();
-      setChannels(fetched);
+      // "system" veya "radio" isimli odaları arayüzden kaldır
+      const filtered = fetched.filter(c => 
+        c.name.toLowerCase() !== 'system' && 
+        c.name.toLowerCase() !== 'radio' &&
+        c.name.toLowerCase() !== '#system' &&
+        c.name.toLowerCase() !== '#radio'
+      );
+      setChannels(filtered);
     } catch (e) { handleError(e); }
   };
 
