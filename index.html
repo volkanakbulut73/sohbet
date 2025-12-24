@@ -20,16 +20,20 @@
       padding: 0;
       overflow: hidden;
       font-family: 'Courier New', Courier, monospace;
+      -webkit-tap-highlight-color: transparent;
     }
     #root {
       height: 100vh;
       width: 100vw;
-      background: white;
+      background: #fff;
     }
     /* Klasik mIRC Scrollbar */
     ::-webkit-scrollbar { width: 12px; height: 12px; }
     ::-webkit-scrollbar-track { background: #d4dce8; border: 1px solid #888; }
     ::-webkit-scrollbar-thumb { background: #c0c0c0; border: 2px solid #eee; border-right-color: #555; border-bottom-color: #555; }
+    
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 <script type="importmap">
 {

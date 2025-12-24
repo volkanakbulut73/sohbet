@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/', // Veya Hostinger'da bir alt klasördeyseniz './' yapın
+  base: '/',
   define: {
     'process.env': {}
   },
@@ -21,6 +21,12 @@ export default defineConfig({
           vendor: ['@supabase/supabase-js', '@google/genai', 'lucide-react']
         }
       }
+    }
+  },
+  // Dev server ayarları (MIME hatalarını önlemek için)
+  server: {
+    fs: {
+      strict: false
     }
   }
 });
