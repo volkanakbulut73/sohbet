@@ -4,7 +4,15 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Vite ortamında veya global process nesnesinde key ara
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (window as any).process?.env?.API_KEY || "";
+    
+    if (!apiKey) {
+      console.warn("API Key bulunamadı. Lütfen yapılandırmayı kontrol edin.");
+      return "Sistem hatası: Yapay zeka anahtarı yapılandırılmamış.";
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     const model = "gemini-3-flash-preview";
     
     let parts: any[] = [];
