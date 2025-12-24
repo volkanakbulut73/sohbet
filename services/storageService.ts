@@ -21,6 +21,42 @@ export const storageService = {
     })) as Channel[];
   },
 
+  async getAdminCredentials(): Promise<{ user: string, pass: string }> {
+    try {
+      const { data: userData } = await supabase.from('system_config').select('value').eq('key', 'admin_username').maybeSingle();
+      const { data: passData } = await supabase.from('system_config').select('value').eq('key', 'admin_password').maybeSingle();
+      return { 
+        user: userData?.value || 'admin', 
+        pass: passData?.value || 'admin123' 
+      };
+    } catch {
+      return { user: 'admin', pass: 'admin123' };
+    }
+  },
+
+  async updateAdminCredentials(user: string, pass: string) {
+    const updates = [
+      { key: 'admin_username', value: user, updated_at: new Date() },
+      { key: 'admin_password', value: pass, updated_at: new Date() }
+    ];
+    const { error } = await supabase.from('system_config').upsert(updates);
+    if (error) throw error;
+  },
+
+  async getBotInstruction(): Promise<string> {
+    try {
+      const { data } = await supabase.from('system_config').select('value').eq('key', 'bot_instruction').maybeSingle();
+      return data?.value || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION;
+    } catch {
+      return CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION;
+    }
+  },
+
+  async updateBotInstruction(val: string) {
+    const { error } = await supabase.from('system_config').upsert({ key: 'bot_instruction', value: val, updated_at: new Date() });
+    if (error) throw error;
+  },
+
   async getModuleVersion(): Promise<string> {
     try {
       const { data } = await supabase.from('system_config').select('value').eq('key', 'min_client_version').single();
@@ -67,7 +103,6 @@ export const storageService = {
     if (error) throw error;
   },
 
-  // --- ENGELLEME VE AYARLAR ---
   async addBlock(blocker: string, blocked: string) {
     const { error } = await supabase.from('user_blocks').upsert({ blocker, blocked });
     if (error) throw error;

@@ -12,6 +12,7 @@ export const useChatCore = (initialUserName: string) => {
   const [privateChats, setPrivateChats] = useState<string[]>(['GeminiBot']);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [allowPrivate, setAllowPrivate] = useState(true);
+  const [botInstruction, setBotInstruction] = useState(CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION);
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('sohbet');
@@ -22,7 +23,6 @@ export const useChatCore = (initialUserName: string) => {
 
   const subscriptionRef = useRef<any>(null);
   const channelSubRef = useRef<any>(null);
-  const notifySound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
 
   const handleError = (err: any) => {
     let rawMsg = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
@@ -35,9 +35,20 @@ export const useChatCore = (initialUserName: string) => {
     const fetchSettings = async () => {
       const settings = await storageService.getUserSettings(userName);
       setAllowPrivate(settings.allow_private);
+      const instruction = await storageService.getBotInstruction();
+      setBotInstruction(instruction);
     };
     fetchSettings();
   }, [userName]);
+
+  const saveBotInstruction = async (val: string) => {
+    if (!isAdmin) return;
+    try {
+      await storageService.updateBotInstruction(val);
+      setBotInstruction(val);
+      setError("Bot talimatları güncellendi.");
+    } catch (e) { handleError(e); }
+  };
 
   const refreshBlocks = async () => {
     if (!userName) return;
@@ -75,43 +86,24 @@ export const useChatCore = (initialUserName: string) => {
   };
 
   const closeTab = (name: string) => {
-    if (name === 'sohbet') return; // Don't close main channel
-    
+    if (name === 'sohbet') return;
     if (name.startsWith('#') || channels.some(c => c.name === name)) {
       setChannels(prev => prev.filter(c => c.name !== name));
     } else {
       setPrivateChats(prev => prev.filter(n => n !== name));
     }
-
-    if (activeTab === name) {
-      setActiveTab('sohbet');
-    }
+    if (activeTab === name) setActiveTab('sohbet');
   };
 
   const sendMessage = async (text: string, imageBase64?: string) => {
     if (!text.trim() && !imageBase64) return;
-    
     const isPrivate = !activeTab.startsWith('#') && activeTab !== 'sohbet';
+    
     if (isPrivate && activeTab !== 'GeminiBot') {
       const blockedMe = await storageService.checkIsBlocked(activeTab, userName);
-      if (blockedMe) {
-        handleError("Bu kullanıcıya mesaj gönderemezsiniz (Engellendiniz).");
-        return;
-      }
-
+      if (blockedMe) { handleError("Bu kullanıcıya mesaj gönderemezsiniz (Engellendiniz)."); return; }
       const targetSettings = await storageService.getUserSettings(activeTab);
-      if (!targetSettings.allow_private) {
-        handleError("Bu kullanıcı özel mesaj kabul etmiyor.");
-        return;
-      }
-    }
-
-    const currentChannel = channels.find(c => c.name === activeTab);
-    const isOp = isAdmin || (currentChannel?.ops || []).includes(userName);
-
-    if (currentChannel?.islocked && !isOp) {
-      handleError("Bu oda kilitli.");
-      return;
+      if (!targetSettings.allow_private) { handleError("Bu kullanıcı özel mesaj kabul etmiyor."); return; }
     }
 
     try {
@@ -124,7 +116,7 @@ export const useChatCore = (initialUserName: string) => {
 
       if (activeTab === 'GeminiBot') {
         setIsAILoading(true);
-        const res = await getGeminiResponse(text, "Private AI Chat");
+        const res = await getGeminiResponse(text, "Private AI Chat", undefined, botInstruction);
         await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: 'GeminiBot' });
         setIsAILoading(false);
       }
@@ -153,7 +145,6 @@ export const useChatCore = (initialUserName: string) => {
       if (payload.new && payload.new.channel === activeTab) {
         setMessages(prev => [...prev, { ...payload.new, timestamp: new Date(payload.new.created_at) }]);
       }
-      // If a message comes for a closed private chat, reopen it
       if (payload.new && !payload.new.channel.startsWith('#') && payload.new.channel !== 'sohbet' && payload.new.sender !== userName) {
         setPrivateChats(prev => prev.includes(payload.new.channel) ? prev : [...prev, payload.new.channel]);
       }
@@ -171,6 +162,7 @@ export const useChatCore = (initialUserName: string) => {
     messages, sendMessage,
     isAILoading, isOp: isAdmin || (channels.find(c => c.name === activeTab)?.ops || []).includes(userName),
     error, isMuted, setIsMuted, updateRequired, closeTab,
+    botInstruction, setBotInstruction, saveBotInstruction,
     initiatePrivateChat: (u: string) => { if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); setActiveTab(u); },
     clearScreen: () => setMessages([])
   };

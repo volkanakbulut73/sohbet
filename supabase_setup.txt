@@ -1,31 +1,23 @@
--- WORKIGOM SOHBET MODÜLÜ - ENGELLEME SİSTEMİ GÜNCELLEMESİ
 
--- 1. TABLOLARI OLUŞTUR
-CREATE TABLE IF NOT EXISTS public.user_blocks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    blocker TEXT NOT NULL,
-    blocked TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(blocker, blocked)
-);
-
-CREATE TABLE IF NOT EXISTS public.user_settings (
-    username TEXT PRIMARY KEY,
-    allow_private BOOLEAN DEFAULT true,
+-- 1. SİSTEM KONFİGÜRASYON TABLOSU
+CREATE TABLE IF NOT EXISTS public.system_config (
+    key TEXT PRIMARY KEY,
+    value TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. RLS'Yİ AKTİF ET
-ALTER TABLE public.user_blocks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
+-- 2. VARSAYILAN DEĞERLERİ EKLE (Admin: admin / Şifre: admin123)
+INSERT INTO public.system_config (key, value)
+VALUES 
+('bot_instruction', 'Sen Workigom platformu için özelleşmiş bir kurumsal asistansın. İş modelimize uygun profesyonel bir dil kullan.'),
+('admin_username', 'admin'),
+('admin_password', 'admin123')
+ON CONFLICT (key) DO NOTHING;
 
--- 3. POLİTİKALARI YENİDEN OLUŞTUR
-DROP POLICY IF EXISTS "Public All Blocks" ON public.user_blocks;
-CREATE POLICY "Public All Blocks" ON public.user_blocks FOR ALL TO public USING (true) WITH CHECK (true);
+-- 3. RLS AYARLARI
+ALTER TABLE public.system_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Select Config" ON public.system_config;
+CREATE POLICY "Public Select Config" ON public.system_config FOR SELECT TO public USING (true);
 
-DROP POLICY IF EXISTS "Public All Settings" ON public.user_settings;
-CREATE POLICY "Public All Settings" ON public.user_settings FOR ALL TO public USING (true) WITH CHECK (true);
-
--- 4. LOG KAYDI
-INSERT INTO public.message_logs (event_type, payload)
-VALUES ('DB_BLOCK_SYSTEM_SETUP', '{"status": "success", "message": "Block and Settings tables created"}');
+DROP POLICY IF EXISTS "Admin Update Config" ON public.system_config;
+CREATE POLICY "Admin Update Config" ON public.system_config FOR UPDATE TO public USING (true) WITH CHECK (true);
