@@ -1,0 +1,33 @@
+WORKIGOM SOHBET MODÜLÜ - YERLEŞTİRME VE GÜVENLİK REHBERİ (GÜNCELLENDİ)
+
+GÜNCELLEME NOTU: 
+Eğer daha önce "event_type sütunu mevcut değil" hatası aldıysanız, 
+yeni `supabase_setup.txt` içeriği bu sütunu mevcut tablonuza otomatik olarak ekleyecektir.
+
+MODÜLÜ UYGULAMAYA YERLEŞTİRME ADIMLARI:
+
+1. ADIM: VERİTABANI ONARIMI VE KURULUMU
+---------------------------------------
+- Supabase SQL Editor'e gidin.
+- `supabase_setup.txt` içindeki tüm kodları kopyalayıp çalıştırın.
+- Bu işlem eksik sütunları oluşturur, RLS ayarlarını yapar ve sistem versiyonunu günceller.
+
+2. ADIM: WEB ENTEGRASYONU
+-------------------------
+Aşağıdaki HTML yapısını kullanın:
+<div id="chat-widget"></div>
+<script type="module">
+  import { initWorkigomChat } from './index.js';
+  initWorkigomChat('chat-widget', {
+    externalUser: 'Kullanici_Adi'
+  });
+</script>
+
+3. ADIM: MOBİL KULLANIM (WebView)
+---------------------------------
+URL: `https://chat.siteniz.com/?nick=KullaniciAdi`
+
+GÜVENLİK KONTROLÜ:
+------------------
+`message_logs` tablosu "service_role" dışındaki tüm rollere (anon, authenticated) tamamen kapalıdır. 
+Kullanıcılarınız bu tablonun varlığını görseler dahi içeriğine hiçbir şekilde erişemezler.

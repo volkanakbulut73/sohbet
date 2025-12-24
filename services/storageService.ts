@@ -1,22 +1,33 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { Message, Channel, MessageType } from '../types';
-
-const SUPABASE_URL = 'https://abunbqqxtpugsjfvvikj.supabase.co'; 
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFidW5icXF4dHB1Z3NqZnZ2aWtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTcyNzksImV4cCI6MjA4MTg5MzI3OX0.ld29ijoxlkkCC2uNPnvc4aiTiMEhQvu2bfilH6IOIzo';
+import { CHAT_MODULE_CONFIG } from '../config';
 
 export const isConfigured = () => 
-  SUPABASE_URL.startsWith('https://') && 
-  SUPABASE_ANON_KEY.length > 20 &&
-  !SUPABASE_ANON_KEY.includes('anon-key');
+  CHAT_MODULE_CONFIG.SUPABASE_URL.startsWith('https://') && 
+  CHAT_MODULE_CONFIG.SUPABASE_KEY.length > 20;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(CHAT_MODULE_CONFIG.SUPABASE_URL, CHAT_MODULE_CONFIG.SUPABASE_KEY);
 
 export const storageService = {
   async getChannels(): Promise<Channel[]> {
     const { data, error } = await supabase.from('channels').select('*');
     if (error) throw error;
-    return data as Channel[];
+    return (data || []).map(c => ({
+      ...c,
+      islocked: c.islocked ?? false,
+      ops: c.ops ?? [],
+      bannedusers: c.bannedusers ?? []
+    })) as Channel[];
+  },
+
+  async getModuleVersion(): Promise<string> {
+    try {
+      const { data } = await supabase.from('system_config').select('value').eq('key', 'min_client_version').single();
+      return data?.value || CHAT_MODULE_CONFIG.VERSION;
+    } catch {
+      return CHAT_MODULE_CONFIG.VERSION;
+    }
   },
 
   async createChannel(channel: Channel) {
@@ -44,7 +55,7 @@ export const storageService = {
   async getMessagesByChannel(channelName: string): Promise<Message[]> {
     const { data, error } = await supabase.from('messages').select('*').eq('channel', channelName).order('created_at', { ascending: true }).limit(200);
     if (error) throw error;
-    return data.map(m => ({
+    return (data || []).map(m => ({
       id: m.id, sender: m.sender, text: m.text, timestamp: new Date(m.created_at), type: m.type as MessageType, channel: m.channel
     }));
   },
@@ -53,6 +64,34 @@ export const storageService = {
     const { error } = await supabase.from('messages').insert({
       sender: message.sender, text: message.text, type: message.type, channel: message.channel
     });
+    if (error) throw error;
+  },
+
+  // --- ENGELLEME VE AYARLAR ---
+  async addBlock(blocker: string, blocked: string) {
+    const { error } = await supabase.from('user_blocks').upsert({ blocker, blocked });
+    if (error) throw error;
+  },
+
+  async removeBlock(blocker: string, blocked: string) {
+    const { error } = await supabase.from('user_blocks').delete().match({ blocker, blocked });
+    if (error) throw error;
+  },
+
+  async checkIsBlocked(blocker: string, blocked: string): Promise<boolean> {
+    const { data, error } = await supabase.from('user_blocks').select('id').match({ blocker, blocked }).maybeSingle();
+    if (error) return false;
+    return !!data;
+  },
+
+  async getUserSettings(username: string) {
+    const { data, error } = await supabase.from('user_settings').select('*').eq('username', username).maybeSingle();
+    if (error) return { allow_private: true };
+    return data || { allow_private: true };
+  },
+
+  async updateUserSettings(username: string, allow_private: boolean) {
+    const { error } = await supabase.from('user_settings').upsert({ username, allow_private, updated_at: new Date() });
     if (error) throw error;
   },
 

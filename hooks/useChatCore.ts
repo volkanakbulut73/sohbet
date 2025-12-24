@@ -3,135 +3,114 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Message, MessageType, Channel } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
 import { storageService, isConfigured, supabase } from '../services/storageService';
+import { CHAT_MODULE_CONFIG } from '../config';
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('mirc_is_admin') === 'true');
   const [channels, setChannels] = useState<Channel[]>([]);
   const [privateChats, setPrivateChats] = useState<string[]>(['GeminiBot']);
-  const [blockedUsers, setBlockedUsers] = useState<string[]>(() => {
-    const saved = localStorage.getItem('mirc_blocked');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [allowPrivate, setAllowPrivate] = useState(true);
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('sohbet');
   const [isAILoading, setIsAILoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('mirc_muted') === 'true');
+  const [updateRequired, setUpdateRequired] = useState(false);
 
   const subscriptionRef = useRef<any>(null);
   const channelSubRef = useRef<any>(null);
   const notifySound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
 
   const handleError = (err: any) => {
-    console.error("Chat Error Detail:", err);
-    let rawMsg = "";
+    let rawMsg = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
+    setError(rawMsg);
+    setTimeout(() => setError(null), 4000);
+  };
+
+  useEffect(() => {
+    if (!userName) return;
+    const fetchSettings = async () => {
+      const settings = await storageService.getUserSettings(userName);
+      setAllowPrivate(settings.allow_private);
+    };
+    fetchSettings();
+  }, [userName]);
+
+  const refreshBlocks = async () => {
+    if (!userName) return;
+    const { data } = await supabase.from('user_blocks').select('blocked').eq('blocker', userName);
+    if (data) setBlockedUsers(data.map(d => d.blocked));
+  };
+
+  useEffect(() => {
+    refreshBlocks();
+  }, [userName, activeTab]);
+
+  const toggleAllowPrivate = async (val: boolean) => {
+    setAllowPrivate(val);
+    await storageService.updateUserSettings(userName, val);
+  };
+
+  const blockUser = async (target: string) => {
+    try {
+      await storageService.addBlock(userName, target);
+      await refreshBlocks();
+      await storageService.saveMessage({
+        sender: 'SYSTEM', text: `${target} engellendi.`, type: MessageType.SYSTEM, channel: activeTab
+      });
+    } catch (e) { handleError(e); }
+  };
+
+  const unblockUser = async (target: string) => {
+    try {
+      await storageService.removeBlock(userName, target);
+      await refreshBlocks();
+      await storageService.saveMessage({
+        sender: 'SYSTEM', text: `${target} engeli kaldırıldı.`, type: MessageType.SYSTEM, channel: activeTab
+      });
+    } catch (e) { handleError(e); }
+  };
+
+  const closeTab = (name: string) => {
+    if (name === 'sohbet') return; // Don't close main channel
     
-    if (typeof err === 'string') {
-      rawMsg = err;
-    } else if (err && typeof err === 'object') {
-      rawMsg = err.message || err.error_description || err.details || (err.error && err.error.message) || JSON.stringify(err);
-    }
-    
-    // Eğer hata islocked sütunuyla ilgiliyse kullanıcıya gerçek durumu göster
-    if (rawMsg.toLowerCase().includes("islocked") || rawMsg.toLowerCase().includes("column")) {
-      setError(`Veritabanı Hatası: ${rawMsg}. Eğer 'islocked' sütunu yok diyorsa, lütfen SQL kısmından 'ALTER TABLE channels ADD COLUMN islocked boolean DEFAULT false;' komutunu (küçük harflerle) çalıştırdığınızdan emin olun.`);
+    if (name.startsWith('#') || channels.some(c => c.name === name)) {
+      setChannels(prev => prev.filter(c => c.name !== name));
     } else {
-      setError(rawMsg);
+      setPrivateChats(prev => prev.filter(n => n !== name));
     }
 
-    setTimeout(() => setError(null), 8000);
-  };
-
-  useEffect(() => {
-    localStorage.setItem('mirc_blocked', JSON.stringify(blockedUsers));
-  }, [blockedUsers]);
-
-  useEffect(() => {
-    if (userName && userName.trim() !== '') {
-      localStorage.setItem('mirc_nick', String(userName));
-    }
-  }, [userName]);
-
-  useEffect(() => {
-    localStorage.setItem('mirc_muted', isMuted.toString());
-  }, [isMuted]);
-
-  useEffect(() => {
-    localStorage.setItem('mirc_is_admin', isAdmin.toString());
-  }, [isAdmin]);
-
-  const currentChannel = channels.find(c => c.name === activeTab);
-  const isOp = isAdmin || (currentChannel?.ops || []).includes(userName);
-
-  const loadChannels = async () => {
-    if (!userName || userName.trim() === '') return;
-    try {
-      const fetched = await storageService.getChannels();
-      if (fetched.length === 0) {
-        const defaultChan = { name: 'sohbet', description: 'Ana Oda', unreadCount: 0, users: [userName] };
-        await storageService.createChannel(defaultChan);
-        setChannels([defaultChan]);
-      } else {
-        setChannels(fetched.filter(c => !c.name.startsWith('__SYSTEM')));
-      }
-    } catch (e) {
-      handleError(e);
+    if (activeTab === name) {
+      setActiveTab('sohbet');
     }
   };
-
-  useEffect(() => {
-    if (!isConfigured() || !userName || userName.trim() === '') return;
-    loadChannels();
-    channelSubRef.current = storageService.subscribeToChannels(() => {
-      loadChannels();
-    });
-    return () => channelSubRef.current?.unsubscribe();
-  }, [userName]);
-
-  const fetchMsgs = async () => {
-    if (!userName || userName.trim() === '') return;
-    try {
-      const fetched = await storageService.getMessagesByChannel(activeTab);
-      setMessages(fetched);
-    } catch (e) {
-      handleError(e);
-    }
-  };
-
-  useEffect(() => {
-    if (!userName || userName.trim() === '') return;
-    fetchMsgs();
-    subscriptionRef.current = storageService.subscribeToMessages((payload) => {
-      if (payload.eventType === 'DELETE') {
-        fetchMsgs();
-        return;
-      }
-      const newMessage = payload.new;
-      if (newMessage && newMessage.channel === activeTab) {
-        setMessages(prev => {
-          if (prev.some(m => m.id === newMessage.id)) return prev;
-          if (!isMuted && newMessage.sender !== userName) notifySound.current.play().catch(() => {});
-          return [...prev, { ...newMessage, timestamp: new Date(newMessage.created_at) }];
-        });
-      }
-    });
-
-    return () => subscriptionRef.current?.unsubscribe();
-  }, [activeTab, isMuted, userName]);
 
   const sendMessage = async (text: string, imageBase64?: string) => {
     if (!text.trim() && !imageBase64) return;
     
-    // Kilit Kontrolü
-    if (currentChannel?.islocked && !isOp) {
-      handleError("Bu oda kilitli. Sadece operatörler yazabilir.");
-      return;
+    const isPrivate = !activeTab.startsWith('#') && activeTab !== 'sohbet';
+    if (isPrivate && activeTab !== 'GeminiBot') {
+      const blockedMe = await storageService.checkIsBlocked(activeTab, userName);
+      if (blockedMe) {
+        handleError("Bu kullanıcıya mesaj gönderemezsiniz (Engellendiniz).");
+        return;
+      }
+
+      const targetSettings = await storageService.getUserSettings(activeTab);
+      if (!targetSettings.allow_private) {
+        handleError("Bu kullanıcı özel mesaj kabul etmiyor.");
+        return;
+      }
     }
 
-    if (currentChannel?.bannedusers?.includes(userName)) {
-      handleError("Bu odadan yasaklandınız.");
+    const currentChannel = channels.find(c => c.name === activeTab);
+    const isOp = isAdmin || (currentChannel?.ops || []).includes(userName);
+
+    if (currentChannel?.islocked && !isOp) {
+      handleError("Bu oda kilitli.");
       return;
     }
 
@@ -145,104 +124,54 @@ export const useChatCore = (initialUserName: string) => {
 
       if (activeTab === 'GeminiBot') {
         setIsAILoading(true);
-        const res = await getGeminiResponse(text, activeTab);
+        const res = await getGeminiResponse(text, "Private AI Chat");
         await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: 'GeminiBot' });
         setIsAILoading(false);
       }
-    } catch (err: any) {
-      handleError(err);
-    }
+    } catch (err: any) { handleError(err); }
   };
 
-  const manageUser = async (targetUser: string, action: 'op' | 'deop' | 'kick' | 'ban') => {
-    if (!isOp) return;
-    const chan = channels.find(c => c.name === activeTab);
-    if (!chan) return;
-
+  const loadChannels = async () => {
+    if (!userName) return;
     try {
-      let updates: Partial<Channel> = {};
-      const ops = chan.ops || [];
-      const banned = chan.bannedusers || [];
+      const fetched = await storageService.getChannels();
+      setChannels(fetched);
+    } catch (e) { handleError(e); }
+  };
 
-      switch (action) {
-        case 'op':
-          updates.ops = Array.from(new Set([...ops, targetUser]));
-          break;
-        case 'deop':
-          updates.ops = ops.filter(u => u !== targetUser);
-          break;
-        case 'kick':
-          await storageService.saveMessage({ sender: 'SYSTEM', text: `${targetUser} kanaldan atıldı.`, type: MessageType.SYSTEM, channel: activeTab });
-          break;
-        case 'ban':
-          updates.bannedusers = Array.from(new Set([...banned, targetUser]));
-          await storageService.saveMessage({ sender: 'SYSTEM', text: `${targetUser} kanaldan yasaklandı.`, type: MessageType.SYSTEM, channel: activeTab });
-          break;
+  useEffect(() => {
+    if (!isConfigured() || !userName) return;
+    loadChannels();
+    channelSubRef.current = storageService.subscribeToChannels(() => loadChannels());
+    return () => channelSubRef.current?.unsubscribe();
+  }, [userName]);
+
+  useEffect(() => {
+    if (!userName) return;
+    storageService.getMessagesByChannel(activeTab).then(setMessages);
+    subscriptionRef.current = storageService.subscribeToMessages((payload) => {
+      if (payload.new && payload.new.channel === activeTab) {
+        setMessages(prev => [...prev, { ...payload.new, timestamp: new Date(payload.new.created_at) }]);
       }
-
-      if (Object.keys(updates).length > 0) {
-        await storageService.updateChannel(activeTab, updates);
+      // If a message comes for a closed private chat, reopen it
+      if (payload.new && !payload.new.channel.startsWith('#') && payload.new.channel !== 'sohbet' && payload.new.sender !== userName) {
+        setPrivateChats(prev => prev.includes(payload.new.channel) ? prev : [...prev, payload.new.channel]);
       }
-    } catch (err) {
-      handleError(err);
-    }
-  };
-
-  const toggleLock = async () => {
-    if (!isOp) return;
-    
-    const chan = channels.find(c => c.name === activeTab);
-    if (!chan) {
-      handleError("Bu sekme kilitlenemez.");
-      return;
-    }
-
-    try {
-      const currentLock = !!chan.islocked;
-      const nextLockState = !currentLock;
-      
-      await storageService.updateChannel(activeTab, { islocked: nextLockState });
-      await loadChannels();
-
-      await storageService.saveMessage({ 
-        sender: 'SYSTEM', 
-        text: nextLockState ? "Kanal kilitlendi. Sadece yönetici yazabilir." : "Kanal kilidi açıldı. Herkes yazabilir.", 
-        type: MessageType.SYSTEM, 
-        channel: activeTab 
-      });
-    } catch (err) {
-      handleError(err);
-    }
-  };
-
-  const clearScreen = async () => {
-    if (!isOp) return;
-    if (activeTab === 'Status') return;
-    
-    try {
-      await storageService.clearChannelMessages(activeTab);
-      setMessages([]);
-      await storageService.saveMessage({
-        sender: 'SYSTEM',
-        text: `Kanal içeriği ${userName} tarafından temizlendi.`,
-        type: MessageType.SYSTEM,
-        channel: activeTab
-      });
-    } catch (err) {
-      handleError(err);
-    }
-  };
+    });
+    return () => subscriptionRef.current?.unsubscribe();
+  }, [activeTab, userName]);
 
   return {
     userName, setUserName,
     isAdmin, setIsAdmin,
     channels, privateChats, 
-    blockedUsers, toggleBlockUser: (u: string) => setBlockedUsers(p => p.includes(u) ? p.filter(x => x!==u) : [...p, u]),
+    blockedUsers, blockUser, unblockUser,
+    allowPrivate, toggleAllowPrivate,
     activeTab, setActiveTab,
     messages, sendMessage,
-    isAILoading, isOp, error,
-    isMuted, setIsMuted,
-    manageUser, toggleLock, clearScreen,
-    initiatePrivateChat: (u: string) => { if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); setActiveTab(u); }
+    isAILoading, isOp: isAdmin || (channels.find(c => c.name === activeTab)?.ops || []).includes(userName),
+    error, isMuted, setIsMuted, updateRequired, closeTab,
+    initiatePrivateChat: (u: string) => { if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); setActiveTab(u); },
+    clearScreen: () => setMessages([])
   };
 };

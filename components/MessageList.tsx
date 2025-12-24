@@ -44,16 +44,16 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     switch (msg.type) {
       case MessageType.SYSTEM:
         return (
-          <div className="mirc-text py-0.5 animate-in slide-in-from-left-1 duration-200">
-            <span className="text-gray-500 mr-2">{time}</span>
+          <div className="mirc-text py-0.25 animate-in slide-in-from-left-1 duration-200">
+            <span className="text-gray-400 mr-1.5">{time}</span>
             <span className="text-blue-700 font-bold">-- </span>
             <span className="text-blue-700 italic">{displayText}</span>
           </div>
         );
       case MessageType.ACTION:
         return (
-          <div className="mirc-text py-0.5 text-purple-700 italic">
-            <span className="text-gray-500 mr-2">{time}</span>
+          <div className="mirc-text py-0.25 text-purple-700 italic">
+            <span className="text-gray-400 mr-1.5">{time}</span>
             * <span 
                 className="cursor-pointer hover:underline font-bold" 
                 onClick={(e) => handleNickClick(e, msg.sender)}
@@ -65,8 +65,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
         );
       case MessageType.AI:
         return (
-          <div className="mirc-text py-0.5 border-l-2 border-red-500 pl-2 bg-red-50 mb-1">
-            <span className="text-gray-500 mr-2">{time}</span>
+          <div className="mirc-text py-0.5 border-l-2 border-red-500 pl-2 bg-red-50/50 mb-0.5">
+            <span className="text-gray-400 mr-1.5">{time}</span>
             <span 
               className="text-red-700 font-bold cursor-pointer hover:underline"
               onClick={(e) => handleNickClick(e, 'GeminiBot')}
@@ -88,13 +88,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
               >
                 {`<${msg.sender}>`}
               </span>
-              <span className="text-gray-500 text-[10px] italic underline">Görsel paylaştı:</span>
+              <span className="text-gray-500 text-[9px] italic underline">Görsel paylaştı:</span>
             </div>
-            <div className="ml-14 mt-1 border-4 border-gray-200 shadow-sm inline-block rounded max-w-[80%] overflow-hidden bg-black/5">
+            <div className="ml-12 mt-1 border-2 border-gray-200 shadow-sm inline-block rounded max-w-[70%] overflow-hidden bg-black/5">
               <img 
                 src={displayText} 
                 alt="Shared content" 
-                className="max-h-64 object-contain hover:scale-105 transition-transform cursor-zoom-in"
+                className="max-h-48 object-contain hover:scale-105 transition-transform cursor-zoom-in"
                 loading="lazy"
                 onClick={() => window.open(displayText, '_blank')}
               />
@@ -103,19 +103,19 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
         );
       default:
         const isMe = msg.sender === currentUser;
-        const nickColor = isMe ? 'text-gray-900' : 'text-blue-800';
+        const nickColor = isMe ? 'text-gray-800' : 'text-blue-800';
         return (
-          <div className="mirc-text py-0.5 flex items-start group">
-            <span className="text-gray-400 shrink-0 mr-1">{time}</span>
+          <div className="mirc-text py-0.25 flex items-start group">
+            <span className="text-gray-400 shrink-0 mr-1.5 select-none">{time}</span>
             <span 
-              className={`${nickColor} shrink-0 mr-1 font-bold cursor-pointer hover:underline active:text-blue-500 transition-colors`}
+              className={`${nickColor} shrink-0 mr-1.5 font-bold cursor-pointer hover:underline active:text-blue-500 transition-colors`}
               onClick={(e) => handleNickClick(e, msg.sender)}
               onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
               title={`${msg.sender} için seçenekleri gör`}
             >
               {`<${msg.sender}>`}
             </span>
-            <span className="text-black break-words selection:bg-blue-200">{displayText}</span>
+            <span className="text-black break-words selection:bg-blue-100">{displayText}</span>
           </div>
         );
     }
@@ -124,13 +124,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="h-full overflow-y-auto p-2 bg-white flex flex-col"
+      className="h-full overflow-y-auto p-2 bg-white flex flex-col font-mono"
     >
       {messages.length === 0 ? (
         <div className="flex-1 flex items-center justify-center opacity-10 select-none">
           <div className="text-center">
             <p className="text-4xl font-black italic">mIRC</p>
-            <p className="text-xs font-bold uppercase tracking-widest">Connect Module</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest">Connect Module</p>
           </div>
         </div>
       ) : (
