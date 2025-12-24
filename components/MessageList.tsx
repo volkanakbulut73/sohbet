@@ -35,11 +35,21 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     }
   };
 
+  const getDisplayText = (text: any): string => {
+    if (typeof text === 'string') return text;
+    if (text === null || text === undefined) return '';
+    if (typeof text === 'object') {
+      // Supabase'den JSON olarak gelen datalarda "text" alanı varsa onu al
+      return text.text || text.message || JSON.stringify(text);
+    }
+    return String(text);
+  };
+
   const renderMessageLine = (msg: Message) => {
     if (blockedUsers.includes(msg.sender)) return null;
 
     const time = `[${formatTime(msg.timestamp)}]`;
-    const displayText = typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text);
+    const displayText = getDisplayText(msg.text);
 
     switch (msg.type) {
       case MessageType.SYSTEM:
@@ -97,6 +107,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
                 className="max-h-48 object-contain hover:scale-105 transition-transform cursor-zoom-in"
                 loading="lazy"
                 onClick={() => window.open(displayText, '_blank')}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </div>
           </div>

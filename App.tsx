@@ -89,7 +89,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         <div className="flex items-center gap-2">
           {/* Block actions: ONLY on Private Tabs */}
           {isPrivateTab && activeTab !== 'GeminiBot' && (
-            <div className="flex items-center gap-1 mr-2">
+            <div className="flex items-center gap-1 mr-2 bg-black/10 p-0.5 rounded">
               {isTargetBlocked ? (
                 <button 
                   onClick={() => unblockUser(activeTab)}
@@ -145,7 +145,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             {chan.name !== 'sohbet' && (
               <X 
                 size={10} 
-                className="hover:text-red-500 cursor-pointer" 
+                className="hover:text-red-500 cursor-pointer ml-1" 
                 onClick={(e) => { e.stopPropagation(); closeTab(chan.name); }} 
               />
             )}
@@ -161,7 +161,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             </div>
             <X 
               size={10} 
-              className="hover:text-red-500 cursor-pointer" 
+              className="hover:text-red-500 cursor-pointer ml-1" 
               onClick={(e) => { e.stopPropagation(); closeTab(nick); }} 
             />
           </div>
@@ -172,8 +172,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
       <main className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col relative border-r border-gray-200">
           {coreError && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-bold px-4 py-2 rounded-full shadow-2xl z-50 animate-bounce">
-              {coreError}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-bold px-4 py-2 rounded-full shadow-2xl z-50 animate-bounce max-w-[90%] text-center">
+              {typeof coreError === 'string' ? coreError : JSON.stringify(coreError)}
             </div>
           )}
           <div className="flex-1 overflow-hidden">
@@ -185,8 +185,16 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             />
           </div>
         </div>
-        <aside className="w-32 sm:w-40 bg-[#f0f4f8] shrink-0">
-          <UserList users={currentChannel?.users || [userName, 'GeminiBot']} currentUser={userName} onClose={() => {}} onUserClick={(e, nick) => initiatePrivateChat(nick)} />
+        <aside className="w-32 sm:w-40 bg-[#f0f4f8] shrink-0 border-l border-gray-200">
+          <UserList 
+            users={currentChannel?.users || [userName, 'GeminiBot']} 
+            currentUser={userName} 
+            onClose={() => {}} 
+            onUserClick={(e, nick) => initiatePrivateChat(nick)} 
+            blockedUsers={blockedUsers}
+            currentOps={currentChannel?.ops || []}
+            isAdmin={isAdmin}
+          />
         </aside>
       </main>
 
@@ -198,7 +206,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isTargetBlocked || (currentChannel?.islocked && !isOp)}
-            placeholder={isTargetBlocked ? "Bu kullanıcıyı engellediniz." : "Mesaj yazın..."}
+            placeholder={isTargetBlocked ? "Bu kullanıcıyı engellediniz." : (currentChannel?.islocked && !isOp ? "Kilitli oda..." : "Mesaj yazın...")}
             className="flex-1 bg-white border border-gray-300 rounded px-3 py-1.5 text-[11.5px] outline-none focus:border-blue-500 disabled:bg-gray-100 transition-colors"
           />
           <button type="submit" className="bg-[#000080] text-white px-4 py-1.5 rounded font-bold text-[11px] hover:bg-blue-900 transition-colors active:scale-95">Gönder</button>
