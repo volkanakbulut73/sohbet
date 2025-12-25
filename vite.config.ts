@@ -13,8 +13,8 @@ export default defineConfig({
     minify: 'terser',
     rollupOptions: {
       output: {
-        // SDK olarak kullanılacağı için isimleri sabit tutmak entegrasyonu kolaylaştırır
-        entryFileNames: `assets/[name].js`,
+        // SDK entry point must be predictable
+        entryFileNames: `assets/index.js`,
         chunkFileNames: `assets/[name].js`,
         assetFileNames: `assets/[name].[ext]`
       }
@@ -24,6 +24,6 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    cors: true // Yerel geliştirmede CORS izinlerini açar
+    cors: true
   }
 });
