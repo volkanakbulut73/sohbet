@@ -1,6 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { Message, Channel, MessageType } from '../types';
+import { Message, Channel, MessageType, UserRegistration } from '../types';
 import { CHAT_MODULE_CONFIG } from '../config';
 
 export const isConfigured = () => 
@@ -10,6 +10,35 @@ export const isConfigured = () =>
 export const supabase = createClient(CHAT_MODULE_CONFIG.SUPABASE_URL, CHAT_MODULE_CONFIG.SUPABASE_KEY);
 
 export const storageService = {
+  // --- KAYIT VE KİMLİK DOĞRULAMA ---
+  async registerUser(regData: UserRegistration) {
+    const { error } = await supabase.from('registrations').insert({
+      nickname: regData.nickname,
+      email: regData.email,
+      password: regData.password,
+      criminal_record_file: regData.criminal_record_file,
+      insurance_file: regData.insurance_file,
+      status: 'pending'
+    });
+    if (error) {
+      if (error.code === '23505') throw new Error('Bu email adresi zaten kayıtlı.');
+      throw error;
+    }
+  },
+
+  async loginUser(email: string, pass: string): Promise<UserRegistration | null> {
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('*')
+      .eq('email', email)
+      .eq('password', pass)
+      .maybeSingle();
+    
+    if (error) throw error;
+    return data as UserRegistration | null;
+  },
+
+  // --- KANAL VE MESAJ YÖNETİMİ ---
   async getChannels(): Promise<Channel[]> {
     const { data, error } = await supabase.from('channels').select('*');
     if (error) throw error;
@@ -19,73 +48,6 @@ export const storageService = {
       ops: c.ops ?? [],
       bannedusers: c.bannedusers ?? []
     })) as Channel[];
-  },
-
-  async getAdminCredentials(): Promise<{ user: string, pass: string }> {
-    try {
-      const { data: userData } = await supabase.from('system_config').select('value').eq('key', 'admin_username').maybeSingle();
-      const { data: passData } = await supabase.from('system_config').select('value').eq('key', 'admin_password').maybeSingle();
-      return { 
-        user: userData?.value || 'admin', 
-        pass: passData?.value || 'admin123' 
-      };
-    } catch {
-      return { user: 'admin', pass: 'admin123' };
-    }
-  },
-
-  async updateAdminCredentials(user: string, pass: string) {
-    const updates = [
-      { key: 'admin_username', value: user, updated_at: new Date() },
-      { key: 'admin_password', value: pass, updated_at: new Date() }
-    ];
-    const { error } = await supabase.from('system_config').upsert(updates);
-    if (error) throw error;
-  },
-
-  async getBotInstruction(): Promise<string> {
-    try {
-      const { data } = await supabase.from('system_config').select('value').eq('key', 'bot_instruction').maybeSingle();
-      return data?.value || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION;
-    } catch {
-      return CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION;
-    }
-  },
-
-  async updateBotInstruction(val: string) {
-    const { error } = await supabase.from('system_config').upsert({ key: 'bot_instruction', value: val, updated_at: new Date() });
-    if (error) throw error;
-  },
-
-  async getModuleVersion(): Promise<string> {
-    try {
-      const { data } = await supabase.from('system_config').select('value').eq('key', 'min_client_version').single();
-      return data?.value || CHAT_MODULE_CONFIG.VERSION;
-    } catch {
-      return CHAT_MODULE_CONFIG.VERSION;
-    }
-  },
-
-  async createChannel(channel: Channel) {
-    const { error } = await supabase.from('channels').upsert({
-      name: channel.name,
-      description: channel.description,
-      users: channel.users,
-      islocked: false,
-      ops: [],
-      bannedusers: []
-    });
-    if (error) throw error;
-  },
-
-  async updateChannel(name: string, updates: Partial<Channel>) {
-    const { error } = await supabase.from('channels').update(updates).eq('name', name);
-    if (error) throw error;
-  },
-
-  async clearChannelMessages(channelName: string) {
-    const { error } = await supabase.from('messages').delete().eq('channel', channelName);
-    if (error) throw error;
   },
 
   async getMessagesByChannel(channelName: string): Promise<Message[]> {
@@ -103,38 +65,7 @@ export const storageService = {
     if (error) throw error;
   },
 
-  async addBlock(blocker: string, blocked: string) {
-    const { error } = await supabase.from('user_blocks').upsert({ blocker, blocked });
-    if (error) throw error;
-  },
-
-  async removeBlock(blocker: string, blocked: string) {
-    const { error } = await supabase.from('user_blocks').delete().match({ blocker, blocked });
-    if (error) throw error;
-  },
-
-  async checkIsBlocked(blocker: string, blocked: string): Promise<boolean> {
-    const { data, error } = await supabase.from('user_blocks').select('id').match({ blocker, blocked }).maybeSingle();
-    if (error) return false;
-    return !!data;
-  },
-
-  async getUserSettings(username: string) {
-    const { data, error } = await supabase.from('user_settings').select('*').eq('username', username).maybeSingle();
-    if (error) return { allow_private: true };
-    return data || { allow_private: true };
-  },
-
-  async updateUserSettings(username: string, allow_private: boolean) {
-    const { error } = await supabase.from('user_settings').upsert({ username, allow_private, updated_at: new Date() });
-    if (error) throw error;
-  },
-
   subscribeToMessages(callback: (payload: any) => void) {
     return supabase.channel('messages_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => callback(payload)).subscribe();
-  },
-
-  subscribeToChannels(callback: (payload: any) => void) {
-    return supabase.channel('channels_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, (payload) => callback(payload)).subscribe();
   }
 };

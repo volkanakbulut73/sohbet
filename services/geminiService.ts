@@ -4,15 +4,16 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    // Vite ortamında veya global process nesnesinde key ara
-    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (window as any).process?.env?.API_KEY || "";
+    // API Key must be obtained exclusively from process.env.API_KEY
+    const apiKey = process.env.API_KEY || "";
     
     if (!apiKey) {
-      console.warn("API Key bulunamadı. Lütfen yapılandırmayı kontrol edin.");
-      return "Sistem hatası: Yapay zeka anahtarı yapılandırılmamış.";
+      console.warn("API Key bulunamadı.");
+      return "Sistem hatası: Yapay zeka yapılandırması eksik.";
     }
 
     const ai = new GoogleGenAI({ apiKey });
+    // Using the recommended model for basic text/chat tasks
     const model = "gemini-3-flash-preview";
     
     let parts: any[] = [];
@@ -39,9 +40,9 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
-    return response.text || "Üzgünüm, bu isteği şu an işleyemiyorum.";
+    return response.text || "Üzgünüm, şu an yanıt veremiyorum.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Bağlantı hatası: Bot şu an meşgul.";
+    return "Bağlantı hatası: Sistem şu an meşgul.";
   }
 };

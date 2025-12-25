@@ -31,3 +31,14 @@ export interface ChatModuleProps {
   onSendMessage?: (msg: string) => void;
   className?: string;
 }
+
+export interface UserRegistration {
+  id?: string;
+  nickname: string;
+  email: string;
+  password?: string;
+  criminal_record_file?: string; // base64
+  insurance_file?: string; // base64
+  status: 'pending' | 'approved' | 'rejected';
+  created_at?: string;
+}
