@@ -14,7 +14,7 @@ export const storageService = {
   async registerUser(regData: UserRegistration) {
     const { error } = await supabase.from('registrations').insert({
       nickname: regData.nickname,
-      full_name: regData.fullName, // DB: full_name
+      full_name: regData.fullName,
       email: regData.email,
       password: regData.password,
       criminal_record_file: regData.criminal_record_file,
@@ -41,7 +41,7 @@ export const storageService = {
 
     return {
       ...data,
-      fullName: data.full_name // Mapping DB -> UI
+      fullName: data.full_name
     } as UserRegistration;
   },
 
@@ -73,7 +73,7 @@ export const storageService = {
     
     return (data || []).map(d => ({
       ...d,
-      fullName: d.full_name // Mapping DB -> UI
+      fullName: d.full_name
     })) as UserRegistration[];
   },
 
@@ -82,7 +82,11 @@ export const storageService = {
       .from('registrations')
       .update({ status })
       .eq('id', id);
-    if (error) throw error;
+    
+    if (error) {
+      console.error("Supabase Update Status Error:", error);
+      throw new Error(`Güncelleme hatası: ${error.message} (Politika sorunu olabilir)`);
+    }
   },
 
   async deleteRegistration(id: string) {
