@@ -23,7 +23,6 @@ export const storageService = {
     if (error) {
       console.error("Supabase Error:", error);
       if (error.code === '23505') throw new Error('Bu email veya nickname zaten kullanımda.');
-      if (error.message.includes('not found')) throw new Error('Veritabanı tabloları henüz oluşturulmamış. Lütfen SQL kurulumunu yapın.');
       throw error;
     }
   },
@@ -36,11 +35,55 @@ export const storageService = {
       .eq('password', pass)
       .maybeSingle();
     
-    if (error) {
-      console.error("Login Error:", error);
-      throw error;
-    }
+    if (error) throw error;
     return data as UserRegistration | null;
+  },
+
+  // --- ADMIN İŞLEMLERİ ---
+  async adminLogin(user: string, pass: string): Promise<boolean> {
+    // Fix: Updated select to include 'key' so properties can be accessed correctly
+    const { data, error } = await supabase
+      .from('system_config')
+      .select('key, value')
+      .in('key', ['admin_username', 'admin_password']);
+    
+    if (error || !data) return false;
+    const config: any = {};
+    // Fix: Accessing item.key is now safe because 'key' is included in the select
+    data.forEach(item => config[item.key] = item.value);
+    
+    // Not: Normalde config tablosundan eşleştirme yapılır, 
+    // kurulumda verdiğimiz admin/admin123 varsayılanıdır.
+    // Fix: Accessing d.key is now safe because 'key' is included in the select
+    const dbAdmin = data.find(d => d.key === 'admin_username')?.value;
+    const dbPass = data.find(d => d.key === 'admin_password')?.value;
+    
+    return user === dbAdmin && pass === dbPass;
+  },
+
+  async getAllRegistrations(): Promise<UserRegistration[]> {
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data as UserRegistration[];
+  },
+
+  async updateRegistrationStatus(id: string, status: 'approved' | 'rejected') {
+    const { error } = await supabase
+      .from('registrations')
+      .update({ status })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async deleteRegistration(id: string) {
+    const { error } = await supabase
+      .from('registrations')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   },
 
   // --- KANAL VE MESAJ YÖNETİMİ ---

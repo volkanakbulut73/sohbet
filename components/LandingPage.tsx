@@ -11,20 +11,21 @@ import {
   FileText, 
   CheckCircle2, 
   Info,
-  Shield
+  Shield,
+  Settings
 } from 'lucide-react';
 
 interface LandingPageProps {
   onEnter: () => void;
+  onAdminClick?: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
   return (
     <div className="min-h-screen bg-[#0b0f14] text-gray-300 font-mono flex flex-col selection:bg-[#00ff99] selection:text-black">
       
       {/* 1. HERO ALANI */}
       <section className="relative min-h-[95vh] flex flex-col items-center justify-center px-6 py-12 overflow-hidden border-b border-gray-900">
-        {/* Retro Grid Background Effect */}
         <div className="absolute inset-0 z-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#00ff99 0.5px, transparent 0.5px)', backgroundSize: '30px 30px' }}></div>
         
         <div className="max-w-5xl w-full text-center space-y-10 z-10 fade-in">
@@ -135,13 +136,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                  <li className="flex items-center gap-3 text-gray-400"><ChevronRight size={18} className="text-[#00ff99]" /> Geyik serbest, saygı şart</li>
                  <li className="flex items-center gap-3 text-gray-400"><ChevronRight size={18} className="text-[#00ff99]" /> Moderasyon her an aktif</li>
                </ul>
-               <div className="text-xs font-bold text-gray-600 bg-gray-900 w-fit px-4 py-2 mt-4 italic">
-                  [ Sistem ]: Sohbete hoş geldin 🙂
-               </div>
             </div>
           </div>
 
-          {/* mIRC Style Terminal Visual - Polished */}
+          {/* mIRC Style Visual */}
           <div className="bg-[#000080] border-4 border-white shadow-[20px_20px_0px_0px_rgba(0,255,153,0.05)] rounded-lg p-1 hidden lg:block overflow-hidden transition-transform hover:scale-[1.02]">
             <div className="bg-[#d4dce8] h-full rounded-sm">
               <div className="bg-gradient-to-r from-[#000080] to-blue-800 text-white px-3 py-1.5 text-[11px] font-black flex justify-between items-center shadow-md">
@@ -176,36 +174,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         </div>
       </section>
 
-      {/* 4. NASIL KATILIRSIN? */}
-      <section className="py-32 px-6 bg-[#0e1218] border-t border-gray-900">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-20 space-y-4">
-            <h3 className="text-3xl font-black text-white uppercase italic tracking-widest">Nasıl Katılırsın?</h3>
-            <p className="text-[#00ff99] text-xs font-bold">4 ADIMDA GÜVENLİ ERİŞİM</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[
-              { step: "1", title: "Başvuru Oluştur", desc: "Sistem üzerinden temel bilgilerinle kaydını başlat." },
-              { step: "2", title: "Kontrol", desc: "Kimlik & sabıka kontrolü sürecini bekle." },
-              { step: "3", title: "Doğrulama", desc: "Çalışma durumu doğrulaması yap." },
-              { step: "4", title: "Giriş 🚀", desc: "Onay sonrası sohbete hemen bağlan." }
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col items-center text-center p-6 bg-gray-900/30 border border-gray-800 hover:border-[#00ff99]/50 transition-colors">
-                <div className="w-12 h-12 rounded-sm bg-[#00ff99] text-black flex items-center justify-center font-black text-xl mb-6 shadow-[4px_4px_0_0_rgba(255,255,255,0.1)]">
-                  {item.step}
-                </div>
-                <h5 className="text-white font-black mb-3 uppercase text-xs tracking-tighter">{item.title}</h5>
-                <p className="text-[10px] text-gray-500 italic font-bold leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* 5. FOOTER / FINAL CTA */}
-      <footer className="py-32 px-6 border-t border-gray-900 bg-[#0b0f14] text-center relative overflow-hidden">
-        {/* Decorative Background Text */}
+      <footer className="py-24 px-6 border-t border-gray-900 bg-[#0b0f14] text-center relative overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] select-none">
           <span className="text-[20vw] font-black uppercase italic whitespace-nowrap">WORKIGOM</span>
         </div>
@@ -233,9 +203,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               WORKIGOM NETWORK SYSTEM © 2024
             </div>
             <div className="flex gap-8 text-[10px] text-gray-500 font-black uppercase tracking-widest">
+              <button 
+                onClick={onAdminClick}
+                className="flex items-center gap-1 hover:text-[#00ff99] transition-colors uppercase"
+              >
+                <Settings size={12} /> Yönetici Girişi
+              </button>
               <a href="#" className="hover:text-[#00ff99] transition-colors">DESTEK</a>
               <a href="#" className="hover:text-[#00ff99] transition-colors">KVKK</a>
-              <a href="#" className="hover:text-[#00ff99] transition-colors">GİZLİLİK</a>
             </div>
           </div>
         </div>

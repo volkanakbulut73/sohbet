@@ -5,16 +5,18 @@ import MessageList from './components/MessageList';
 import UserList from './components/UserList';
 import LandingPage from './components/LandingPage';
 import RegistrationForm from './components/RegistrationForm';
+import AdminDashboard from './components/AdminDashboard';
 import { ChatModuleProps } from './types';
 import { CHAT_MODULE_CONFIG } from './config';
 import { storageService } from './services/storageService';
-import { Menu, X, Hash, Users, Globe, LogOut, MessageSquare, Send, Lock, ChevronRight, Mail, ShieldCheck, Clock } from 'lucide-react';
+import { Menu, X, Hash, Users, Globe, LogOut, MessageSquare, Send, Lock, ChevronRight, Mail, ShieldCheck, Clock, Settings, User } from 'lucide-react';
 
-type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat';
+type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
   const [view, setView] = useState<AppView>('landing');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [adminForm, setAdminForm] = useState({ username: '', password: '' });
   const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -56,6 +58,24 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
     }
   };
 
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+    try {
+      const success = await storageService.adminLogin(adminForm.username, adminForm.password);
+      if (success) {
+        setView('admin_panel');
+      } else {
+        setLoginError('Yönetici bilgileri hatalı.');
+      }
+    } catch (err) {
+      setLoginError('Giriş yapılamadı.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
@@ -64,11 +84,56 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
   };
 
   if (view === 'landing') {
-    return <LandingPage onEnter={() => setView('login')} />;
+    return <LandingPage onEnter={() => setView('login')} onAdminClick={() => setView('admin_login')} />;
   }
 
   if (view === 'register') {
     return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
+  }
+
+  if (view === 'admin_panel') {
+    return <AdminDashboard onLogout={() => setView('landing')} />;
+  }
+
+  if (view === 'admin_login') {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center p-4 z-[100] font-mono">
+        <div className="w-full max-w-sm bg-gray-900 border border-gray-800 p-8 space-y-8 shadow-2xl">
+          <div className="text-center space-y-2">
+            <Settings size={48} className="text-[#00ff99] mx-auto mb-4" />
+            <h2 className="text-xl font-black text-white uppercase italic">Yönetici Girişi</h2>
+            <p className="text-[10px] text-gray-500 font-bold">CONTROL CENTER ACCESS</p>
+          </div>
+          {loginError && <div className="p-3 bg-red-900/50 border border-red-500 text-[10px] text-red-200 font-bold">{loginError}</div>}
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-gray-400 uppercase">Username:</label>
+              <input 
+                type="text" 
+                value={adminForm.username}
+                onChange={e => setAdminForm({...adminForm, username: e.target.value})}
+                className="w-full bg-black border border-gray-800 p-3 text-white text-xs outline-none focus:border-[#00ff99]"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-gray-400 uppercase">Password:</label>
+              <input 
+                type="password" 
+                value={adminForm.password}
+                onChange={e => setAdminForm({...adminForm, password: e.target.value})}
+                className="w-full bg-black border border-gray-800 p-3 text-white text-xs outline-none focus:border-[#00ff99]"
+                required
+              />
+            </div>
+            <button disabled={isLoggingIn} className="w-full bg-[#00ff99] text-black py-4 text-xs font-black uppercase hover:bg-white transition-all">
+              {isLoggingIn ? 'DOĞRULANIYOR...' : 'Sistem Girişi'}
+            </button>
+            <button type="button" onClick={() => setView('landing')} className="w-full text-[10px] text-gray-500 hover:text-white uppercase font-bold">Geri Dön</button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   if (view === 'pending') {
@@ -165,10 +230,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
                 </button>
               </div>
             </form>
-
-            <div className="text-[8px] text-center text-gray-700 leading-relaxed italic border-t border-gray-900 pt-6">
-              Bu sistem sadece onaylı kurumsal kullanıcılar içindir.
-            </div>
           </div>
         </div>
       </div>
@@ -283,7 +344,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </form>
       </div>
 
-      {/* Durum Çubuğu */}
       <div className="h-5 bg-[#d4dce8] border-t border-gray-300 flex items-center justify-between px-2 text-[9px] font-bold text-gray-600 shrink-0">
         <div className="flex gap-4 items-center">
           <span className="uppercase">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
@@ -296,7 +356,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </div>
       </div>
 
-      {/* Sadece sol çekmece için overlay, sağ çekmece side-by-side olduğu için overlay'e ihtiyaç duymaz */}
       {isLeftDrawerOpen && (
         <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={() => setIsLeftDrawerOpen(false)} />
       )}
