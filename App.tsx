@@ -189,7 +189,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
           <div className="hidden sm:flex items-center gap-1 text-[9px] font-bold bg-green-600 px-2 py-0.5 rounded-sm">
              <ShieldCheck size={10} /> ONAYLI KİMLİK
           </div>
-          <button onClick={() => setIsRightDrawerOpen(!isRightDrawerOpen)} className="p-1 hover:bg-white/20 rounded-sm lg:hidden">
+          <button 
+            onClick={() => setIsRightDrawerOpen(!isRightDrawerOpen)} 
+            className={`p-1 rounded-sm transition-colors ${isRightDrawerOpen ? 'bg-white text-[#000080]' : 'hover:bg-white/20 text-white'}`}
+          >
             <Users size={16} />
           </button>
           <button onClick={() => setView('landing')} title="Çıkış Yap" className="p-1 hover:bg-red-600/50 rounded-sm transition-colors">
@@ -198,6 +201,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </div>
       </div>
 
+      {/* Sekmeler */}
       <div className="h-7 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-0.5 px-1 shrink-0 overflow-x-auto no-scrollbar">
         {['#sohbet', ...privateChats].map(tab => (
           <button 
@@ -212,6 +216,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
       </div>
 
       <div className="flex-1 flex overflow-hidden relative">
+        {/* Sol Panel (Kanallar) */}
         <div className={`absolute lg:relative inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-40 transition-transform duration-300 ${isLeftDrawerOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0 lg:w-48'}`}>
           <div className="p-2 h-full flex flex-col">
              <div className="bg-white border border-gray-500 flex-1 overflow-y-auto">
@@ -234,7 +239,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
+        {/* Ana Sohbet Alanı (Kullanıcı listesi açılınca sağdan daralır) */}
+        <div className={`flex-1 flex flex-col bg-white overflow-hidden relative transition-all duration-300 ${isRightDrawerOpen ? 'mr-32 md:mr-0' : 'mr-0'}`}>
            {isAILoading && (
              <div className="absolute top-0 left-0 right-0 h-0.5 bg-red-500 animate-pulse z-10" />
            )}
@@ -246,26 +252,28 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
            />
         </div>
 
-        <div className={`absolute lg:relative inset-y-0 right-0 w-48 bg-[#d4dce8] border-l border-gray-400 z-40 transition-transform duration-300 ${isRightDrawerOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full lg:translate-x-0'}`}>
+        {/* Sağ Panel (Kullanıcı Listesi - Mobil "Yanda" Görünüm) */}
+        <div className={`absolute right-0 top-0 bottom-0 w-32 md:w-48 bg-[#d4dce8] border-l border-gray-400 z-40 transition-transform duration-300 shadow-[-10px_0_15px_rgba(0,0,0,0.1)] lg:relative lg:translate-x-0 lg:shadow-none ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
            <UserList 
             users={[userName, 'GeminiBot', 'Admin', 'User_1']} 
             currentUser={userName} 
-            onUserClick={(e, n) => { initiatePrivateChat(n); setIsRightDrawerOpen(false); }}
+            onUserClick={(e, n) => { initiatePrivateChat(n); }}
             onClose={() => setIsRightDrawerOpen(false)} 
             currentOps={['Admin', 'GeminiBot']}
            />
         </div>
       </div>
 
+      {/* Mesaj Giriş Alanı */}
       <div className="p-1 bg-[#d4dce8] border-t border-gray-400 shrink-0">
         <form onSubmit={handleSend} className="flex gap-1">
           <div className="flex-1 bg-white border border-gray-600 px-2 py-1 flex items-center shadow-inner">
-             <span className="text-[11px] font-bold text-blue-900 mr-2 shrink-0">[{userName}]</span>
+             <span className="text-[11px] font-bold text-blue-900 mr-1.5 shrink-0 truncate max-w-[80px]">[{userName}]</span>
              <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 text-xs outline-none bg-transparent font-mono"
+              className="flex-1 text-[12px] md:text-xs outline-none bg-transparent font-mono"
               placeholder="Mesaj yazın..."
              />
           </div>
@@ -275,20 +283,22 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </form>
       </div>
 
+      {/* Durum Çubuğu */}
       <div className="h-5 bg-[#d4dce8] border-t border-gray-300 flex items-center justify-between px-2 text-[9px] font-bold text-gray-600 shrink-0">
         <div className="flex gap-4 items-center">
           <span className="uppercase">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
           <span className="hidden sm:inline">SERVER: {CHAT_MODULE_CONFIG.DOMAIN}</span>
-          <span>AUTH: {userName}</span>
+          <span className="truncate max-w-[100px]">AUTH: {userName}</span>
         </div>
         <div className="flex items-center gap-1 text-green-700">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-          ENCRYPTED SESSION
+          SECURE
         </div>
       </div>
 
-      {(isLeftDrawerOpen || isRightDrawerOpen) && (
-        <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={() => { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); }} />
+      {/* Sadece sol çekmece için overlay, sağ çekmece side-by-side olduğu için overlay'e ihtiyaç duymaz */}
+      {isLeftDrawerOpen && (
+        <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={() => setIsLeftDrawerOpen(false)} />
       )}
     </div>
   );
