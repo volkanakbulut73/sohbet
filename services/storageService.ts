@@ -21,7 +21,9 @@ export const storageService = {
       status: 'pending'
     });
     if (error) {
-      if (error.code === '23505') throw new Error('Bu email adresi zaten kayıtlı.');
+      console.error("Supabase Error:", error);
+      if (error.code === '23505') throw new Error('Bu email veya nickname zaten kullanımda.');
+      if (error.message.includes('not found')) throw new Error('Veritabanı tabloları henüz oluşturulmamış. Lütfen SQL kurulumunu yapın.');
       throw error;
     }
   },
@@ -34,7 +36,10 @@ export const storageService = {
       .eq('password', pass)
       .maybeSingle();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Login Error:", error);
+      throw error;
+    }
     return data as UserRegistration | null;
   },
 
@@ -51,21 +56,38 @@ export const storageService = {
   },
 
   async getMessagesByChannel(channelName: string): Promise<Message[]> {
-    const { data, error } = await supabase.from('messages').select('*').eq('channel', channelName).order('created_at', { ascending: true }).limit(200);
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('channel', channelName)
+      .order('created_at', { ascending: true })
+      .limit(100);
+      
     if (error) throw error;
     return (data || []).map(m => ({
-      id: m.id, sender: m.sender, text: m.text, timestamp: new Date(m.created_at), type: m.type as MessageType, channel: m.channel
+      id: m.id.toString(), 
+      sender: m.sender, 
+      text: m.text, 
+      timestamp: new Date(m.created_at), 
+      type: m.type as MessageType, 
+      channel: m.channel
     }));
   },
 
   async saveMessage(message: Omit<Message, 'id' | 'timestamp'>) {
     const { error } = await supabase.from('messages').insert({
-      sender: message.sender, text: message.text, type: message.type, channel: message.channel
+      sender: message.sender, 
+      text: message.text, 
+      type: message.type, 
+      channel: message.channel
     });
     if (error) throw error;
   },
 
   subscribeToMessages(callback: (payload: any) => void) {
-    return supabase.channel('messages_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => callback(payload)).subscribe();
+    return supabase
+      .channel('messages_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => callback(payload))
+      .subscribe();
   }
 };
