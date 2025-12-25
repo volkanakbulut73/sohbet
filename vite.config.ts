@@ -13,11 +13,11 @@ export default defineConfig({
     minify: 'terser',
     rollupOptions: {
       output: {
-        // Ana SDK dosyasını assets klasöründen çıkarıp root'a alıyoruz.
-        // Bu sayede Vercel 307 Redirect yapmaz, doğrudan dosyayı servis eder.
-        entryFileNames: `[name].js`, 
-        chunkFileNames: `assets/[name]-[hash].js`,
-        assetFileNames: `assets/[name]-[hash].[ext]`
+        // SDK ana giriş dosyasını 'dist/index.js' olarak zorla.
+        // Bu sayede Vercel sunucusu dosyayı bulmak için yönlendirme (307) yapmaz.
+        entryFileNames: 'index.js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
