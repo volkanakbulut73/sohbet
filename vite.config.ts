@@ -13,10 +13,11 @@ export default defineConfig({
     minify: 'terser',
     rollupOptions: {
       output: {
-        // SDK entry point must be predictable
-        entryFileNames: `assets/index.js`,
-        chunkFileNames: `assets/[name].js`,
-        assetFileNames: `assets/[name].[ext]`
+        // Ana SDK dosyasını assets klasöründen çıkarıp root'a alıyoruz.
+        // Bu sayede Vercel 307 Redirect yapmaz, doğrudan dosyayı servis eder.
+        entryFileNames: `[name].js`, 
+        chunkFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`
       }
     }
   },
