@@ -14,7 +14,7 @@ export const storageService = {
   async registerUser(regData: UserRegistration) {
     const { error } = await supabase.from('registrations').insert({
       nickname: regData.nickname,
-      full_name: regData.fullName,
+      full_name: regData.fullName, // DB: full_name
       email: regData.email,
       password: regData.password,
       criminal_record_file: regData.criminal_record_file,
@@ -22,7 +22,7 @@ export const storageService = {
       status: 'pending'
     });
     if (error) {
-      console.error("Supabase Error:", error);
+      console.error("Supabase Register Error:", error);
       if (error.code === '23505') throw new Error('Bu email veya nickname zaten kullanımda.');
       throw error;
     }
@@ -41,7 +41,7 @@ export const storageService = {
 
     return {
       ...data,
-      fullName: data.full_name
+      fullName: data.full_name // Mapping DB -> UI
     } as UserRegistration;
   },
 
@@ -53,8 +53,6 @@ export const storageService = {
       .in('key', ['admin_username', 'admin_password']);
     
     if (error || !data) return false;
-    const config: any = {};
-    data.forEach(item => config[item.key] = item.value);
     
     const dbAdmin = data.find(d => d.key === 'admin_username')?.value;
     const dbPass = data.find(d => d.key === 'admin_password')?.value;
@@ -67,10 +65,15 @@ export const storageService = {
       .from('registrations')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    
+    if (error) {
+      console.error("Supabase Fetch All Error:", error);
+      throw error;
+    }
+    
     return (data || []).map(d => ({
       ...d,
-      fullName: d.full_name
+      fullName: d.full_name // Mapping DB -> UI
     })) as UserRegistration[];
   },
 
