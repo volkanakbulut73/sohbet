@@ -85,7 +85,7 @@ export const storageService = {
     
     if (error) {
       console.error("Supabase Update Status Error:", error);
-      throw new Error(`Güncelleme hatası: ${error.message} (Politika sorunu olabilir)`);
+      throw new Error(`Güncelleme hatası: ${error.message}`);
     }
   },
 
@@ -97,12 +97,60 @@ export const storageService = {
     if (error) throw error;
   },
 
+  // --- BİLDİRİM YÖNETİMİ ---
+  async sendChatNotification(channel: string, text: string) {
+    // If 'all', we fetch all channels and insert into each
+    if (channel === 'all') {
+      const channels = await this.getChannels();
+      const insertData = channels.map(c => ({
+        sender: 'SYSTEM',
+        text,
+        type: MessageType.SYSTEM,
+        channel: c.name
+      }));
+      const { error } = await supabase.from('messages').insert(insertData);
+      if (error) throw error;
+    } else {
+      await this.saveMessage({
+        sender: 'SYSTEM',
+        text,
+        type: MessageType.SYSTEM,
+        channel: channel
+      });
+    }
+
+    // Log the notification
+    await supabase.from('notifications_log').insert({
+      type: 'chat',
+      target: channel,
+      body: text
+    });
+  },
+
+  async sendEmailNotification(emails: string[], subject: string, body: string) {
+    // In a real environment, you'd trigger a Supabase Edge Function or an external SMTP service here.
+    // For this module, we will log them as "Sent" records.
+    const logs = emails.map(email => ({
+      type: 'email',
+      target: email,
+      subject,
+      body
+    }));
+    
+    const { error } = await supabase.from('notifications_log').insert(logs);
+    if (error) throw error;
+
+    console.log(`Email notification sent to ${emails.length} users:`, { subject, body });
+  },
+
   // --- KANAL VE MESAJ YÖNETİMİ ---
   async getChannels(): Promise<Channel[]> {
     const { data, error } = await supabase.from('channels').select('*');
     if (error) throw error;
     return (data || []).map(c => ({
       ...c,
+      unreadCount: 0,
+      users: [],
       islocked: c.islocked ?? false,
       ops: c.ops ?? [],
       bannedusers: c.bannedusers ?? []
