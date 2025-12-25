@@ -5,14 +5,14 @@ import App from './App';
 import { ChatModuleProps } from './types';
 
 /**
- * Bu modülü herhangi bir web sayfasında veya mobil webview'da 
- * bağımsız olarak başlatmak için kullanılır.
+ * Workigom Chat SDK
+ * Bu fonksiyon, modülü herhangi bir DOM elementine enjekte eder.
  */
-const initChat = (elementId: string, props: ChatModuleProps = {}) => {
+export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {}) => {
   const rootElement = document.getElementById(elementId);
   if (!rootElement) {
-    console.error(`Workigom Chat: #${elementId} elementi bulunamadı.`);
-    return;
+    console.warn(`Workigom Chat Error: #${elementId} bulunamadı.`);
+    return null;
   }
 
   const root = ReactDOM.createRoot(rootElement);
@@ -25,18 +25,14 @@ const initChat = (elementId: string, props: ChatModuleProps = {}) => {
   return root;
 };
 
-// Global erişim sağla
-(window as any).initWorkigomChat = initChat;
-
-// Sayfa yüklendiğinde root varsa otomatik başlat
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  if (document.getElementById('root')) {
-    initChat('root');
+// Tarayıcı ortamında global erişim sağla (window.initWorkigomChat)
+if (typeof window !== 'undefined') {
+  (window as any).initWorkigomChat = initWorkigomChat;
+  
+  // Eğer sayfada id'si "root" olan bir element varsa otomatik başlat (Geliştirme kolaylığı için)
+  const defaultRoot = document.getElementById('root');
+  if (defaultRoot && !(defaultRoot as any)._workigomStarted) {
+    (defaultRoot as any)._workigomStarted = true;
+    initWorkigomChat('root');
   }
-} else {
-  window.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('root')) {
-      initChat('root');
-    }
-  });
 }

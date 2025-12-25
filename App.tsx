@@ -33,6 +33,14 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
 
   const [inputText, setInputText] = useState('');
 
+  // Entegrasyon Kontrolü: Eğer dışarıdan kullanıcı ismi geliyorsa direkt chat'e aktar
+  useEffect(() => {
+    if (externalUser && externalUser.trim() !== "") {
+      setUserName(externalUser);
+      setView('chat');
+    }
+  }, [externalUser]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -300,7 +308,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
           </div>
         </div>
 
-        {/* Ana Sohbet Alanı (Kullanıcı listesi açılınca sağdan daralır) */}
+        {/* Ana Sohbet Alanı */}
         <div className={`flex-1 flex flex-col bg-white overflow-hidden relative transition-all duration-300 ${isRightDrawerOpen ? 'mr-32 md:mr-0' : 'mr-0'}`}>
            {isAILoading && (
              <div className="absolute top-0 left-0 right-0 h-0.5 bg-red-500 animate-pulse z-10" />
@@ -313,7 +321,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
            />
         </div>
 
-        {/* Sağ Panel (Kullanıcı Listesi - Mobil "Yanda" Görünüm) */}
+        {/* Sağ Panel (Kullanıcı Listesi) */}
         <div className={`absolute right-0 top-0 bottom-0 w-32 md:w-48 bg-[#d4dce8] border-l border-gray-400 z-40 transition-transform duration-300 shadow-[-10px_0_15px_rgba(0,0,0,0.1)] lg:relative lg:translate-x-0 lg:shadow-none ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
            <UserList 
             users={[userName, 'GeminiBot', 'Admin', 'User_1']} 

@@ -4,8 +4,6 @@ import {
   Users, 
   CheckCircle, 
   XCircle, 
-  Eye, 
-  Trash2, 
   ShieldCheck, 
   Clock, 
   FileText, 
@@ -17,8 +15,9 @@ import {
   Megaphone,
   Mail,
   Send,
-  Hash,
-  MessageSquare
+  MessageSquare,
+  History,
+  Terminal
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { UserRegistration, Channel } from '../types';
@@ -32,6 +31,7 @@ type AdminTab = 'registrations' | 'notifications';
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [registrations, setRegistrations] = useState<UserRegistration[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<AdminTab>('registrations');
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -47,15 +47,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [regs, chns] = await Promise.all([
+      const [regs, chns, history] = await Promise.all([
         storageService.getAllRegistrations(),
-        storageService.getChannels()
+        storageService.getChannels(),
+        storageService.getNotificationLogs()
       ]);
       setRegistrations(regs);
       setChannels(chns);
+      setLogs(history);
     } catch (err: any) {
       console.error("Admin Load Error:", err);
-      alert("Veriler yüklenemedi: " + (err.message || "Bilinmeyen hata"));
     } finally {
       setLoading(false);
     }
@@ -73,7 +74,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     try {
       await storageService.updateRegistrationStatus(id, status);
       await loadData();
-      if (filter === 'pending') setFilter(status);
+      if (status === 'approved') setFilter('approved');
     } catch (err: any) {
       alert("Hata: " + err.message);
     } finally {
@@ -88,8 +89,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     setNotifSending(true);
     try {
       await storageService.sendChatNotification(chatNotif.channel, chatNotif.message);
-      alert("Sohbet bildirimi başarıyla gönderildi.");
       setChatNotif({ ...chatNotif, message: '' });
+      await loadData();
+      alert("Sohbet duyurusu başarıyla yayınlandı.");
     } catch (err: any) {
       alert("Hata: " + err.message);
     } finally {
@@ -111,13 +113,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       }
 
       if (targets.length === 0) {
-        alert("Gönderilecek hedef bulunamadı.");
+        alert("Gönderilecek onaylı kullanıcı bulunamadı.");
         return;
       }
 
       await storageService.sendEmailNotification(targets, emailNotif.subject, emailNotif.message);
-      alert(`${targets.length} kullanıcıya e-posta bildirimi kuyruğa alındı.`);
       setEmailNotif({ ...emailNotif, message: '', subject: '' });
+      await loadData();
+      alert(`${targets.length} kullanıcıya bildirim kuyruğa alındı.`);
     } catch (err: any) {
       alert("Hata: " + err.message);
     } finally {
@@ -144,7 +147,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
           <div>
             <h1 className="text-white font-black text-sm tracking-tighter uppercase">Workigom Control Center</h1>
-            <p className="text-[9px] text-gray-500 font-bold">YÖNETİCİ PANELİ v1.0.8</p>
+            <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Global Administration Panel</p>
           </div>
         </div>
         <button 
@@ -159,17 +162,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {/* Sidebar */}
         <aside className="w-64 bg-gray-900/50 border-r border-gray-800 p-4 space-y-6 hidden md:block">
           <div>
-            <p className="text-[10px] font-black text-gray-600 mb-4 px-2 tracking-widest uppercase">NAVİGASYON</p>
+            <p className="text-[10px] font-black text-gray-600 mb-4 px-2 tracking-widest uppercase">MENÜ</p>
             <div className="space-y-1">
               <button 
                 onClick={() => setActiveTab('registrations')}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-sm transition-all ${activeTab === 'registrations' ? 'bg-[#00ff99] text-black' : 'hover:bg-gray-800'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-sm transition-all ${activeTab === 'registrations' ? 'bg-[#00ff99] text-black shadow-[0_0_15px_rgba(0,255,153,0.3)]' : 'hover:bg-gray-800'}`}
               >
                 <Users size={16} /> Kullanıcı Yönetimi
               </button>
               <button 
                 onClick={() => setActiveTab('notifications')}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-sm transition-all ${activeTab === 'notifications' ? 'bg-[#00ff99] text-black' : 'hover:bg-gray-800'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-sm transition-all ${activeTab === 'notifications' ? 'bg-[#00ff99] text-black shadow-[0_0_15px_rgba(0,255,153,0.3)]' : 'hover:bg-gray-800'}`}
               >
                 <Megaphone size={16} /> Bildirim Merkezi
               </button>
@@ -178,11 +181,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
           {activeTab === 'registrations' && (
             <div>
-              <p className="text-[10px] font-black text-gray-600 mb-4 px-2 tracking-widest uppercase">FİLTRELE</p>
+              <p className="text-[10px] font-black text-gray-600 mb-4 px-2 tracking-widest uppercase">HIZLI FİLTRE</p>
               <div className="space-y-1">
-                <button onClick={() => setFilter('all')} className={`w-full flex items-center gap-3 px-4 py-2 text-[10px] font-bold rounded-sm ${filter === 'all' ? 'text-white bg-gray-800' : 'text-gray-500 hover:bg-gray-800/50'}`}>Hepsi</button>
-                <button onClick={() => setFilter('pending')} className={`w-full flex items-center gap-3 px-4 py-2 text-[10px] font-bold rounded-sm ${filter === 'pending' ? 'text-orange-400 bg-orange-900/20' : 'text-gray-500 hover:bg-gray-800/50'}`}>Bekleyenler</button>
-                <button onClick={() => setFilter('approved')} className={`w-full flex items-center gap-3 px-4 py-2 text-[10px] font-bold rounded-sm ${filter === 'approved' ? 'text-blue-400 bg-blue-900/20' : 'text-gray-500 hover:bg-gray-800/50'}`}>Onaylılar</button>
+                <button onClick={() => setFilter('all')} className={`w-full text-left px-4 py-2 text-[10px] font-bold rounded-sm ${filter === 'all' ? 'text-white bg-gray-800' : 'text-gray-500 hover:bg-gray-800/50'}`}>Tüm Kayıtlar</button>
+                <button onClick={() => setFilter('pending')} className={`w-full text-left px-4 py-2 text-[10px] font-bold rounded-sm ${filter === 'pending' ? 'text-orange-400 bg-orange-900/20' : 'text-gray-500 hover:bg-gray-800/50'}`}>Onay Bekleyenler</button>
+                <button onClick={() => setFilter('approved')} className={`w-full text-left px-4 py-2 text-[10px] font-bold rounded-sm ${filter === 'approved' ? 'text-blue-400 bg-blue-900/20' : 'text-gray-500 hover:bg-gray-800/50'}`}>Onaylananlar</button>
               </div>
             </div>
           )}
@@ -193,26 +196,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           {activeTab === 'registrations' ? (
             <>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div className="flex flex-col">
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
-                    {filter === 'approved' ? <CheckCircle className="text-blue-500" /> : filter === 'pending' ? <Clock className="text-orange-500" /> : <Users />}
-                    {filter === 'approved' ? 'Onaylananlar' : filter === 'pending' ? 'Bekleyenler' : 'Tüm Kayıtlar'}
-                    <span className="text-gray-600 text-sm font-normal">({filtered.length})</span>
-                    </h2>
-                </div>
+                <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
+                  {filter === 'approved' ? <CheckCircle className="text-blue-500" /> : filter === 'pending' ? <Clock className="text-orange-500" /> : <Users />}
+                  {filter === 'approved' ? 'Onaylı Üyeler' : filter === 'pending' ? 'Bekleyen Başvurular' : 'Tüm Başvurular'}
+                  <span className="text-gray-600 text-sm font-normal">[{filtered.length}]</span>
+                </h2>
                 
                 <div className="flex gap-2">
-                  <button onClick={loadData} disabled={loading} className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-sm transition-all disabled:opacity-50">
-                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                  </button>
+                  <button onClick={loadData} className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-sm transition-all"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
                     <input 
                       type="text" 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Ara (Nick, Email, Ad Soyad)..." 
-                      className="bg-gray-900 border border-gray-700 text-xs py-2 pl-9 pr-4 rounded-sm outline-none focus:border-[#00ff99] w-64"
+                      placeholder="Ara..." 
+                      className="bg-gray-900 border border-gray-700 text-xs py-2 pl-9 pr-4 rounded-sm outline-none focus:border-[#00ff99] w-48 lg:w-64"
                     />
                   </div>
                 </div>
@@ -222,59 +221,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="bg-gray-900 text-gray-500 sticky top-0 z-10">
                     <tr>
-                      <th className="p-4 border-b border-gray-800 font-black uppercase">Ad Soyad</th>
+                      <th className="p-4 border-b border-gray-800 font-black uppercase">Üye Bilgisi</th>
                       <th className="p-4 border-b border-gray-800 font-black uppercase">Nickname</th>
-                      <th className="p-4 border-b border-gray-800 font-black uppercase">Email</th>
                       <th className="p-4 border-b border-gray-800 font-black uppercase">Durum</th>
                       <th className="p-4 border-b border-gray-800 font-black uppercase">Belgeler</th>
-                      <th className="p-4 border-b border-gray-800 font-black uppercase text-right">Eylemler</th>
+                      <th className="p-4 border-b border-gray-800 font-black uppercase text-right">İşlem</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800/50">
                     {loading && filtered.length === 0 ? (
-                      <tr><td colSpan={6} className="p-20 text-center text-gray-500 italic">Veriler yükleniyor...</td></tr>
+                      <tr><td colSpan={5} className="p-20 text-center text-gray-500 italic">Veritabanı taranıyor...</td></tr>
                     ) : filtered.length === 0 ? (
-                      <tr><td colSpan={6} className="p-20 text-center text-gray-500 italic">Kayıt bulunamadı.</td></tr>
+                      <tr><td colSpan={5} className="p-20 text-center text-gray-500 italic">Kayıt bulunamadı.</td></tr>
                     ) : filtered.map(reg => (
-                      <tr key={reg.id} className={`hover:bg-white/5 transition-colors group ${processingId === reg.id ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <tr key={reg.id} className="hover:bg-white/5 transition-colors group">
                         <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#00ff99]/10 rounded-sm flex items-center justify-center font-black text-[#00ff99] border border-[#00ff99]/20">
-                              {processingId === reg.id ? <Loader2 size={14} className="animate-spin" /> : <User size={14} />}
-                            </div>
-                            <span className="font-black text-white text-sm tracking-tight">{reg.fullName || 'Belirtilmedi'}</span>
+                          <div className="flex flex-col">
+                            <span className="font-black text-white text-sm tracking-tight">{reg.fullName}</span>
+                            <span className="text-[10px] text-gray-500">{reg.email}</span>
                           </div>
                         </td>
                         <td className="p-4 text-gray-400 font-mono">@{reg.nickname}</td>
-                        <td className="p-4 text-gray-500 font-bold">{reg.email}</td>
                         <td className="p-4">
-                          <span className={`px-2 py-1 rounded-sm text-[9px] font-black uppercase flex items-center gap-1.5 w-fit ${
-                            reg.status === 'approved' ? 'bg-green-900/40 text-green-400 border border-green-500/30' :
-                            reg.status === 'pending' ? 'bg-orange-900/40 text-orange-400 border border-orange-500/30' :
-                            'bg-red-900/40 text-red-400 border border-red-500/30'
+                          <span className={`px-2 py-0.5 rounded-sm text-[9px] font-black uppercase ${
+                            reg.status === 'approved' ? 'bg-green-900/30 text-green-400 border border-green-500/20' :
+                            reg.status === 'pending' ? 'bg-orange-900/30 text-orange-400 border border-orange-500/20' :
+                            'bg-red-900/30 text-red-400 border border-red-500/20'
                           }`}>
-                            {reg.status === 'approved' ? 'Onaylı' : reg.status === 'pending' ? 'Bekliyor' : 'Reddedildi'}
+                            {reg.status}
                           </span>
                         </td>
                         <td className="p-4">
                           <div className="flex gap-2">
-                            <button onClick={() => setSelectedDoc(reg.criminal_record_file || null)} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-[#00ff99] hover:text-black rounded-sm transition-all text-[10px] font-bold">
-                              <FileText size={12} /> Sicil
-                            </button>
-                            <button onClick={() => setSelectedDoc(reg.insurance_file || null)} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 hover:bg-[#00ff99] hover:text-black rounded-sm transition-all text-[10px] font-bold">
-                              <FileText size={12} /> SGK
-                            </button>
+                            <button onClick={() => setSelectedDoc(reg.criminal_record_file || null)} className="p-1.5 bg-gray-800 hover:bg-[#00ff99] hover:text-black rounded-sm transition-all" title="Sicil Kaydı"><FileText size={14} /></button>
+                            <button onClick={() => setSelectedDoc(reg.insurance_file || null)} className="p-1.5 bg-gray-800 hover:bg-[#00ff99] hover:text-black rounded-sm transition-all" title="SGK Belgesi"><FileText size={14} /></button>
                           </div>
                         </td>
                         <td className="p-4 text-right">
-                          <div className={`flex justify-end gap-2 transition-opacity ${processingId ? 'opacity-20' : 'opacity-0 group-hover:opacity-100'}`}>
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {reg.status !== 'approved' && (
-                              <button onClick={() => handleStatusUpdate(reg.id!, 'approved')} className="p-2 bg-green-600 hover:bg-green-500 text-white rounded-sm"><CheckCircle size={14} /></button>
+                              <button onClick={() => handleStatusUpdate(reg.id!, 'approved')} className="p-1.5 bg-green-600 text-white rounded-sm"><CheckCircle size={14} /></button>
                             )}
                             {reg.status !== 'rejected' && (
-                              <button onClick={() => handleStatusUpdate(reg.id!, 'rejected')} className="p-2 bg-orange-600 hover:bg-orange-500 text-white rounded-sm"><XCircle size={14} /></button>
+                              <button onClick={() => handleStatusUpdate(reg.id!, 'rejected')} className="p-1.5 bg-orange-600 text-white rounded-sm"><XCircle size={14} /></button>
                             )}
-                            <button onClick={() => storageService.deleteRegistration(reg.id!).then(loadData)} className="p-2 bg-red-600 hover:bg-red-500 text-white rounded-sm"><Trash2 size={14} /></button>
                           </div>
                         </td>
                       </tr>
@@ -289,36 +279,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
                   <Megaphone className="text-[#00ff99]" /> BİLDİRİM MERKEZİ
                 </h2>
-                <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-wider">Topluluk duyurularını ve kurumsal iletişimi buradan yönetin.</p>
+                <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-widest border-l border-[#00ff99] pl-3">Duyuruları ve kurumsal iletişim kanalını buradan yönetin.</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Sohbet Odası Bildirimi */}
                 <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-sm space-y-6">
-                  <h3 className="text-sm font-black text-[#00ff99] uppercase flex items-center gap-2">
-                    <MessageSquare size={16} /> Sohbet Odası Bildirimi (Broadcast)
+                  <h3 className="text-xs font-black text-[#00ff99] uppercase flex items-center gap-2 border-b border-gray-800 pb-3">
+                    <MessageSquare size={14} /> SOHBET ODASI ANONU (REAL-TIME)
                   </h3>
                   <form onSubmit={handleChatNotify} className="space-y-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-500 uppercase">Hedef Kanal:</label>
+                      <label className="text-[9px] font-black text-gray-500 uppercase">HEDEF KANAL:</label>
                       <select 
                         value={chatNotif.channel}
                         onChange={e => setChatNotif({...chatNotif, channel: e.target.value})}
-                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-[#00ff99]"
+                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-[#00ff99] appearance-none cursor-pointer"
                       >
-                        <option value="all">Tüm Kanallar (#broadcast)</option>
-                        {channels.map(c => (
-                          <option key={c.name} value={c.name}>{c.name}</option>
-                        ))}
+                        <option value="all">TÜM KANALLAR (GLOBAL BROADCAST)</option>
+                        {channels.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-500 uppercase">Mesaj İçeriği (Sistem Mesajı):</label>
+                      <label className="text-[9px] font-black text-gray-500 uppercase">ANONS İÇERİĞİ:</label>
                       <textarea 
                         value={chatNotif.message}
                         onChange={e => setChatNotif({...chatNotif, message: e.target.value})}
-                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-[#00ff99] h-32 resize-none"
-                        placeholder="Örn: Sunucumuz bu gece bakım çalışması nedeniyle 02:00-03:00 arası kapalı olacaktır."
+                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-[#00ff99] h-32 resize-none font-mono"
+                        placeholder="Anonsunuzu buraya yazın..."
                         required
                       />
                     </div>
@@ -328,51 +316,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                       className="w-full bg-[#00ff99] text-black py-4 text-xs font-black uppercase hover:bg-white transition-all flex items-center justify-center gap-2"
                     >
                       {notifSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                      ANONS GÖNDER
+                      ANONSU YAYINLA
                     </button>
                   </form>
                 </div>
 
                 {/* E-Posta Bildirimi */}
                 <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-sm space-y-6">
-                  <h3 className="text-sm font-black text-blue-400 uppercase flex items-center gap-2">
-                    <Mail size={16} /> E-Posta Bildirimi (Newsletter)
+                  <h3 className="text-xs font-black text-blue-400 uppercase flex items-center gap-2 border-b border-gray-800 pb-3">
+                    <Mail size={14} /> KURUMSAL E-POSTA DUYURUSU
                   </h3>
                   <form onSubmit={handleEmailNotify} className="space-y-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-500 uppercase">Alıcı(lar):</label>
+                      <label className="text-[9px] font-black text-gray-500 uppercase">ALICILAR:</label>
                       <select 
                         value={emailNotif.target}
                         onChange={e => setEmailNotif({...emailNotif, target: e.target.value})}
-                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-[#00ff99]"
+                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-blue-500 appearance-none cursor-pointer"
                       >
-                        <option value="all">Tüm Onaylı Üyeler ({registrations.filter(r => r.status === 'approved').length} Kişi)</option>
+                        <option value="all">TÜM ONAYLI ÜYELER ({registrations.filter(r => r.status === 'approved').length})</option>
                         {registrations.filter(r => r.status === 'approved').map(r => (
                           <option key={r.id} value={r.email}>{r.fullName} (@{r.nickname})</option>
                         ))}
                       </select>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-500 uppercase">Konu (Subject):</label>
-                      <input 
-                        type="text"
-                        value={emailNotif.subject}
-                        onChange={e => setEmailNotif({...emailNotif, subject: e.target.value})}
-                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-[#00ff99]"
-                        placeholder="Örn: Workigom Yeni Güncelleme Duyurusu"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-500 uppercase">Mesaj Gövdesi (HTML/Text):</label>
-                      <textarea 
-                        value={emailNotif.message}
-                        onChange={e => setEmailNotif({...emailNotif, message: e.target.value})}
-                        className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-[#00ff99] h-32 resize-none"
-                        placeholder="Sayın üyemiz, topluluk kurallarımız güncellenmiştir..."
-                        required
-                      />
-                    </div>
+                    <input 
+                      type="text"
+                      value={emailNotif.subject}
+                      onChange={e => setEmailNotif({...emailNotif, subject: e.target.value})}
+                      className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-blue-500"
+                      placeholder="Konu başlığı..."
+                      required
+                    />
+                    <textarea 
+                      value={emailNotif.message}
+                      onChange={e => setEmailNotif({...emailNotif, message: e.target.value})}
+                      className="w-full bg-black border border-gray-700 p-3 text-white text-xs outline-none focus:border-blue-500 h-24 resize-none font-mono"
+                      placeholder="E-posta içeriği..."
+                      required
+                    />
                     <button 
                       type="submit" 
                       disabled={notifSending}
@@ -384,19 +366,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   </form>
                 </div>
               </div>
+
+              {/* Bildirim Geçmişi Logları */}
+              <div className="mt-12 bg-black/40 border border-gray-800 p-6 rounded-sm">
+                <h3 className="text-[10px] font-black text-gray-400 uppercase flex items-center gap-2 mb-4">
+                  <History size={14} /> SON İŞLEMLER (ADMIN LOG)
+                </h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto font-mono text-[10px]">
+                  {logs.length === 0 ? (
+                    <p className="text-gray-600 italic">Henüz bir bildirim kaydı bulunmuyor.</p>
+                  ) : logs.map(log => (
+                    <div key={log.id} className="flex gap-3 border-b border-gray-800/50 py-2 hover:bg-white/5 px-2">
+                      <span className="text-gray-600 shrink-0">[{new Date(log.created_at).toLocaleTimeString()}]</span>
+                      <span className={log.type === 'chat' ? 'text-green-500' : 'text-blue-400'}>[{log.type.toUpperCase()}]</span>
+                      <span className="text-gray-400 shrink-0">TO: {log.target}</span>
+                      <span className="text-white truncate">"{log.body}"</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </main>
       </div>
 
-      {/* Document Modal */}
+      {/* Document Preview Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 bg-black/95 z-[300] flex flex-col items-center justify-center p-10 animate-in fade-in zoom-in-95">
-          <button onClick={() => setSelectedDoc(null)} className="absolute top-10 right-10 text-white hover:text-[#00ff99] transition-colors flex items-center gap-2 font-black uppercase">
-            <XCircle size={32} /> Kapat
-          </button>
-          <div className="max-w-4xl max-h-[80vh] bg-white p-2 rounded-sm overflow-auto shadow-[0_0_50px_rgba(0,255,153,0.2)]">
-            <img src={selectedDoc} alt="Belge" className="max-w-full" />
+        <div className="fixed inset-0 bg-black/95 z-[500] flex flex-col items-center justify-center p-10 animate-in fade-in">
+          <button onClick={() => setSelectedDoc(null)} className="absolute top-10 right-10 text-white hover:text-[#00ff99] transition-colors flex items-center gap-2 font-black uppercase border border-white/20 px-4 py-2">KAPAT [ESC]</button>
+          <div className="max-w-4xl w-full h-[80vh] bg-white rounded-sm overflow-hidden flex items-center justify-center">
+            <img src={selectedDoc} alt="Belge Önizleme" className="max-h-full object-contain" />
           </div>
         </div>
       )}

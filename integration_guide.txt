@@ -1,29 +1,49 @@
 
-WORKIGOM CHAT - GITHUB & HOSTINGER DEPLOYMENT REHBERİ (v1.0.8)
+WORKIGOM CHAT - ENTEGRASYON VE KURULUM REHBERİ (SDK v1.0.8)
 
-Bu proje şu an Otomatik Dağıtım (Auto-Deploy) için hazır hale getirilmiştir.
+-------------------------------------------------------------------
+KRİTİK: CORS HATASI ÇÖZÜMÜ (Access-Control-Allow-Origin)
+-------------------------------------------------------------------
+Eğer başka bir web sitesinden (örn: workigom.com) bu modülü çağırırken 
+"Blocked by CORS policy" hatası alıyorsanız, ana sunucunuzun (workigomchat.online) 
+bu isteklere izin vermesi gerekir.
 
-ADIM 1: GITHUB WEBHOOK AYARI (KRİTİK)
--------------------------------------
-GitHub reponuzda (https://github.com/volkanakbulut73/sohbet) şu adımları takip edin:
-1. Reponuzun "Settings" -> "Webhooks" sekmesine gidin.
-2. "Add webhook" butonuna tıklayın.
-3. "Payload URL" kısmına şu adresi yapıştırın:
-   https://webhooks.hostinger.com/deploy/4c6b71374c5b525227208722f38ac5f5
-4. "Content type" olarak "application/json" seçin.
-5. "Which events..." kısmında "Just the push event" seçili kalsın.
-6. "Add webhook" diyerek kaydedin.
+ADIMLAR:
+1. Proje kök dizinindeki `.htaccess` dosyasını sunucunuzun (Hostinger/Apache) 
+   ana dizinine (public_html) yükleyin.
+2. Eğer Nginx kullanıyorsanız, server bloğuna şu satırı ekleyin:
+   add_header Access-Control-Allow-Origin *;
+3. Supabase Panelinde: Authentication -> URL Configuration -> External Redirect URLs 
+   kısmına "https://www.workigom.com" adresini ekleyin.
 
-ADIM 2: HOSTINGER HPANEL YAPILANDIRMASI
----------------------------------------
-1. Hostinger hPanel -> Websites -> www.workigomchat.online -> Manage.
-2. "Advanced" -> "GIT" sekmesine gidin (Veya "Front-end" deployment aracını kullanın).
-3. "Deployment Directory" olarak "/" (veya build alıyorsanız "/dist") belirleyin.
-4. Artık bilgisayarınızdan reponuza kod gönderdiğinizde, Hostinger bu değişikliği algılayıp siteyi güncelleyecektir.
+----------------------------------------
+YÖNTEM A: HTML / JAVASCRIPT (WEB WIDGET)
+----------------------------------------
+Sitenizin <body> etiketinin sonuna şu kodu ekleyin:
 
-ADIM 3: BUILD İŞLEMİ (Opsiyonel)
--------------------------------
-Eğer Hostinger'da "Front-end" aracını kullanıyorsanız, Hostinger sizin yerinize "npm install && npm run build" komutlarını çalıştıracaktır. Eğer manuel FTP kullanacaksanız, sadece "dist" klasörünün içindekileri yükleyin.
+<div id="workigom-chat-app" style="width:100%; height:600px;"></div>
+<script type="module">
+  // Projenizin ana JS dosyasını import edin
+  // ÖNEMLİ: URL'nin doğruluğundan emin olun (assets klasörü altında olabilir)
+  import { initWorkigomChat } from 'https://www.workigomchat.online/assets/index.js';
+  
+  initWorkigomChat('workigom-chat-app', {
+    externalUser: 'Ziyaretci_' + Math.floor(Math.random() * 1000)
+  });
+</script>
 
-DİKKAT:
-Herhangi bir hata durumunda Hostinger hPanel -> "Log Files" kısmından webhook'un başarıyla tetiklenip tetiklenmediğini görebilirsiniz.
+YÖNTEM B: MOBİL UYGULAMA (WEBVIEW)
+----------------------------------
+Mobil uygulamalarda performans için modülü tam ekran WebView olarak yükleyin.
+URL: https://www.workigomchat.online
+
+YÖNTEM C: IFRAME ENTEGRASYONU (CORS SORUNU ÇIKARMAZ)
+----------------------------------------
+Eğer sunucu ayarlarıyla uğraşmak istemiyorsanız Iframe en güvenli yoldur:
+<iframe 
+  src="https://www.workigomchat.online" 
+  width="100%" 
+  height="700px" 
+  frameborder="0"
+  allow="camera;microphone;geolocation">
+</iframe>

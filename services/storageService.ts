@@ -66,10 +66,7 @@ export const storageService = {
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) {
-      console.error("Supabase Fetch All Error:", error);
-      throw error;
-    }
+    if (error) throw error;
     
     return (data || []).map(d => ({
       ...d,
@@ -82,65 +79,69 @@ export const storageService = {
       .from('registrations')
       .update({ status })
       .eq('id', id);
-    
-    if (error) {
-      console.error("Supabase Update Status Error:", error);
-      throw new Error(`Güncelleme hatası: ${error.message}`);
-    }
+    if (error) throw error;
   },
 
   async deleteRegistration(id: string) {
-    const { error } = await supabase
-      .from('registrations')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('registrations').delete().eq('id', id);
     if (error) throw error;
   },
 
   // --- BİLDİRİM YÖNETİMİ ---
   async sendChatNotification(channel: string, text: string) {
-    // If 'all', we fetch all channels and insert into each
+    let targetChannels: string[] = [];
+    
     if (channel === 'all') {
-      const channels = await this.getChannels();
-      const insertData = channels.map(c => ({
-        sender: 'SYSTEM',
-        text,
-        type: MessageType.SYSTEM,
-        channel: c.name
-      }));
-      const { error } = await supabase.from('messages').insert(insertData);
-      if (error) throw error;
+      const { data: channels } = await supabase.from('channels').select('name');
+      targetChannels = (channels || []).map(c => c.name);
+      // Hiç kanal yoksa varsayılan #sohbet ekle
+      if (targetChannels.length === 0) targetChannels = ['#sohbet'];
     } else {
-      await this.saveMessage({
-        sender: 'SYSTEM',
-        text,
-        type: MessageType.SYSTEM,
-        channel: channel
-      });
+      targetChannels = [channel];
     }
 
-    // Log the notification
+    const insertData = targetChannels.map(c => ({
+      sender: 'SYSTEM',
+      text,
+      type: MessageType.SYSTEM,
+      channel: c
+    }));
+
+    const { error: msgError } = await supabase.from('messages').insert(insertData);
+    if (msgError) throw msgError;
+
+    // Günlüğe kaydet
     await supabase.from('notifications_log').insert({
       type: 'chat',
       target: channel,
-      body: text
+      body: text,
+      sender_admin: 'WorkigomAdmin'
     });
   },
 
   async sendEmailNotification(emails: string[], subject: string, body: string) {
-    // In a real environment, you'd trigger a Supabase Edge Function or an external SMTP service here.
-    // For this module, we will log them as "Sent" records.
+    // Gerçek e-posta gönderimi için burada Edge Functions veya harici bir API (Resend, SendGrid vb.) çağrılır.
+    // Şimdilik sistem günlüğüne kaydediyoruz.
     const logs = emails.map(email => ({
       type: 'email',
       target: email,
       subject,
-      body
+      body,
+      sender_admin: 'WorkigomAdmin'
     }));
     
     const { error } = await supabase.from('notifications_log').insert(logs);
     if (error) throw error;
+  },
 
-    console.log(`Email notification sent to ${emails.length} users:`, { subject, body });
+  async getNotificationLogs() {
+    const { data, error } = await supabase
+      .from('notifications_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return data || [];
   },
 
   // --- KANAL VE MESAJ YÖNETİMİ ---
@@ -188,7 +189,7 @@ export const storageService = {
 
   subscribeToMessages(callback: (payload: any) => void) {
     return supabase
-      .channel('messages_realtime')
+      .channel('messages_realtime_global')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => callback(payload))
       .subscribe();
   }
