@@ -1,49 +1,42 @@
 
-WORKIGOM CHAT - ENTEGRASYON VE KURULUM REHBERİ (SDK v1.0.8)
+WORKIGOM CHAT - MODERN ENTEGRASYON REHBERİ (SDK v1.0.8)
 
 -------------------------------------------------------------------
-KRİTİK: CORS HATASI ÇÖZÜMÜ (Access-Control-Allow-Origin)
+ÇÖZÜM: PROXY YÖNTEMİ (ÖNERİLEN)
 -------------------------------------------------------------------
-Eğer başka bir web sitesinden (örn: workigom.com) bu modülü çağırırken 
-"Blocked by CORS policy" hatası alıyorsanız, ana sunucunuzun (workigomchat.online) 
-bu isteklere izin vermesi gerekir.
+CORS hatalarını aşmak için en sağlam yol "Reverse Proxy" kullanmaktır.
 
-ADIMLAR:
-1. Proje kök dizinindeki `.htaccess` dosyasını sunucunuzun (Hostinger/Apache) 
-   ana dizinine (public_html) yükleyin.
-2. Eğer Nginx kullanıyorsanız, server bloğuna şu satırı ekleyin:
-   add_header Access-Control-Allow-Origin *;
-3. Supabase Panelinde: Authentication -> URL Configuration -> External Redirect URLs 
-   kısmına "https://www.workigom.com" adresini ekleyin.
+Eğer Vercel/Next.js kullanıyorsanız vercel.json'a ekleyin:
+{
+  "rewrites": [
+    { "source": "/chat-sdk/:path*", "destination": "https://www.workigomchat.online/:path*" }
+  ]
+}
 
-----------------------------------------
-YÖNTEM A: HTML / JAVASCRIPT (WEB WIDGET)
-----------------------------------------
-Sitenizin <body> etiketinin sonuna şu kodu ekleyin:
+Eğer Vite kullanıyorsanız vite.config.ts'e ekleyin:
+server: {
+  proxy: {
+    '/chat-sdk': {
+      target: 'https://www.workigomchat.online',
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/chat-sdk/, '')
+    }
+  }
+}
 
-<div id="workigom-chat-app" style="width:100%; height:600px;"></div>
-<script type="module">
-  // Projenizin ana JS dosyasını import edin
-  // ÖNEMLİ: URL'nin doğruluğundan emin olun (assets klasörü altında olabilir)
-  import { initWorkigomChat } from 'https://www.workigomchat.online/assets/index.js';
-  
-  initWorkigomChat('workigom-chat-app', {
-    externalUser: 'Ziyaretci_' + Math.floor(Math.random() * 1000)
-  });
-</script>
+Kullanım:
+import { initWorkigomChat } from '/chat-sdk/assets/index.js';
 
-YÖNTEM B: MOBİL UYGULAMA (WEBVIEW)
-----------------------------------
-Mobil uygulamalarda performans için modülü tam ekran WebView olarak yükleyin.
-URL: https://www.workigomchat.online
+-------------------------------------------------------------------
+ALTERNATİF: DOĞRUDAN ÇAĞRI (CORS İZİNLİ)
+-------------------------------------------------------------------
+Sunucumuzda (workigomchat.online) Access-Control-Allow-Origin: * aktiftir.
+Eğer proxy kullanmayacaksanız, scripti 'crossorigin' attribute ile yüklemelisiniz:
 
-YÖNTEM C: IFRAME ENTEGRASYONU (CORS SORUNU ÇIKARMAZ)
-----------------------------------------
-Eğer sunucu ayarlarıyla uğraşmak istemiyorsanız Iframe en güvenli yoldur:
-<iframe 
-  src="https://www.workigomchat.online" 
-  width="100%" 
-  height="700px" 
-  frameborder="0"
-  allow="camera;microphone;geolocation">
-</iframe>
+<script type="module" crossorigin src="https://www.workigomchat.online/assets/index.js"></script>
+
+-------------------------------------------------------------------
+ALTERNATİF: IFRAME (SIFIR HATA)
+-------------------------------------------------------------------
+En hızlı ve hatasız yöntemdir:
+<iframe src="https://www.workigomchat.online" width="100%" height="600px" frameborder="0"></iframe>

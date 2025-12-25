@@ -11,14 +11,12 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false,
-      },
-    },
     rollupOptions: {
       output: {
-        manualChunks: undefined, // Küçük projelerde chunk'ları bölmemek MIME sorunlarını azaltabilir
+        // SDK olarak kullanılacağı için isimleri sabit tutmak entegrasyonu kolaylaştırır
+        entryFileNames: `assets/[name].js`,
+        chunkFileNames: `assets/[name].js`,
+        assetFileNames: `assets/[name].[ext]`
       }
     }
   },
@@ -26,5 +24,6 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    cors: true // Yerel geliştirmede CORS izinlerini açar
   }
 });
