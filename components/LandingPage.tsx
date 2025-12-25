@@ -144,7 +144,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
             <div className="bg-[#d4dce8] h-full rounded-sm">
               <div className="bg-gradient-to-r from-[#000080] to-blue-800 text-white px-3 py-1.5 text-[11px] font-black flex justify-between items-center shadow-md">
                 <span className="flex items-center gap-2">
-                   <Shield size={12} /> Status: connected to Workigom (irc.workigom.online)
+                   <Shield size={12} /> Status: connected to Workigom (irc.workigomchat.online)
                 </span>
                 <div className="flex gap-1.5">
                   <div className="w-4 h-4 bg-[#c0c0c0] border border-white shadow-inner"></div>
@@ -153,7 +153,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
                 </div>
               </div>
               <div className="p-6 font-mono text-[13px] space-y-3 text-black leading-tight bg-white/90">
-                <p className="text-blue-800 font-bold">*** Local host: www.workigomchat.online (127.0.0.1)</p>
+                <p className="text-blue-800 font-bold">*** Local host: workigomchat.online (127.0.0.1)</p>
                 <p className="text-blue-800">*** Checking identity protocol...</p>
                 <div className="pl-4 space-y-1">
                   <p className="text-green-700 font-bold flex items-center gap-2">
@@ -183,7 +183,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
         <div className="max-w-4xl mx-auto space-y-12 z-10 relative">
           <div className="space-y-4">
             <h2 className="text-4xl md:text-6xl font-black text-white uppercase italic tracking-tighter">Güvenli Sohbet Bir Ayrıcalıktır</h2>
-            <p className="text-[#00ff99] text-sm font-black tracking-[0.5em] uppercase">WWW.WORKIGOMCHAT.ONLINE</p>
+            <p className="text-[#00ff99] text-sm font-black tracking-[0.5em] uppercase">WORKIGOMCHAT.ONLINE</p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
