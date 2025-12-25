@@ -35,6 +35,7 @@ export interface ChatModuleProps {
 export interface UserRegistration {
   id?: string;
   nickname: string;
+  fullName: string;
   email: string;
   password?: string;
   criminal_record_file?: string; // base64

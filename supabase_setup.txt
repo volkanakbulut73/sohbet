@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS public.registrations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     nickname TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL, -- Ad Soyad Alanı
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     criminal_record_file TEXT, -- Base64 döküman verisi
@@ -10,6 +11,9 @@ CREATE TABLE IF NOT EXISTS public.registrations (
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Eğer tablo zaten varsa şu komutu çalıştırabilirsiniz:
+-- ALTER TABLE public.registrations ADD COLUMN IF NOT EXISTS full_name TEXT NOT NULL DEFAULT 'Belirtilmedi';
 
 -- 2. KANALLAR TABLOSU
 CREATE TABLE IF NOT EXISTS public.channels (

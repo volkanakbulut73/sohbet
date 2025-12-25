@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Upload, FileCheck, ShieldAlert, ChevronRight, User, Mail, Lock } from 'lucide-react';
+import { X, Upload, FileCheck, ShieldAlert, ChevronRight, User, Mail, Lock, UserRound } from 'lucide-react';
 import { storageService } from '../services/storageService';
 
 interface RegistrationFormProps {
@@ -11,6 +11,7 @@ interface RegistrationFormProps {
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     nickname: '',
+    fullName: '',
     email: '',
     password: '',
   });
@@ -45,6 +46,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClose, onSuccess 
     try {
       await storageService.registerUser({
         nickname: formData.nickname,
+        fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
         criminal_record_file: files.criminal,
@@ -89,18 +91,30 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClose, onSuccess 
               
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-gray-600 flex items-center gap-1 uppercase">
+                  <UserRound size={10} /> Ad Soyad:
+                </label>
+                <input 
+                  type="text" 
+                  required
+                  value={formData.fullName}
+                  onChange={e => setFormData({...formData, fullName: e.target.value})}
+                  className="w-full border-2 border-gray-400 p-2 text-xs bg-white focus:border-[#000080] outline-none"
+                  placeholder="Örn: Ahmet Yılmaz"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-gray-600 flex items-center gap-1 uppercase">
                   <ChevronRight size={10} /> Nickname:
                 </label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    required
-                    value={formData.nickname}
-                    onChange={e => setFormData({...formData, nickname: e.target.value})}
-                    className="w-full border-2 border-gray-400 p-2 text-xs bg-white focus:border-[#000080] outline-none"
-                    placeholder="Örn: Volkan73"
-                  />
-                </div>
+                <input 
+                  type="text" 
+                  required
+                  value={formData.nickname}
+                  onChange={e => setFormData({...formData, nickname: e.target.value})}
+                  className="w-full border-2 border-gray-400 p-2 text-xs bg-white focus:border-[#000080] outline-none"
+                  placeholder="Örn: Ahmet73"
+                />
               </div>
 
               <div className="space-y-1.5">

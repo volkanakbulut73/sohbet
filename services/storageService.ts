@@ -14,6 +14,7 @@ export const storageService = {
   async registerUser(regData: UserRegistration) {
     const { error } = await supabase.from('registrations').insert({
       nickname: regData.nickname,
+      full_name: regData.fullName,
       email: regData.email,
       password: regData.password,
       criminal_record_file: regData.criminal_record_file,
@@ -36,12 +37,16 @@ export const storageService = {
       .maybeSingle();
     
     if (error) throw error;
-    return data as UserRegistration | null;
+    if (!data) return null;
+
+    return {
+      ...data,
+      fullName: data.full_name
+    } as UserRegistration;
   },
 
   // --- ADMIN İŞLEMLERİ ---
   async adminLogin(user: string, pass: string): Promise<boolean> {
-    // Fix: Updated select to include 'key' so properties can be accessed correctly
     const { data, error } = await supabase
       .from('system_config')
       .select('key, value')
@@ -49,12 +54,8 @@ export const storageService = {
     
     if (error || !data) return false;
     const config: any = {};
-    // Fix: Accessing item.key is now safe because 'key' is included in the select
     data.forEach(item => config[item.key] = item.value);
     
-    // Not: Normalde config tablosundan eşleştirme yapılır, 
-    // kurulumda verdiğimiz admin/admin123 varsayılanıdır.
-    // Fix: Accessing d.key is now safe because 'key' is included in the select
     const dbAdmin = data.find(d => d.key === 'admin_username')?.value;
     const dbPass = data.find(d => d.key === 'admin_password')?.value;
     
@@ -67,7 +68,10 @@ export const storageService = {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data as UserRegistration[];
+    return (data || []).map(d => ({
+      ...d,
+      fullName: d.full_name
+    })) as UserRegistration[];
   },
 
   async updateRegistrationStatus(id: string, status: 'approved' | 'rejected') {

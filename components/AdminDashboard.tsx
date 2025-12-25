@@ -12,7 +12,8 @@ import {
   LogOut,
   RefreshCw,
   Search,
-  Mail
+  Mail,
+  User
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { UserRegistration } from '../types';
@@ -134,7 +135,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
                 <input 
                   type="text" 
-                  placeholder="Ara (Nick, Email)..." 
+                  placeholder="Ara (Nick, Email, Ad Soyad)..." 
                   className="bg-gray-900 border border-gray-700 text-xs py-2 pl-9 pr-4 rounded-sm outline-none focus:border-[#00ff99] w-64"
                 />
               </div>
@@ -145,7 +146,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-gray-900 text-gray-500 sticky top-0 z-10">
                 <tr>
-                  <th className="p-4 border-b border-gray-800 font-black uppercase">Kullanıcı</th>
+                  <th className="p-4 border-b border-gray-800 font-black uppercase">Kullanıcı / Nick</th>
+                  <th className="p-4 border-b border-gray-800 font-black uppercase">Ad Soyad</th>
                   <th className="p-4 border-b border-gray-800 font-black uppercase">Email</th>
                   <th className="p-4 border-b border-gray-800 font-black uppercase">Durum</th>
                   <th className="p-4 border-b border-gray-800 font-black uppercase">Belgeler</th>
@@ -155,11 +157,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <tbody className="divide-y divide-gray-800/50">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="p-20 text-center text-gray-500 italic">Yükleniyor...</td>
+                    <td colSpan={6} className="p-20 text-center text-gray-500 italic">Yükleniyor...</td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-20 text-center text-gray-500 italic">Kayıt bulunamadı.</td>
+                    <td colSpan={6} className="p-20 text-center text-gray-500 italic">Kayıt bulunamadı.</td>
                   </tr>
                 ) : filtered.map(reg => (
                   <tr key={reg.id} className="hover:bg-white/5 transition-colors group">
@@ -169,6 +171,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                           {reg.nickname[0].toUpperCase()}
                         </div>
                         <span className="font-black text-white">{reg.nickname}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2 text-gray-300">
+                        <User size={12} className="text-gray-500" />
+                        <span className="font-bold">{reg.fullName}</span>
                       </div>
                     </td>
                     <td className="p-4 text-gray-400 font-bold">{reg.email}</td>
