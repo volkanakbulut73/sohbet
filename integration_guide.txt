@@ -1,42 +1,22 @@
 
-WORKIGOM CHAT - MODERN ENTEGRASYON REHBERİ (SDK v1.0.8)
+WORKIGOM CHAT - MODERN ENTEGRASYON REHBERİ (SDK v1.0.9)
 
 -------------------------------------------------------------------
-ÇÖZÜM: PROXY YÖNTEMİ (ÖNERİLEN)
+KULLANIM (CORS İZİNLİ)
 -------------------------------------------------------------------
-CORS hatalarını aşmak için en sağlam yol "Reverse Proxy" kullanmaktır.
+Vercel üzerindeki birincil alan adınız 'workigomchat.online' olduğu için 
+yönlendirme (307) hatalarını önlemek amacıyla doğrudan bu linki kullanmalısınız:
 
-Eğer Vercel/Next.js kullanıyorsanız vercel.json'a ekleyin:
-{
-  "rewrites": [
-    { "source": "/chat-sdk/:path*", "destination": "https://www.workigomchat.online/:path*" }
-  ]
-}
-
-Eğer Vite kullanıyorsanız vite.config.ts'e ekleyin:
-server: {
-  proxy: {
-    '/chat-sdk': {
-      target: 'https://www.workigomchat.online',
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/chat-sdk/, '')
-    }
-  }
-}
-
-Kullanım:
-import { initWorkigomChat } from '/chat-sdk/assets/index.js';
+<script type="module" crossorigin src="https://workigomchat.online/index.js"></script>
 
 -------------------------------------------------------------------
-ALTERNATİF: DOĞRUDAN ÇAĞRI (CORS İZİNLİ)
+KRİTİK NOTLAR
 -------------------------------------------------------------------
-Sunucumuzda (workigomchat.online) Access-Control-Allow-Origin: * aktiftir.
-Eğer proxy kullanmayacaksanız, scripti 'crossorigin' attribute ile yüklemelisiniz:
-
-<script type="module" crossorigin src="https://www.workigomchat.online/assets/index.js"></script>
+1. 'crossorigin' özniteliği zorunludur.
+2. Linkte 'www' OLMAMALIDIR (Vercel redirect hatasını önlemek için).
+3. SDK tek bir dosya (index.js) olarak derlenmiştir, tüm bağımlılıklar içindedir.
 
 -------------------------------------------------------------------
 ALTERNATİF: IFRAME (SIFIR HATA)
 -------------------------------------------------------------------
-En hızlı ve hatasız yöntemdir:
-<iframe src="https://www.workigomchat.online" width="100%" height="600px" frameborder="0"></iframe>
+<iframe src="https://workigomchat.online" width="100%" height="600px" frameborder="0"></iframe>

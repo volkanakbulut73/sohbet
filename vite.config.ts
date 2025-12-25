@@ -11,13 +11,16 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     minify: 'terser',
+    modulePreload: false, // Preload linklerini devre dışı bırak (CORS karmaşasını önler)
     rollupOptions: {
       output: {
-        // SDK ana giriş dosyasını 'dist/index.js' olarak zorla.
-        // Bu sayede Vercel sunucusu dosyayı bulmak için yönlendirme (307) yapmaz.
+        // TÜM SDK'YI TEK BİR DOSYADA TOPLA:
+        // Bu ayar, 'Failed to fetch dynamically imported module' hatasını kökten çözer.
+        inlineDynamicImports: true, 
         entryFileNames: 'index.js',
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        manualChunks: undefined,
       }
     }
   },

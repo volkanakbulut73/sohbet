@@ -1,18 +1,18 @@
 
 /**
- * www.workigomchat.online - Üretim Ortamı Konfigürasyonu
+ * workigomchat.online - Üretim Ortamı Konfigürasyonu
  */
 export const CHAT_MODULE_CONFIG = {
-  VERSION: '1.0.8',
-  DOMAIN: 'www.workigomchat.online',
-  BASE_URL: 'https://www.workigomchat.online',
+  VERSION: '1.0.9',
+  DOMAIN: 'workigomchat.online',
+  BASE_URL: 'https://workigomchat.online',
   // Supabase bağlantı bilgileri
   SUPABASE_URL: 'https://abunbqqxtpugsjfvvikj.supabase.co',
   SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFidW5icXF4dHB1Z3NqZnZ2aWtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTcyNzksImV4cCI6MjA4MTg5MzI3OX0.ld29ijoxlkkCC2uNPnvc4aiTiMEhQvu2bfilH6IOIzo',
   AUTO_REFRESH_ON_VERSION_MISMATCH: true,
   DEBUG_MODE: false,
   // Botun kurumsal kimliği
-  BOT_SYSTEM_INSTRUCTION: `Sen Workigom platformu (www.workigomchat.online) için özelleşmiş bir kurumsal asistansın.
+  BOT_SYSTEM_INSTRUCTION: `Sen Workigom platformu (workigomchat.online) için özelleşmiş bir kurumsal asistansın.
   
   Görevlerin:
   1. Kullanıcılara profesyonel, nazik ve çözüm odaklı yaklaşmak.
