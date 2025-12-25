@@ -1,47 +1,70 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Workigom Chat | www.workigomchat.online</title>
-  <meta name="description" content="Workigom Chat - Kurumsal ve modern mIRC tabanlı sohbet platformu.">
-  <meta name="theme-color" content="#000080">
+  <meta name="description" content="Gerçek insanlarla, güvenli ve seviyeli sohbet platformu.">
+  <meta name="theme-color" content="#0b0f14">
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968804.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
       --mirc-navy: #000080;
       --mirc-bg: #d4dce8;
+      --terminal-green: #00ff99;
+      --dark-bg: #0b0f14;
     }
     body {
-      background-color: var(--mirc-navy);
+      background-color: var(--dark-bg);
       margin: 0;
       padding: 0;
-      overflow: hidden;
-      font-family: 'Courier New', Courier, monospace;
+      overflow-x: hidden;
+      font-family: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
       -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
     }
     #root {
-      height: 100vh;
+      min-height: 100vh;
       width: 100vw;
-      background: #fff;
     }
-    /* Klasik mIRC Scrollbar */
-    ::-webkit-scrollbar { width: 12px; height: 12px; }
-    ::-webkit-scrollbar-track { background: #d4dce8; border: 1px solid #888; }
-    ::-webkit-scrollbar-thumb { background: #c0c0c0; border: 2px solid #eee; border-right-color: #555; border-bottom-color: #555; }
     
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .cursor-blink {
+      animation: blink 1s step-end infinite;
+      display: inline-block;
+      width: 8px;
+      height: 1.2em;
+      background-color: var(--terminal-green);
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
+    @keyframes blink {
+      from, to { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Klasik mIRC Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0b0f14; }
+    ::-webkit-scrollbar-thumb { background: #1a202c; border: 1px solid #333; }
+    
+    html { scroll-behavior: smooth; }
   </style>
 <script type="importmap">
 {
   "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.89.0",
