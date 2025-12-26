@@ -22,7 +22,7 @@
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
       -webkit-tap-highlight-color: transparent;
-      overflow: hidden;
+      overflow: hidden !important;
       position: relative;
     }
     #root {
@@ -30,6 +30,7 @@
       width: 100%;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     
     .safe-top {
@@ -44,10 +45,9 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Mobil klavye optimizasyonu */
+    /* Mobil klavye ve taşma yönetimi */
     @media screen and (max-width: 768px) {
       input { font-size: 16px !important; }
-      body { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
     }
   </style>
 <script type="importmap">

@@ -39,11 +39,11 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   const [inputText, setInputText] = useState('');
 
-  // Mobil klavye ve yükseklik senkronizasyonu
   useEffect(() => {
     const handleResize = () => {
       if (window.visualViewport) {
-        // Eğer standalone ise tam boy, embedded ise kapsayıcısının boyu
+        // Gömülü modda (workigom.com içindeyken) sadece 100% kullan, 
+        // standalone modda (workigomchat.online) dinamik yükseklik kullan.
         setViewportHeight(embedded ? '100%' : `${window.visualViewport.height}px`);
       }
     };
@@ -141,10 +141,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono absolute inset-0 w-full ${className}`}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Status Bar - Mobil Üst Boşluk Fix */}
+      {/* 1. Status Bar - Gömülü modda üst boşluğu tamamen kaldırıyoruz */}
       <div className={`bg-[#000080] text-white px-2 py-1 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10 ${!embedded ? 'safe-top' : ''}`}>
         <div className="flex items-center gap-2">
           <Menu size={18} className="cursor-pointer sm:hidden" onClick={() => setIsLeftDrawerOpen(true)} />
@@ -175,7 +175,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         ))}
       </div>
 
-      {/* 3. Main Area - flex-1 min-h-0 mesaj listesinin inputu aşağı itmesini engeller */}
+      {/* 3. Main Area */}
       <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative mx-1 my-0.5 border border-gray-400">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
           {isAILoading && <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500 animate-pulse z-10" />}
@@ -200,9 +200,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area - Mesaj kutusu her zaman altta (shrink-0 zorunludur) */}
-      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-20">
-        <form onSubmit={handleSend} className="flex items-center gap-1 w-full">
+      {/* 4. Input Area - Mobilde ana sitenin alt barı için extra boşluk eklendi */}
+      <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-50 ${embedded ? 'sm:pb-1.5 pb-20' : ''}`}>
+        <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-2xl mx-auto">
           <div className="hidden sm:flex bg-white border border-gray-500 h-8 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
             <span className="text-[#000080] text-[10px] font-bold truncate">{userName}</span>
           </div>
@@ -218,9 +218,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           </div>
           <button 
             type="submit" 
-            className="bg-[#000080] text-white px-4 h-10 text-[11px] font-bold rounded-sm shadow active:bg-blue-800 transition-colors uppercase flex items-center justify-center gap-2"
+            className="bg-[#000080] text-white px-4 h-10 text-[11px] font-bold rounded-sm shadow active:bg-blue-800 transition-colors flex items-center justify-center"
           >
-            <Send size={16} />
+            <Send size={18} />
           </button>
         </form>
       </div>
