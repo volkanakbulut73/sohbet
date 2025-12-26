@@ -24,6 +24,7 @@
       font-family: 'Courier New', Courier, monospace;
       -webkit-tap-highlight-color: transparent;
       overflow: hidden;
+      position: fixed; /* iOS scroll zıplama sorununu çözer */
     }
     
     #root {
@@ -31,6 +32,7 @@
       width: 100%;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     
     .safe-top {
@@ -59,10 +61,16 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* Web view'da chat container'ın site içinde düzgün durması için */
     .workigom-embedded-view {
       border-radius: 0;
       box-shadow: none;
+    }
+
+    /* Mobil klavye açıldığında input alanının ekran dışına çıkmasını önlemek için */
+    @supports (height: 100dvh) {
+      body, html, #root {
+        height: 100dvh;
+      }
     }
   </style>
 <script type="importmap">
