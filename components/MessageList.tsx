@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Message, MessageType } from '../types';
 
@@ -53,7 +52,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     switch (msg.type) {
       case MessageType.SYSTEM:
         return (
-          <div className="mirc-text py-0.5 animate-in slide-in-from-left-1 duration-200 text-[11px] sm:text-[13px]">
+          <div className="mirc-text py-0.5 animate-in slide-in-from-left-1 duration-200 text-[11px] sm:text-[13px] font-mono">
             <span className="text-gray-400 mr-1.5">{time}</span>
             <span className="text-blue-700 font-bold">-- </span>
             <span className="text-blue-700 italic">{displayText}</span>
@@ -61,7 +60,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
         );
       case MessageType.ACTION:
         return (
-          <div className="mirc-text py-0.5 text-purple-700 italic text-[11px] sm:text-[13px]">
+          <div className="mirc-text py-0.5 text-purple-700 italic text-[11px] sm:text-[13px] font-mono">
             <span className="text-gray-400 mr-1.5">{time}</span>
             * <span 
                 className="cursor-pointer hover:underline font-bold" 
@@ -74,7 +73,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
         );
       case MessageType.AI:
         return (
-          <div className="mirc-text py-0.75 border-l-2 border-red-500 pl-2 bg-red-50/50 mb-0.5 text-[11px] sm:text-[13px]">
+          <div className="mirc-text py-0.75 mb-0.5 text-[11px] sm:text-[13px] font-mono">
             <span className="text-gray-400 mr-1.5">{time}</span>
             <span 
               className="text-red-700 font-bold cursor-pointer hover:underline"
@@ -82,12 +81,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
               onContextMenu={(e) => handleNickContextMenu(e, 'GeminiBot')}
             >
               {`<@GeminiBot>`}
-            </span> {displayText}
+            </span> <span className="text-black">{displayText}</span>
           </div>
         );
       case MessageType.IMAGE:
         return (
-          <div className="mirc-text py-1 flex flex-col group text-[11px] sm:text-[13px]">
+          <div className="mirc-text py-1 flex flex-col group text-[11px] sm:text-[13px] font-mono">
             <div className="flex items-center">
               <span className="text-gray-400 shrink-0 mr-1">{time}</span>
               <span 
@@ -115,7 +114,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
         const isMe = msg.sender === currentUser;
         const nickColor = isMe ? 'text-gray-800' : 'text-blue-800';
         return (
-          <div className="mirc-text py-0.5 flex items-start group text-[11px] sm:text-[13px]">
+          <div className="mirc-text py-0.5 flex items-start group text-[11px] sm:text-[13px] font-mono">
             <span className="text-gray-400 shrink-0 mr-1.5 select-none">{time}</span>
             <span 
               className={`${nickColor} shrink-0 mr-1.5 font-bold cursor-pointer hover:underline active:text-blue-500 transition-colors`}
@@ -133,22 +132,24 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="h-full overflow-y-auto p-3 bg-white flex flex-col font-mono custom-scrollbar"
+      className="h-full overflow-y-auto p-4 bg-white flex flex-col font-mono custom-scrollbar no-scrollbar"
     >
-      {messages.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center opacity-10 select-none">
-          <div className="text-center">
-            <p className="text-4xl font-black italic">mIRC</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest">Connect Module</p>
+      <div className="flex-1">
+        {messages.length === 0 ? (
+          <div className="h-full flex items-center justify-center opacity-10 select-none">
+            <div className="text-center">
+              <p className="text-4xl font-black italic">mIRC</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest">Connect Module</p>
+            </div>
           </div>
-        </div>
-      ) : (
-        messages.map((msg) => (
-          <div key={msg.id}>
-            {renderMessageLine(msg)}
-          </div>
-        ))
-      )}
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id}>
+              {renderMessageLine(msg)}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

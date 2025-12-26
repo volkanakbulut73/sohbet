@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useChatCore } from './hooks/useChatCore';
 import MessageList from './components/MessageList';
@@ -9,7 +8,7 @@ import AdminDashboard from './components/AdminDashboard';
 import { ChatModuleProps } from './types';
 import { CHAT_MODULE_CONFIG } from './config';
 import { storageService } from './services/storageService';
-import { Menu, X, Hash, Users, LogOut, MessageSquare, Send, Lock, Clock, Settings } from 'lucide-react';
+import { Menu, X, Hash, Users, LogOut, MessageSquare, Send, Lock, Clock, Settings, ChevronLeft, Plus, Home, Heart, User } from 'lucide-react';
 
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
@@ -27,6 +26,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [activeNav, setActiveNav] = useState('sohbet');
   
   const { 
     userName, setUserName,
@@ -178,134 +178,154 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   }
 
   return (
-    <div className={`h-[100dvh] w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
-      {/* Header Panel - Optimized Height */}
-      <div className="h-9 sm:h-11 bg-[#1a1f26] flex items-center justify-between px-2 sm:px-3 text-white shrink-0 z-50 border-b border-gray-800">
-        <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-          <button 
-            onClick={() => { setIsLeftDrawerOpen(!isLeftDrawerOpen); setIsRightDrawerOpen(false); }} 
-            className={`p-1 sm:p-2 rounded-sm transition-colors ${isLeftDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
-          >
-            <Menu size={18} />
-          </button>
-          <div className="flex flex-col justify-center min-w-0">
-             <div className="flex items-center gap-1 sm:gap-2">
-                <span className="text-[10px] sm:text-[12px] font-black tracking-tight uppercase italic text-white truncate">Global Sohbet</span>
-                <span className="text-[7px] sm:text-[9px] bg-[#00ff99]/20 text-[#00ff99] px-1 rounded font-bold shrink-0">V1.1.1</span>
-             </div>
-             <div className="flex items-center gap-1 opacity-60">
-                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full animate-pulse shrink-0"></div>
-                <span className="text-[7px] sm:text-[8px] font-bold uppercase tracking-wider truncate">Bağlantı: {userName}</span>
-             </div>
+    <div className={`h-screen-safe w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
+      
+      {/* Header - As per screenshot */}
+      <div className="safe-top bg-[#1a1f26] border-b border-gray-800 shrink-0 z-50">
+        <div className="h-12 flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setView(embedded ? 'login' : 'landing')}
+              className="w-8 h-8 rounded-full bg-gray-800/50 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] font-black text-white tracking-tight">Global Sohbet</span>
+                <span className="text-[9px] text-[#00ff99] font-bold">V1.1.1</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-[#00ff99] rounded-full animate-pulse shadow-[0_0_8px_#00ff99]"></div>
+                <span className="text-[10px] text-gray-400 font-bold">Hattasız Bağlantı: <span className="text-gray-300">{userName}</span></span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-0.5 sm:gap-1">
-          <button 
-            onClick={() => { setIsRightDrawerOpen(!isRightDrawerOpen); setIsLeftDrawerOpen(false); }} 
-            className={`p-1.5 sm:p-2 rounded-sm transition-colors ${isRightDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
-          >
-            <Users size={18} />
-          </button>
-          <button onClick={() => setView(embedded ? 'login' : 'landing')} className="p-1.5 sm:p-2 hover:bg-red-600 rounded-sm transition-colors">
-             <LogOut size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+             <button onClick={() => setIsRightDrawerOpen(!isRightDrawerOpen)} className="p-2 text-gray-400 hover:text-white">
+               <Users size={20} />
+             </button>
+          </div>
         </div>
       </div>
 
-      {/* Tabs Row - Narrowed Height */}
-      <div className="h-7 sm:h-8 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-0.5 px-1 shrink-0 overflow-x-auto no-scrollbar">
-        {['#sohbet', ...privateChats].map(tab => (
+      {/* Sub-Header / Branding */}
+      <div className="bg-[#0b0f14] py-3 px-6 flex items-center justify-between shrink-0">
+        <div className="flex flex-col">
+          <h2 className="text-[10px] font-black text-[#00ff99] uppercase tracking-widest italic">Global Sohbet V1.1.1</h2>
+          <h3 className="text-[12px] font-black text-white uppercase tracking-tighter">BAĞLANTI: {userName?.toUpperCase()}</h3>
+        </div>
+        <button onClick={() => setIsLeftDrawerOpen(true)} className="p-2 text-white">
+          <Menu size={24} />
+        </button>
+      </div>
+
+      {/* Tabs Row */}
+      <div className="bg-gray-800 flex shrink-0 overflow-x-auto no-scrollbar">
+        {['#sohbet', 'GEMINIBOT', ...privateChats.filter(n => n !== 'GeminiBot')].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 sm:px-4 h-full text-[9px] sm:text-[10px] font-black border-t border-l border-r border-gray-500 flex items-center gap-1.5 transition-all shrink-0 ${activeTab === tab ? 'bg-white border-b-transparent translate-y-[1px] z-10 shadow-sm' : 'bg-gray-300 opacity-70 hover:opacity-100'}`}
+            className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border-b-2 ${activeTab === tab ? 'bg-white text-black border-[#00ff99]' : 'text-gray-400 border-transparent hover:text-white'}`}
           >
-            {tab.startsWith('#') ? <Hash size={10} className="text-blue-800" /> : <MessageSquare size={10} className="text-purple-800" />}
-            {tab.toUpperCase()}
+            {tab.startsWith('#') ? <Hash size={12} className="inline mr-1" /> : ''}
+            {tab}
           </button>
         ))}
       </div>
 
-      {/* Main Container */}
-      <div className="flex-1 flex overflow-hidden relative min-h-0">
-        {/* Left Sidebar (Channels) */}
-        <div 
-          className={`absolute lg:relative inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
-          ${isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-48 lg:hidden'}`}
-        >
-          <div className="p-2 h-full flex flex-col">
-             <div className="bg-white border border-gray-500 flex-1 overflow-y-auto shadow-inner">
-                <div className="bg-gray-800 text-[#00ff99] p-2 text-[10px] font-black flex justify-between items-center border-b border-gray-700">
-                  <span>KANALLAR</span>
-                  <X size={14} className="cursor-pointer" onClick={() => setIsLeftDrawerOpen(false)} />
-                </div>
-                <div className="p-1 space-y-0.5">
-                   {['#sohbet', '#yardim', '#teknoloji', '#is-dunyasi'].map(c => (
-                     <button 
-                      key={c} 
-                      onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} 
-                      className={`w-full text-left px-3 py-2 text-[11px] font-bold border-b border-gray-100 hover:bg-blue-600 hover:text-white transition-colors ${activeTab === c ? 'bg-blue-800 text-white' : 'text-gray-700'}`}
-                     >
-                       <span className="mr-2 text-gray-400 opacity-50">#</span>{c.replace('#','')}
-                     </button>
-                   ))}
-                </div>
-             </div>
-          </div>
-        </div>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex overflow-hidden relative min-h-0 bg-white">
+        {/* Left Drawer (Mobile) */}
+        {isLeftDrawerOpen && (
+          <>
+            <div className="fixed inset-0 bg-black/60 z-[100] lg:hidden" onClick={() => setIsLeftDrawerOpen(false)} />
+            <div className="fixed inset-y-0 left-0 w-64 bg-gray-900 z-[110] p-4 flex flex-col fade-in">
+              <div className="flex justify-between items-center mb-6">
+                <span className="text-white font-black text-sm italic">MENÜ</span>
+                <X size={20} className="text-gray-500" onClick={() => setIsLeftDrawerOpen(false)} />
+              </div>
+              <div className="space-y-1">
+                {['#sohbet', '#yardim', '#teknoloji', '#is-dunyasi'].map(c => (
+                  <button key={c} onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} className={`w-full text-left px-4 py-3 text-xs font-bold rounded-sm ${activeTab === c ? 'bg-[#00ff99] text-black' : 'text-gray-400 hover:bg-gray-800'}`}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setView('landing')} className="mt-auto flex items-center gap-2 text-red-500 text-xs font-bold p-4">
+                <LogOut size={16} /> ÇIKIŞ YAP
+              </button>
+            </div>
+          </>
+        )}
 
-        {/* Center: Chat Window */}
-        <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
-           {isAILoading && <div className="absolute top-0 left-0 right-0 h-1 bg-[#00ff99] animate-pulse z-20" />}
-           <div className="flex-1 overflow-hidden">
-             <MessageList 
-               messages={messages} 
-               currentUser={userName} 
-               blockedUsers={[]} 
-               onNickClick={(e, n) => initiatePrivateChat(n)} 
-             />
-           </div>
-        </div>
-
-        {/* Right Sidebar: Users */}
-        <div 
-          className={`absolute lg:relative inset-y-0 right-0 w-36 bg-[#f3f4f6] border-l border-gray-300 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
-          ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:block'}`}
-        >
-           <UserList 
-            users={[userName, 'GeminiBot', 'Admin']} 
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {isAILoading && <div className="h-1 bg-[#00ff99] animate-pulse shrink-0" />}
+          <MessageList 
+            messages={messages} 
             currentUser={userName} 
-            onUserClick={(e, n) => { initiatePrivateChat(n); setIsRightDrawerOpen(false); }}
-            onClose={() => setIsRightDrawerOpen(false)} 
-            currentOps={['Admin', 'GeminiBot']}
-           />
+            blockedUsers={[]} 
+            onNickClick={(e, n) => initiatePrivateChat(n)} 
+          />
         </div>
+
+        {/* Right User List Panel */}
+        {isRightDrawerOpen && (
+          <div className="absolute inset-y-0 right-0 w-64 bg-gray-100 border-l border-gray-300 z-50 fade-in flex flex-col">
+            <UserList 
+              users={[userName, 'GeminiBot', 'Admin']} 
+              currentUser={userName} 
+              onUserClick={(e, n) => { initiatePrivateChat(n); setIsRightDrawerOpen(false); }}
+              onClose={() => setIsRightDrawerOpen(false)} 
+              currentOps={['Admin', 'GeminiBot']}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Input Panel - Fixed Visibility & Styling */}
-      <div className="p-2 bg-[#d4dce8] border-t border-gray-400 shrink-0 z-[60]">
-        <form onSubmit={handleSend} className="flex gap-1.5 h-10">
-          <div className="flex-1 bg-white border-2 border-gray-500 px-3 flex items-center shadow-inner rounded-sm group focus-within:border-blue-700 transition-colors">
-             <span className="text-[10px] font-black text-blue-900 mr-2 hidden sm:inline select-none">[{userName}]</span>
-             <input 
+      {/* FAB - Floating Action Button */}
+      <div className="fixed bottom-24 right-6 z-40">
+        <button className="w-14 h-14 bg-gray-900 rounded-full flex items-center justify-center text-white shadow-2xl border-2 border-white/10 active:scale-95 transition-all">
+          <Plus size={32} />
+        </button>
+      </div>
+
+      {/* Input Panel - Fixed visibility */}
+      <div className="bg-white border-t border-gray-200 p-2 sm:p-4 pb-20 sm:pb-24">
+        <form onSubmit={handleSend} className="flex gap-2">
+          <div className="flex-1 bg-gray-100 rounded-full px-4 flex items-center focus-within:ring-2 ring-[#00ff99]/30 transition-all h-12">
+            <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 text-[13px] outline-none bg-transparent font-bold h-full placeholder-gray-400"
+              className="flex-1 bg-transparent text-[15px] outline-none font-medium h-full placeholder-gray-400 text-black"
               placeholder="Mesaj yazın..."
-              onFocus={() => { if(window.innerWidth < 1024) { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); } }}
-             />
+            />
           </div>
-          <button type="submit" className="bg-white border-2 border-white shadow-[1px_1px_0px_1px_rgba(0,0,0,0.3)] px-4 flex items-center justify-center active:shadow-none active:translate-y-[1px] transition-all hover:bg-gray-50 group min-w-[50px]">
-            <Send size={18} className="text-blue-700 group-hover:scale-110 transition-transform" />
+          <button type="submit" className="w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center active:scale-90 transition-all">
+            <Send size={20} />
           </button>
         </form>
       </div>
 
-      {/* Mobile Backdrops */}
-      {(isLeftDrawerOpen || isRightDrawerOpen) && (
-        <div className="fixed inset-0 bg-black/40 z-[65] lg:hidden backdrop-blur-[1px]" onClick={() => { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); }} />
-      )}
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around px-2 z-50">
+        {[
+          { id: 'home', icon: <Home size={22} />, label: 'Ana Sayfa' },
+          { id: 'requests', icon: <Heart size={22} />, label: 'Talepler' },
+          { id: 'sohbet', icon: <MessageSquare size={22} />, label: 'Sohbet' },
+          { id: 'profile', icon: <User size={22} />, label: 'Profil' }
+        ].map(nav => (
+          <button 
+            key={nav.id}
+            onClick={() => setActiveNav(nav.id)}
+            className={`flex flex-col items-center gap-1 ${activeNav === nav.id ? 'text-black font-bold' : 'text-gray-400'}`}
+          >
+            {nav.icon}
+            <span className="text-[9px] uppercase font-black">{nav.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

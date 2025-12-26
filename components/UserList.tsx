@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { UserX, UserCheck, Shield, ShieldAlert, Crown, Star, ShieldCheck, MoreVertical, Hammer, Ban, ArrowUpCircle, ArrowDownCircle, X, Users } from 'lucide-react';
+import { UserX, UserCheck, Shield, ShieldAlert, Crown, Star, ShieldCheck, MoreVertical, Hammer, Ban, ArrowUpCircle, ArrowDownCircle, X, Users, Heart } from 'lucide-react';
 
 interface UserListProps {
   users: string[];
@@ -20,29 +19,29 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, onActi
   const canManage = isAdmin || currentOps.includes(currentUser);
 
   const getRank = (user: string) => {
-    if (user === 'GeminiBot') return { icon: <ShieldAlert size={10} className="text-red-600" />, prefix: '@', color: 'text-red-700' };
-    if (user.includes('Admin') || (isAdmin && user === currentUser)) return { icon: <Crown size={10} className="text-yellow-600 fill-yellow-500" />, prefix: '', color: 'text-yellow-700' };
-    if (currentOps.includes(user)) return { icon: <ShieldCheck size={10} className="text-blue-600" />, prefix: '@', color: 'text-blue-700' };
-    return { icon: <Star size={9} className="text-gray-400" />, prefix: '', color: 'text-gray-600' };
+    if (user === 'GeminiBot') return { icon: <Heart size={12} className="text-pink-500 fill-pink-500" />, prefix: '@', color: 'text-pink-600' };
+    if (user.includes('Admin') || (isAdmin && user === currentUser)) return { icon: <Crown size={12} className="text-yellow-600 fill-yellow-500" />, prefix: '', color: 'text-yellow-700' };
+    if (currentOps.includes(user)) return { icon: <Shield size={12} className="text-blue-600 fill-blue-500" />, prefix: '@', color: 'text-blue-700' };
+    return { icon: <Star size={11} className="text-gray-400" />, prefix: '', color: 'text-gray-600' };
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#f3f4f6] text-[10px] select-none font-mono relative">
-      {/* List Header - Compact */}
-      <div className="bg-gradient-to-r from-[#000080] to-blue-900 text-white p-1.5 px-2 text-[8px] font-black flex justify-between items-center shrink-0 shadow-sm overflow-hidden">
-        <span className="flex items-center gap-1.5 truncate">
-          <Users size={10} /> USERS ({uniqueUsers.length})
+    <div className="w-full h-full flex flex-col bg-white text-[12px] select-none font-mono relative">
+      {/* List Header */}
+      <div className="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center shrink-0">
+        <span className="text-black font-black uppercase tracking-tighter flex items-center gap-2">
+          <Users size={16} /> AKTİF ÜYELER
         </span>
-        <button onClick={onClose} className="lg:hidden hover:bg-white/20 p-1 rounded-sm">
-          <X size={10} />
+        <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full">
+          <X size={16} />
         </button>
       </div>
 
-      <div className="bg-gray-200/50 p-1 px-2 border-b border-gray-300 text-[8px] font-bold text-gray-500 uppercase tracking-tighter">
-        Active
+      <div className="bg-gray-50/50 p-2 px-4 border-b border-gray-200 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+        ACTIVE
       </div>
 
-      <div className="flex-1 overflow-y-auto py-0.5 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto py-2 custom-scrollbar no-scrollbar">
         {uniqueUsers.map((user, idx) => {
           const rank = getRank(user);
           const isBlocked = blockedUsers.includes(user);
@@ -52,7 +51,7 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, onActi
           return (
             <div key={`${displayUser}-${idx}`} className="relative group">
               <div 
-                className={`flex items-center justify-between gap-1 px-2 py-1 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors ${isBlocked ? 'opacity-40' : ''}`}
+                className={`flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors ${isBlocked ? 'opacity-40' : ''}`}
                 onClick={(e) => {
                   if (canManage && displayUser !== currentUser && displayUser !== 'GeminiBot') {
                     setSelectedUser(selectedUser === displayUser ? null : displayUser);
@@ -61,31 +60,31 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, onActi
                   }
                 }}
               >
-                <div className="flex items-center gap-1 flex-1 min-w-0">
-                  <span className="shrink-0 opacity-70 group-hover:opacity-100">{rank.icon}</span>
-                  <span className={`truncate font-bold text-[10px] ${rank.color} group-hover:text-white transition-colors`}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="shrink-0">{rank.icon}</span>
+                  <span className={`truncate font-bold text-[13px] ${rank.color}`}>
                     {rank.prefix}{displayUser}
                   </span>
                 </div>
                 {canManage && displayUser !== currentUser && displayUser !== 'GeminiBot' && (
-                  <MoreVertical size={9} className="text-gray-300 group-hover:text-white shrink-0" />
+                  <MoreVertical size={14} className="text-gray-300 group-hover:text-gray-500 shrink-0" />
                 )}
               </div>
 
               {/* Action Menu (Popup) */}
               {selectedUser === displayUser && (
-                <div className="absolute right-1 top-5 z-[100] bg-white border border-gray-800 shadow-lg py-0.5 w-24 animate-in zoom-in-95 duration-75">
+                <div className="absolute right-4 top-8 z-[100] bg-white border border-gray-200 shadow-xl py-1 w-32 rounded-lg fade-in">
                   {!isOp ? (
-                    <button onClick={() => { onAction?.(displayUser, 'op'); setSelectedUser(null); }} className="w-full text-left px-2 py-1 hover:bg-blue-700 hover:text-white flex items-center gap-1 text-[9px] font-bold">
-                      <ArrowUpCircle size={10} /> OP
+                    <button onClick={() => { onAction?.(displayUser, 'op'); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-blue-50 text-blue-700 flex items-center gap-2 text-[11px] font-bold">
+                      <ArrowUpCircle size={14} /> OP YETKİSİ
                     </button>
                   ) : (
-                    <button onClick={() => { onAction?.(displayUser, 'deop'); setSelectedUser(null); }} className="w-full text-left px-2 py-1 hover:bg-blue-700 hover:text-white flex items-center gap-1 text-[9px] font-bold">
-                      <ArrowDownCircle size={10} /> DEOP
+                    <button onClick={() => { onAction?.(displayUser, 'deop'); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-600 flex items-center gap-2 text-[11px] font-bold">
+                      <ArrowDownCircle size={14} /> YETKİ AL
                     </button>
                   )}
-                  <button onClick={() => { onAction?.(displayUser, 'kick'); setSelectedUser(null); }} className="w-full text-left px-2 py-1 hover:bg-red-700 hover:text-white flex items-center gap-1 text-[9px] font-bold">
-                    <Hammer size={10} /> KICK
+                  <button onClick={() => { onAction?.(displayUser, 'kick'); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 text-[11px] font-bold">
+                    <Hammer size={14} /> ODADAN AT
                   </button>
                 </div>
               )}
@@ -94,11 +93,13 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, onActi
         })}
       </div>
       
-      {/* Current User Status Area - Very compact */}
-      <div className="mt-auto bg-gray-200 border-t border-gray-300 p-1 text-[8px]">
-        <div className="flex items-center gap-1 text-blue-900 font-black uppercase truncate">
-           <Shield size={9} /> {currentUser}
+      {/* Current User Status Area */}
+      <div className="mt-auto bg-gray-900 border-t border-gray-800 p-4 pb-20 sm:pb-4">
+        <div className="flex items-center gap-2 text-white font-black uppercase tracking-tighter truncate text-[11px]">
+           <div className="w-2 h-2 bg-[#00ff99] rounded-full animate-pulse shadow-[0_0_8px_#00ff99]"></div>
+           {currentUser}
         </div>
+        <p className="text-[9px] text-gray-500 font-bold mt-1">BAĞLI / ONLINE</p>
       </div>
 
       {selectedUser && <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setSelectedUser(null)} />}
