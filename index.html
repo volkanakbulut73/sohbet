@@ -20,33 +20,19 @@
       background-color: white;
       margin: 0;
       padding: 0;
-      overflow: hidden;
       height: 100%;
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
       -webkit-tap-highlight-color: transparent;
-      /* VisualViewport API klavye fixleri için */
-      position: fixed;
-      left: 0;
-      top: 0;
+      overflow: hidden;
     }
     #root {
       height: 100%;
       width: 100%;
-      display: flex;
-      flex-direction: column;
     }
     
-    .h-safe-bottom {
-      height: env(safe-area-inset-bottom, 0px);
-    }
-
     .safe-top {
       padding-top: env(safe-area-inset-top, 0px);
-    }
-
-    .safe-bottom {
-      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     /* Scrollbar */
@@ -60,7 +46,6 @@
     .fade-in { animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    /* Cursor animation for retro feel */
     .cursor-blink {
       display: inline-block;
       width: 8px;
