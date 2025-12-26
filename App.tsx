@@ -114,14 +114,14 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         ))}
       </div>
 
-      {/* 3. Main Area: Chat + Fixed User List (Narrower) */}
+      {/* 3. Main Area: Chat + Fixed User List */}
       <div className="flex-1 flex overflow-hidden min-h-0 bg-white">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
           {isAILoading && <div className="absolute top-0 left-0 right-0 h-[1px] bg-blue-500 animate-pulse z-10" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* MIRC Style User List - Even Narrower for more chat space */}
+        {/* MIRC Style User List */}
         <div className="w-28 md:w-32 border-l border-gray-300 bg-white shrink-0 flex flex-col">
           <div className="p-0.5 border-b border-gray-200">
              <input type="text" placeholder="Nick..." className="w-full text-[9px] p-0.5 bg-gray-50 border border-gray-200 outline-none uppercase" />
@@ -136,10 +136,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* 4. Input Area - Fixed for Mobile Visibility */}
-      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-300 p-1 safe-bottom z-50">
-        <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto">
-          <div className="flex-1 bg-white border border-gray-400 h-8 px-2 flex items-center shadow-inner rounded-sm">
+      {/* 4. Input Area - FIX: 2 Tık Yukarı Kaydırıldı ve Görünürlük Arttırıldı */}
+      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-400 p-2 pb-5 md:pb-4 safe-bottom z-50 relative">
+        <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto mb-1">
+          <div className="flex-1 bg-white border border-gray-400 h-9 px-2 flex items-center shadow-inner rounded-sm">
             <input 
               type="text" 
               value={inputText}
@@ -149,8 +149,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               autoFocus
             />
           </div>
-          <button type="button" className="text-yellow-500 shrink-0"><Smile size={18} fill="currentColor" /></button>
-          <button type="submit" className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-3 h-8 text-[10px] font-bold rounded-sm shadow-sm shrink-0">Gönder</button>
+          <button type="button" className="text-yellow-500 shrink-0"><Smile size={20} fill="currentColor" /></button>
+          <button type="submit" className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-4 h-9 text-[10px] font-bold rounded-sm shadow-sm shrink-0">Gönder</button>
         </form>
       </div>
 
