@@ -13,8 +13,15 @@ import { Menu, X, Hash, Users, Globe, LogOut, MessageSquare, Send, Lock, Chevron
 
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
-const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
-  const [view, setView] = useState<AppView>('landing');
+const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
+  // Eğer embedded true ise asla landing'e gitme
+  const getInitialView = (): AppView => {
+    if (externalUser && externalUser.trim() !== "") return 'chat';
+    if (embedded) return 'login';
+    return 'landing';
+  };
+
+  const [view, setView] = useState<AppView>(getInitialView());
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [adminForm, setAdminForm] = useState({ username: '', password: '' });
   const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
@@ -32,6 +39,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
   } = useChatCore(externalUser || '');
 
   const [inputText, setInputText] = useState('');
+
+  // Embedded modda pozisyonlama tipi
+  const posClass = embedded ? "absolute" : "fixed";
+  const zClass = embedded ? "z-10" : "z-[100]";
 
   useEffect(() => {
     if (externalUser && externalUser.trim() !== "") {
@@ -71,12 +82,100 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
     setInputText('');
   };
 
-  if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onAdminClick={() => setView('admin_login')} />;
-  if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
+  // --- GÖRÜNÜM RENDERING ---
+
+  // Embedded modda landing asla gösterilmez
+  if (view === 'landing' && !embedded) {
+    return <LandingPage onEnter={() => setView('login')} onAdminClick={() => setView('admin_login')} />;
+  }
+
+  // Login Ekranı (Gömülü ise absolute, değilse fixed)
+  if (view === 'login' || (view === 'landing' && embedded)) {
+    return (
+      <div className={`${posClass} inset-0 bg-[#0b0f14] flex items-center justify-center p-4 ${zClass} font-mono ${className}`}>
+        <div className="w-full max-w-sm bg-gray-900 border border-gray-800 p-8 space-y-8 shadow-2xl relative">
+          <div className="text-center space-y-2">
+            <Lock size={40} className="text-[#00ff99] mx-auto mb-2" />
+            <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Sohbete Giriş Yap</h2>
+            <p className="text-[10px] text-gray-500 uppercase font-bold italic tracking-widest">Workigom Güvenli Sohbet Ağı</p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-4">
+              <input 
+                type="email" 
+                placeholder="EMAIL ADRESİNİZ" 
+                required
+                value={loginForm.email}
+                onChange={e => setLoginForm({...loginForm, email: e.target.value})}
+                className="w-full bg-black border border-gray-800 p-4 text-white text-xs outline-none focus:border-[#00ff99] transition-all" 
+              />
+              <input 
+                type="password" 
+                placeholder="ŞİFRENİZ" 
+                required
+                value={loginForm.password}
+                onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+                className="w-full bg-black border border-gray-800 p-4 text-white text-xs outline-none focus:border-[#00ff99] transition-all" 
+              />
+            </div>
+            
+            {loginError && <p className="text-red-500 text-[10px] font-bold uppercase text-center">{loginError}</p>}
+            
+            <button 
+              disabled={isLoggingIn}
+              className="w-full bg-[#00ff99] text-black py-4 text-xs font-black uppercase shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50"
+            >
+              {isLoggingIn ? 'DOĞRULANIYOR...' : 'GİRİŞ YAP'}
+            </button>
+          </form>
+
+          <div className="pt-4 border-t border-gray-800 flex flex-col gap-3 items-center">
+            <button 
+              onClick={() => setView('register')}
+              className="text-[#00ff99] text-[10px] font-black uppercase hover:underline"
+            >
+              Henüz üye değil misiniz? Başvuru yapın →
+            </button>
+            {!embedded && (
+              <button 
+                onClick={() => setView('landing')}
+                className="text-gray-600 text-[9px] font-bold uppercase hover:text-gray-400"
+              >
+                Geri Dön
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'register') return <RegistrationForm onClose={() => setView(embedded ? 'login' : 'landing')} onSuccess={() => setView('pending')} />;
+  
+  if (view === 'pending') {
+    return (
+      <div className={`${posClass} inset-0 bg-[#0b0f14] flex items-center justify-center p-4 ${zClass} font-mono text-center`}>
+        <div className="max-w-md space-y-6 p-8 border border-gray-800 bg-gray-900/50">
+          <Clock size={48} className="text-orange-500 mx-auto animate-spin-slow" />
+          <h2 className="text-2xl font-black text-white uppercase italic">Başvurunuz İnceleniyor</h2>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            Güvenliğiniz için belgeleriniz moderatörlerimiz tarafından kontrol ediliyor. 
+            Onaylandığında e-posta ile bilgilendirileceksiniz.
+          </p>
+          <button onClick={() => setView(embedded ? 'login' : 'landing')} className="text-[#00ff99] text-[10px] font-black uppercase border border-[#00ff99]/30 px-6 py-2">
+            Tamam
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'admin_panel') return <AdminDashboard onLogout={() => setView('landing')} />;
+  
   if (view === 'admin_login') {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center p-4 z-[100] font-mono">
+      <div className={`${posClass} inset-0 bg-black flex items-center justify-center p-4 ${zClass} font-mono`}>
         <div className="w-full max-w-sm bg-gray-900 border border-gray-800 p-8 space-y-8 shadow-2xl">
           <div className="text-center space-y-2">
             <Settings size={48} className="text-[#00ff99] mx-auto mb-4" />
@@ -97,9 +196,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
     );
   }
 
+  // ANA SOHBET ARAYÜZÜ
   return (
-    <div className={`h-screen w-screen flex flex-col bg-white overflow-hidden select-none font-mono ${className}`}>
-      {/* Dynamic Header */}
+    <div className={`h-full w-full flex flex-col bg-white overflow-hidden select-none font-mono ${className}`}>
+      {/* Header */}
       <div className="h-9 bg-[#000080] flex items-center justify-between px-3 text-white shrink-0 z-50">
         <div className="flex items-center gap-2">
           <button onClick={() => setIsLeftDrawerOpen(!isLeftDrawerOpen)} className="p-1.5 hover:bg-white/20 rounded-sm">
@@ -117,13 +217,12 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
           <button onClick={() => setIsRightDrawerOpen(!isRightDrawerOpen)} className={`p-1.5 rounded-sm ${isRightDrawerOpen ? 'bg-white text-[#000080]' : 'hover:bg-white/20'}`}>
             <Users size={18} />
           </button>
-          <button onClick={() => setView('landing')} className="p-1.5 hover:bg-red-600/50 rounded-sm">
+          <button onClick={() => setView(embedded ? 'login' : 'landing')} className="p-1.5 hover:bg-red-600/50 rounded-sm">
              <LogOut size={18} />
           </button>
         </div>
       </div>
 
-      {/* Tabs / Channels */}
       <div className="h-8 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-0.5 px-1 shrink-0 overflow-x-auto no-scrollbar">
         {['#sohbet', ...privateChats].map(tab => (
           <button 
@@ -138,7 +237,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
       </div>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Side (Channels) - Mobile Aware */}
         <div className={`absolute lg:relative inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-[60] transition-transform duration-300 ease-in-out ${isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-48'}`}>
           <div className="p-2 h-full flex flex-col">
              <div className="bg-white border border-gray-500 flex-1 overflow-y-auto">
@@ -161,7 +259,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
           </div>
         </div>
 
-        {/* Main Chat Area */}
         <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
            {isAILoading && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 animate-pulse z-10" />}
            <MessageList 
@@ -172,7 +269,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
            />
         </div>
 
-        {/* Right Side (Users) - Mobile Aware */}
         <div className={`absolute right-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-l border-gray-400 z-[60] transition-transform duration-300 ease-in-out ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:w-48'}`}>
            <UserList 
             users={[userName, 'GeminiBot', 'Admin']} 
@@ -184,7 +280,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </div>
       </div>
 
-      {/* Input Area - Touch Friendly */}
       <div className="p-1.5 bg-[#d4dce8] border-t border-gray-400 shrink-0">
         <form onSubmit={handleSend} className="flex gap-1.5 h-10">
           <div className="flex-1 bg-white border border-gray-600 px-3 flex items-center shadow-inner rounded-sm">
@@ -204,9 +299,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "" }) => {
         </form>
       </div>
 
-      {/* Overlays for Mobile */}
       {(isLeftDrawerOpen || isRightDrawerOpen) && (
-        <div className="fixed inset-0 bg-black/40 z-50 lg:hidden" onClick={() => { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); }} />
+        <div className="fixed inset-0 bg-black/40 z-[45] lg:hidden" onClick={() => { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); }} />
       )}
     </div>
   );

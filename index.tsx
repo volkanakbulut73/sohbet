@@ -15,10 +15,17 @@ export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {})
     return null;
   }
 
+  // Konteynırın stilini ayarla (relative olması içindeki absolute elemanlar için şart)
+  if (rootElement.style.position !== 'fixed' && rootElement.style.position !== 'absolute') {
+    rootElement.style.position = 'relative';
+  }
+  rootElement.style.overflow = 'hidden';
+
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <App {...props} />
+      {/* SDK üzerinden çağrıldığında ZORUNLU olarak 'embedded' aktif edilir */}
+      <App {...props} embedded={true} />
     </React.StrictMode>
   );
   
@@ -29,10 +36,24 @@ export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {})
 if (typeof window !== 'undefined') {
   (window as any).initWorkigomChat = initWorkigomChat;
   
-  // Eğer sayfada id'si "root" olan bir element varsa otomatik başlat (Geliştirme kolaylığı için)
+  /**
+   * KRİTİK DÜZELTME: 
+   * Otomatik başlatma sadece ana domainde (workigomchat.online) veya localhostta çalışmalı.
+   * Dış sitelerde (workigom.com vb.) SDK sadece manuel çağrıldığında çalışmalı.
+   */
+  const isMainDomain = 
+    window.location.hostname === 'workigomchat.online' || 
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1';
+
   const defaultRoot = document.getElementById('root');
-  if (defaultRoot && !(defaultRoot as any)._workigomStarted) {
+  if (isMainDomain && defaultRoot && !(defaultRoot as any)._workigomStarted) {
     (defaultRoot as any)._workigomStarted = true;
-    initWorkigomChat('root');
+    const root = ReactDOM.createRoot(defaultRoot);
+    root.render(
+      <React.StrictMode>
+        <App embedded={false} />
+      </React.StrictMode>
+    );
   }
 }

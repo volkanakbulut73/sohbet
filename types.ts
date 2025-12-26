@@ -30,6 +30,7 @@ export interface ChatModuleProps {
   externalUser?: string;
   onSendMessage?: (msg: string) => void;
   className?: string;
+  embedded?: boolean; // SDK olarak başka sitede kullanılıp kullanılmadığı
 }
 
 export interface UserRegistration {

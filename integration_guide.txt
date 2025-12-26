@@ -1,24 +1,22 @@
 
-WORKIGOM CHAT - MODERN ENTEGRASYON REHBERİ (SDK v1.1.0)
+WORKIGOM CHAT - MODERN ENTEGRASYON REHBERİ (SDK v1.1.1)
 
 -------------------------------------------------------------------
 KOPYALA-YAPIŞTIR (Workigom.com İçin)
 -------------------------------------------------------------------
-Aşağıdaki kodu ana sitenizin (workigom.com) <head> veya <body> etiketinin 
-sonuna yapıştırın. 
-
-UYARI: 'www' öneki OLMAMALIDIR. Vercel primary domaininiz budur.
+Aşağıdaki kod, ana sitenizin (workigom.com) tasarımını bozmadan 
+doğrudan giriş ekranını açar. 
 
 <!-- Workigom Chat SDK Başlangıç -->
 <script type="module" crossorigin src="https://workigomchat.online/index.js"></script>
 
-<div id="workigom-chat-container"></div>
+<div id="workigom-chat-container" style="height: 600px; width: 100%; border: 1px solid #222;"></div>
 
 <script>
   window.addEventListener('load', () => {
     if (window.initWorkigomChat) {
       window.initWorkigomChat('workigom-chat-container', {
-        className: 'custom-chat-style'
+        embedded: true // Landing sayfasını gizler, doğrudan girişe yönlendirir
       });
     }
   });
@@ -26,10 +24,8 @@ UYARI: 'www' öneki OLMAMALIDIR. Vercel primary domaininiz budur.
 <!-- Workigom Chat SDK Bitiş -->
 
 -------------------------------------------------------------------
-NEDEN WWW KULLANILMAMALI?
+PARAMETRELER
 -------------------------------------------------------------------
-Vercel, https://www.workigomchat.online adresine gelen istekleri 
-https://workigomchat.online adresine 307 (Temporary Redirect) ile 
-yönlendirir. Tarayıcılar güvenlik nedeniyle yönlendirmelerdeki CORS 
-başlıklarını reddedebilir. Bu yüzden doğrudan ana (apex) domaini 
-kullanmak en sağlıklı yoldur.
+- embedded: (true/false) Tanıtım sayfasını gizler. SDK kullanımlarında true olmalıdır.
+- externalUser: (string) Eğer sitenizde kullanıcı zaten login ise nickini geçebilirsiniz.
+- className: (string) Container için özel CSS classları.
