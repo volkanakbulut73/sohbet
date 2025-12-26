@@ -39,19 +39,31 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   const [inputText, setInputText] = useState('');
 
-  // Sadece mobil klavye açıldığında visualViewport.height kullanarak 
-  // chat'in parent dışına taşmasını engelliyoruz.
+  // Mobil Klavye ve Viewport Yönetimi
   useEffect(() => {
-    const handleViewport = () => {
-      if (window.visualViewport && !embedded) {
-        document.body.style.height = `${window.visualViewport.height}px`;
+    const updateSize = () => {
+      if (!containerRef.current) return;
+      if (embedded) {
+        // Gömülü modda sadece parent elementin yüksekliğini kullan
+        containerRef.current.style.height = '100%';
+      } else if (window.visualViewport) {
+        // Ana domainde klavye açıldığında viewport küçülmesini baz al
+        containerRef.current.style.height = `${window.visualViewport.height}px`;
       }
     };
 
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewport);
+      window.visualViewport.addEventListener('resize', updateSize);
+      window.visualViewport.addEventListener('scroll', updateSize);
     }
-    return () => window.visualViewport?.removeEventListener('resize', handleViewport);
+    window.addEventListener('resize', updateSize);
+    updateSize();
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', updateSize);
+      window.visualViewport?.removeEventListener('scroll', updateSize);
+      window.removeEventListener('resize', updateSize);
+    };
   }, [embedded]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -85,12 +97,12 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   if (view === 'landing' && !embedded) return <LandingPage onEnter={() => setView('login')} />;
   
-  if (view === 'login') {
+  if (view === 'login' || view === 'landing' && embedded) {
     return (
-      <div className="h-full w-full bg-[#d4dce8] flex items-center justify-center p-4 font-mono">
+      <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 font-mono z-[100]">
         <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-[2px_2px_10px_rgba(0,0,0,0.2)]">
           <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold flex justify-between items-center">
-            <span>Connect</span>
+            <span>Connect to Workigom</span>
             {!embedded && <X size={14} className="cursor-pointer" onClick={() => setView('landing')} />}
           </div>
           <div className="p-4 space-y-4">
@@ -100,11 +112,13 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               </div>
             </div>
             <form onSubmit={handleLogin} className="space-y-3">
-              <input type="email" placeholder="Email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full bg-white border border-gray-400 p-2 text-sm outline-none focus:border-[#000080]" />
+              <input type="email" placeholder="E-mail" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full bg-white border border-gray-400 p-2 text-sm outline-none focus:border-[#000080]" />
               <input type="password" placeholder="Şifre" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-white border border-gray-400 p-2 text-sm outline-none focus:border-[#000080]" />
-              {loginError && <p className="text-red-600 text-[10px] font-bold text-center">{loginError}</p>}
-              <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white shadow-[1px_1px_0_gray] text-black py-2 text-xs font-bold active:translate-y-[1px] active:shadow-none uppercase">GİRİŞ YAP</button>
+              <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white shadow-[1px_1px_0_gray] text-black py-2 text-xs font-bold active:translate-y-[1px] active:shadow-none uppercase">Giriş Yap</button>
             </form>
+            <div className="text-center">
+               <button onClick={() => setView('register')} className="text-[#000080] text-[10px] font-bold hover:underline italic uppercase">Kayıt Olmak İstiyorum</button>
+            </div>
           </div>
         </div>
       </div>
@@ -112,24 +126,24 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   }
 
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
-  if (view === 'pending') return <div className="h-full w-full bg-[#d4dce8] flex items-center justify-center p-4 text-[#000080] font-mono text-center"><div className="space-y-4 border-2 border-white p-8 bg-white/50"><Clock size={48} className="mx-auto"/><h2 className="text-lg font-bold uppercase">Onay Bekleniyor</h2></div></div>;
+  if (view === 'pending') return <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 text-[#000080] font-mono text-center"><div className="space-y-4 border-2 border-white p-8 bg-white/50"><Clock size={48} className="mx-auto"/><h2 className="text-lg font-bold uppercase">Onay Bekleniyor</h2></div></div>;
 
   return (
     <div 
       ref={containerRef}
-      className={`h-full w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono relative ${className}`}
+      className={`absolute inset-0 flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${className}`}
     >
-      {/* 1. Header (Fixed height) */}
-      <div className="bg-black text-white border-b border-gray-800 flex-none h-9 flex items-center z-50">
-        <button className="px-3 text-gray-400 hover:text-white" onClick={() => setIsLeftDrawerOpen(true)}>
-          <Menu size={18} />
+      {/* 1. Header (Sabit Yükseklik) */}
+      <div className="bg-black text-white border-b border-gray-800 flex-none h-10 flex items-center z-50 px-2">
+        <button className="p-1 text-gray-400" onClick={() => setIsLeftDrawerOpen(true)}>
+          <Menu size={20} />
         </button>
-        <div className="flex-1 flex gap-1 overflow-x-auto no-scrollbar h-full items-center">
+        <div className="flex-1 flex gap-1 overflow-x-auto no-scrollbar items-center px-2">
           {['Status', '#Sohbet', '#Yardim'].map(tab => (
             <button 
               key={tab} 
               onClick={() => setActiveTab(tab.startsWith('#') ? tab.toLowerCase() : tab)} 
-              className={`px-3 h-full text-[11px] font-black uppercase transition-all whitespace-nowrap border-b-2 flex items-center ${activeTab === (tab.startsWith('#') ? tab.toLowerCase() : tab) ? 'border-white text-white bg-white/10' : 'border-transparent text-gray-500'}`}
+              className={`px-3 py-1 text-[11px] font-black uppercase whitespace-nowrap border-b-2 ${activeTab === (tab.startsWith('#') ? tab.toLowerCase() : tab) ? 'border-white text-white' : 'border-transparent text-gray-500'}`}
             >
               {tab}
             </button>
@@ -137,24 +151,24 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
         <button 
           onClick={() => setShowUserList(!showUserList)} 
-          className={`px-3 h-full text-gray-400 ${showUserList ? 'text-green-400' : ''}`}
+          className={`p-1 ${showUserList ? 'text-green-400' : 'text-gray-400'}`}
         >
-          <UsersIcon size={16} />
+          <UsersIcon size={20} />
         </button>
       </div>
 
-      {/* 2. Chat Area (Flex-1: Takes available space) */}
-      <div className="flex-1 flex overflow-hidden bg-white relative">
-        <div className="flex-1 flex flex-col min-w-0 bg-white relative overflow-hidden">
+      {/* 2. Content Area (Esnek Orta Bölüm) */}
+      <div className="flex-1 flex overflow-hidden relative bg-white">
+        <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* User List Overlay (Absolute inside chat area) */}
+        {/* User List Drawer (Absolute within content) */}
         {showUserList && (
-          <div className="absolute right-0 top-0 bottom-0 w-48 border-l border-gray-300 bg-white z-[70] flex flex-col shadow-2xl">
+          <div className="absolute right-0 top-0 bottom-0 w-48 border-l border-gray-300 bg-white z-[70] flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
             <div className="bg-gray-100 p-2 border-b border-gray-200 flex justify-between items-center px-2 shrink-0">
               <span className="italic text-[9px] font-black text-gray-600 uppercase">Online</span>
-              <X size={14} className="cursor-pointer text-gray-400" onClick={() => setShowUserList(false)} />
+              <X size={16} className="cursor-pointer text-gray-400" onClick={() => setShowUserList(false)} />
             </div>
             <UserList 
               users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t']} 
@@ -166,34 +180,34 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 3. Input Area (Fixed height at bottom) */}
-      <div className="flex-none bg-[#d4dce8] border-t border-gray-400 p-1.5 z-[60]">
+      {/* 3. Input Area (ALTA ÇAKILI - ZORUNLU GÖRÜNÜR) */}
+      <div className="flex-none bg-[#d4dce8] border-t border-gray-400 p-2 z-[60] shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
         <form onSubmit={handleSend} className="flex items-center gap-1 w-full h-11">
-          <div className="flex-1 bg-white border border-gray-400 h-full px-2 flex items-center shadow-inner rounded-sm overflow-hidden focus-within:border-[#000080]">
+          <div className="flex-1 bg-white border-2 border-gray-400 h-full px-3 flex items-center shadow-inner rounded-sm focus-within:border-[#000080]">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[16px] outline-none font-medium h-full text-black placeholder:text-gray-400 font-mono"
-              placeholder="Mesajınızı buraya yazın..."
+              className="flex-1 bg-transparent text-[16px] outline-none font-medium h-full text-black placeholder:text-gray-400"
+              placeholder="Mesaj gönder..."
               autoComplete="off"
             />
           </div>
           <button 
             type="submit" 
-            className="h-full px-4 bg-[#000080] text-white rounded-sm font-black uppercase text-[11px] active:scale-95 transition-transform"
+            className="h-full px-5 bg-[#000080] text-white rounded-sm font-black uppercase text-[11px] active:scale-95 transition-all"
           >
-            GÖNDER
+            OK
           </button>
         </form>
       </div>
 
-      {/* Drawer Overlay */}
+      {/* Left Sidebar Overlay */}
       {isLeftDrawerOpen && (
         <div className="absolute inset-0 z-[1000]">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white shadow-2xl flex flex-col font-mono">
-            <div className="bg-[#000080] text-white p-3 font-bold text-[13px] flex justify-between items-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+            <div className="bg-[#000080] text-white p-4 font-bold text-[13px] flex justify-between items-center">
                <span className="uppercase tracking-tighter">Kanallar</span>
                <X size={20} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
             </div>
@@ -202,9 +216,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
                 <button 
                   key={c} 
                   onClick={() => { setActiveTab(c.toLowerCase()); setIsLeftDrawerOpen(false); }} 
-                  className={`w-full text-left p-3 text-xs font-black uppercase border ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white border-[#000080]' : 'text-[#000080] hover:bg-white/50 border-transparent'}`}
+                  className={`w-full text-left p-4 text-xs font-black uppercase border rounded-sm transition-colors ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white border-[#000080]' : 'bg-white/40 text-[#000080] border-transparent hover:bg-white'}`}
                 >
-                  <Hash size={12} className="inline mr-2" />
+                  <Hash size={14} className="inline mr-2" />
                   {c}
                 </button>
               ))}

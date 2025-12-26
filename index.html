@@ -27,14 +27,15 @@
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
       background-color: transparent;
-      overflow: hidden; /* Dış kaydırmayı engelle */
+      overflow: hidden !important; /* Dış scroll kesinlikle yasak */
+      position: fixed; /* Mobil cihazlarda zıplamayı önler */
     }
     
     #root {
       height: 100%;
       width: 100%;
-      display: flex;
-      flex-direction: column;
+      position: relative;
+      overflow: hidden;
     }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -51,10 +52,9 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* Mobil için input odaklandığında zoom'u engelle */
     @media screen and (max-width: 768px) {
       input, textarea {
-        font-size: 16px !important;
+        font-size: 16px !important; /* Zoom engelleme */
       }
     }
   </style>
