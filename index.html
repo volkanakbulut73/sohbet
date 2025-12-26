@@ -20,8 +20,8 @@
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
       outline: none;
-      margin: 0;
-      padding: 0;
+      margin: 0 !important;
+      padding: 0 !important;
     }
 
     body, html {
@@ -30,7 +30,8 @@
       height: 100%;
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
-      background-color: transparent; /* Parent sitenin rengini alması için */
+      overflow: hidden;
+      background-color: transparent;
     }
     
     #root {
@@ -39,6 +40,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      background-color: #d4dce8;
     }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -55,7 +57,6 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* Mobil için input odaklanmasında zoom engelleme */
     @media screen and (max-width: 768px) {
       input, textarea {
         font-size: 16px !important;

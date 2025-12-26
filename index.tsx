@@ -15,11 +15,13 @@ export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {})
     return null;
   }
 
-  // Konteynırın stilini ayarla (relative olması içindeki absolute elemanlar için şart)
-  if (rootElement.style.position !== 'fixed' && rootElement.style.position !== 'absolute') {
-    rootElement.style.position = 'relative';
-  }
+  // Konteynırın stilini ayarla (üst boşlukları ve taşmaları kesin olarak engelle)
+  rootElement.style.position = 'relative';
   rootElement.style.overflow = 'hidden';
+  rootElement.style.padding = '0';
+  rootElement.style.margin = '0';
+  rootElement.style.display = 'flex';
+  rootElement.style.flexDirection = 'column';
 
   const root = ReactDOM.createRoot(rootElement);
   root.render(
@@ -36,11 +38,6 @@ export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {})
 if (typeof window !== 'undefined') {
   (window as any).initWorkigomChat = initWorkigomChat;
   
-  /**
-   * KRİTİK DÜZELTME: 
-   * Otomatik başlatma sadece ana domainde (workigomchat.online) veya localhostta çalışmalı.
-   * Dış sitelerde (workigom.com vb.) SDK sadece manuel çağrıldığında çalışmalı.
-   */
   const isMainDomain = 
     window.location.hostname === 'workigomchat.online' || 
     window.location.hostname === 'localhost' || 
