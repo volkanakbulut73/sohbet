@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useChatCore } from './hooks/useChatCore';
 import MessageList from './components/MessageList';
@@ -25,7 +26,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [activeNav, setActiveNav] = useState('sohbet');
   
   const { 
     userName, setUserName,
@@ -290,15 +290,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. FAB + Input Area */}
-      <div className="relative bg-white pb-20 sm:pb-6">
-        {/* Floating Action Button - Mobile Only */}
-        <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-40 sm:hidden">
-          <button className="w-14 h-14 bg-[#1a1f26] rounded-full flex items-center justify-center text-white shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-2 border-white/20 active:scale-95 transition-all">
-            <Plus size={32} />
-          </button>
-        </div>
-
+      {/* 4. Input Area - Adjusted for mIRC style (no mobile nav bar) */}
+      <div className="relative bg-white pb-2 sm:pb-4">
         <div className="p-3 bg-white border-t border-gray-100">
           <form onSubmit={handleSend} className="flex gap-2 max-w-4xl mx-auto">
             <div className="flex-1 bg-gray-100 rounded-full px-5 flex items-center focus-within:ring-2 ring-black/5 transition-all h-12">
@@ -317,24 +310,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* 5. Bottom Navigation - Mobile Only */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 sm:hidden">
-        {[
-          { id: 'home', icon: <Home size={24} />, label: 'Ana Sayfa' },
-          { id: 'requests', icon: <Heart size={24} />, label: 'Talepler' },
-          { id: 'sohbet', icon: <MessageSquare size={24} />, label: 'Sohbet' },
-          { id: 'profile', icon: <User size={24} />, label: 'Profil' }
-        ].map(nav => (
-          <button 
-            key={nav.id}
-            onClick={() => setActiveNav(nav.id)}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeNav === nav.id ? 'text-black' : 'text-gray-300'}`}
-          >
-            {nav.icon}
-            <span className={`text-[9px] uppercase font-black tracking-widest ${activeNav === nav.id ? 'opacity-100' : 'opacity-0'}`}>{nav.label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Mobile-only Bottom Navigation (Section 5) removed to clean up UI as requested */}
     </div>
   );
 };
