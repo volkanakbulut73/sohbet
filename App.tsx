@@ -10,7 +10,6 @@ import { storageService } from './services/storageService';
 import { 
   Menu, X, Send, Lock, Clock, 
   Users as UsersIcon, Hash, 
-  Home, Heart, Plus, MessageCircle, User as UserIcon,
   ChevronLeft
 } from 'lucide-react';
 
@@ -48,11 +47,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     const handleViewportChange = () => {
       if (window.visualViewport) {
         const height = window.visualViewport.height;
-        // Klavye tespiti: Görünür alan toplam ekranın %80'inden azsa klavye açık varsayılır
         const isCurrentlyOpen = height < window.innerHeight * 0.8;
         setIsKeyboardOpen(isCurrentlyOpen);
         
-        // Mobil cihazlarda embedded olsa bile viewport yüksekliğini kullanmak daha güvenlidir
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile || !embedded) {
           setViewportHeight(`${height}px`);
@@ -149,27 +146,13 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative w-full' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Header (Status Bar) */}
-      <div className={`bg-[#000080] text-white px-3 py-1.5 flex items-center justify-between z-[60] text-[12px] font-bold shrink-0 border-b border-white/20 ${!embedded ? 'safe-top' : ''}`}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setView('landing')} className="hover:bg-white/10 p-1">
-             <ChevronLeft size={20} />
-          </button>
-          <div className="flex flex-col">
-            <span className="flex items-center gap-1 uppercase tracking-tighter text-[13px]">
-              <span className="text-green-400">●</span> GLOBAL SOHBET <span className="text-[10px] bg-green-600 px-1 ml-1 font-bold">V1.1.1</span>
-            </span>
-            <span className="text-[10px] opacity-80 font-normal">Hatasız Bağlantı: {userName}</span>
-          </div>
-        </div>
-        <button onClick={() => setShowUserList(!showUserList)} className="p-1.5 hover:bg-blue-700">
-           <UsersIcon size={20} />
-        </button>
-      </div>
+      {/* (1 VE 2 NOLU ALANLAR KALDIRILDI) */}
 
-      {/* 2. Tabs (Channels) */}
-      <div className="bg-black text-white/90 border-b border-gray-600 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 z-50">
-        <button className="px-2 py-1 text-gray-400" onClick={() => setIsLeftDrawerOpen(true)}><Menu size={18} /></button>
+      {/* 2. Tabs (Channels) - Artık en üstte */}
+      <div className={`bg-black text-white/90 border-b border-gray-600 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 z-50 ${!embedded ? 'safe-top' : ''}`}>
+        <button className="px-2 py-1 text-gray-400 hover:text-white" onClick={() => setIsLeftDrawerOpen(true)}>
+          <Menu size={18} />
+        </button>
         <div className="flex-1 flex gap-1">
           {['Status', '#Sohbet', '#Yardim'].map(tab => (
             <button 
@@ -181,6 +164,13 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             </button>
           ))}
         </div>
+        <button 
+          onClick={() => setShowUserList(!showUserList)} 
+          className={`px-3 py-1 text-[11px] font-bold uppercase flex items-center gap-1 transition-all ${showUserList ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
+        >
+          <UsersIcon size={16} />
+          <span className="hidden sm:inline">Online</span>
+        </button>
       </div>
 
       {/* 3. Main Area (Message Area) */}
@@ -209,37 +199,26 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 4. Input Area */}
-      <div className="shrink-0 bg-white border-t border-gray-200 p-2 md:p-3 z-50">
-        <form onSubmit={handleSend} className="flex items-center gap-2 w-full max-w-screen-xl mx-auto">
-          <div className="flex-1 bg-white border-2 border-gray-300 h-11 px-3 flex items-center shadow-sm rounded-lg overflow-hidden focus-within:border-[#000080]">
+      <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-300 p-2 z-50 ${!isKeyboardOpen && !embedded ? 'safe-bottom' : ''}`}>
+        <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-xl mx-auto">
+          <div className="flex-1 bg-white border border-gray-400 h-9 px-2 flex items-center shadow-inner rounded-sm overflow-hidden focus-within:border-[#000080]">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[16px] outline-none font-medium h-full text-black placeholder:text-gray-400"
+              className="flex-1 bg-transparent text-[14px] outline-none font-medium h-full text-black placeholder:text-gray-400 font-mono"
               placeholder="Mesajınızı yazın..."
               autoComplete="off"
             />
           </div>
           <button 
             type="submit" 
-            className="w-11 h-11 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md active:bg-black transition-colors shrink-0"
+            className="h-9 px-4 bg-[#000080] text-white rounded-sm flex items-center justify-center shadow-sm active:bg-black transition-colors shrink-0 text-[11px] font-bold uppercase tracking-tighter"
           >
-            <Menu size={22} />
+            GÖNDER
           </button>
         </form>
       </div>
-
-      {/* 5. Bottom Navigation */}
-      {!isKeyboardOpen && (
-        <div className="shrink-0 bg-white border-t border-gray-200 flex justify-around items-center h-14 z-50">
-           <button className="flex flex-col items-center gap-0.5 text-gray-400"><Home size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Ana Sayfa</span></button>
-           <button className="flex flex-col items-center gap-0.5 text-gray-400"><Heart size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Talepler</span></button>
-           <button className="bg-gray-800 text-white p-3 rounded-full -translate-y-4 shadow-xl border-4 border-[#d4dce8]"><Plus size={22} /></button>
-           <button className="flex flex-col items-center gap-0.5 text-[#000080]"><MessageCircle size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Sohbet</span></button>
-           <button className="flex flex-col items-center gap-0.5 text-gray-400"><UserIcon size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Profil</span></button>
-        </div>
-      )}
 
       {/* Mobile Sidebar Drawer */}
       {isLeftDrawerOpen && (
@@ -261,6 +240,12 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
                   {c}
                 </button>
               ))}
+              
+              <div className="mt-6 space-y-2">
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 border-b border-gray-400 pb-1">Hızlı Erişim</p>
+                <button onClick={() => setView('landing')} className="w-full text-left p-2.5 text-xs font-bold uppercase text-blue-900">Ana Sayfa</button>
+                <button className="w-full text-left p-2.5 text-xs font-bold uppercase text-blue-900">Profilim</button>
+              </div>
             </div>
             <div className="p-4 border-t border-gray-400 bg-gray-200">
                <button onClick={() => setView('landing')} className="w-full p-3 bg-red-800 text-white font-bold text-[11px] rounded uppercase shadow-md">OTURUMU KAPAT</button>
