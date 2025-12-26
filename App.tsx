@@ -178,49 +178,49 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   }
 
   return (
-    <div className={`h-screen w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
-      {/* Header Panel - mIRC Dark Theme */}
-      <div className="h-12 bg-[#1a1f26] flex items-center justify-between px-3 text-white shrink-0 z-50 border-b border-gray-800">
-        <div className="flex items-center gap-3">
+    <div className={`h-[100dvh] w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
+      {/* Header Panel - Optimized Height */}
+      <div className="h-9 sm:h-11 bg-[#1a1f26] flex items-center justify-between px-2 sm:px-3 text-white shrink-0 z-50 border-b border-gray-800">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
           <button 
             onClick={() => { setIsLeftDrawerOpen(!isLeftDrawerOpen); setIsRightDrawerOpen(false); }} 
-            className={`p-2 rounded-sm transition-colors ${isLeftDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
+            className={`p-1 sm:p-2 rounded-sm transition-colors ${isLeftDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
           >
-            <Menu size={20} />
+            <Menu size={18} />
           </button>
-          <div className="flex flex-col">
-             <div className="flex items-center gap-2">
-                <span className="text-[12px] font-black tracking-tight uppercase italic text-white">Global Sohbet</span>
-                <span className="text-[9px] bg-[#00ff99]/20 text-[#00ff99] px-1 rounded font-bold">V1.1.1</span>
+          <div className="flex flex-col justify-center min-w-0">
+             <div className="flex items-center gap-1 sm:gap-2">
+                <span className="text-[10px] sm:text-[12px] font-black tracking-tight uppercase italic text-white truncate">Global Sohbet</span>
+                <span className="text-[7px] sm:text-[9px] bg-[#00ff99]/20 text-[#00ff99] px-1 rounded font-bold shrink-0">V1.1.1</span>
              </div>
-             <div className="flex items-center gap-1.5 opacity-60">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-[8px] font-bold uppercase tracking-widest">Bağlantı: {userName}</span>
+             <div className="flex items-center gap-1 opacity-60">
+                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full animate-pulse shrink-0"></div>
+                <span className="text-[7px] sm:text-[8px] font-bold uppercase tracking-wider truncate">Bağlantı: {userName}</span>
              </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <button 
             onClick={() => { setIsRightDrawerOpen(!isRightDrawerOpen); setIsLeftDrawerOpen(false); }} 
-            className={`p-2 rounded-sm transition-colors ${isRightDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
+            className={`p-1.5 sm:p-2 rounded-sm transition-colors ${isRightDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
           >
-            <Users size={20} />
+            <Users size={18} />
           </button>
-          <button onClick={() => setView(embedded ? 'login' : 'landing')} className="p-2 hover:bg-red-600 rounded-sm transition-colors">
-             <LogOut size={20} />
+          <button onClick={() => setView(embedded ? 'login' : 'landing')} className="p-1.5 sm:p-2 hover:bg-red-600 rounded-sm transition-colors">
+             <LogOut size={18} />
           </button>
         </div>
       </div>
 
-      {/* Tabs Row - Classic mIRC Gray */}
-      <div className="h-9 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-0.5 px-1 shrink-0 overflow-x-auto no-scrollbar">
+      {/* Tabs Row - Narrowed Height */}
+      <div className="h-7 sm:h-8 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-0.5 px-1 shrink-0 overflow-x-auto no-scrollbar">
         {['#sohbet', ...privateChats].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 h-full text-[10px] font-black border-t border-l border-r border-gray-500 flex items-center gap-2 transition-all shrink-0 ${activeTab === tab ? 'bg-white border-b-transparent translate-y-[1px] z-10' : 'bg-gray-300 opacity-70 grayscale hover:grayscale-0'}`}
+            className={`px-3 sm:px-4 h-full text-[9px] sm:text-[10px] font-black border-t border-l border-r border-gray-500 flex items-center gap-1.5 transition-all shrink-0 ${activeTab === tab ? 'bg-white border-b-transparent translate-y-[1px] z-10 shadow-sm' : 'bg-gray-300 opacity-70 hover:opacity-100'}`}
           >
-            {tab.startsWith('#') ? <Hash size={11} className="text-blue-800" /> : <MessageSquare size={11} className="text-purple-800" />}
+            {tab.startsWith('#') ? <Hash size={10} className="text-blue-800" /> : <MessageSquare size={10} className="text-purple-800" />}
             {tab.toUpperCase()}
           </button>
         ))}
@@ -228,7 +228,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
       {/* Main Container */}
       <div className="flex-1 flex overflow-hidden relative min-h-0">
-        {/* Left Sidebar (Channels) - MOBILE OVERLAY */}
+        {/* Left Sidebar (Channels) */}
         <div 
           className={`absolute lg:relative inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
           ${isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-48 lg:hidden'}`}
@@ -254,7 +254,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           </div>
         </div>
 
-        {/* Center: Chat Window - ALWAYS 100% WIDTH ON MOBILE */}
+        {/* Center: Chat Window */}
         <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
            {isAILoading && <div className="absolute top-0 left-0 right-0 h-1 bg-[#00ff99] animate-pulse z-20" />}
            <div className="flex-1 overflow-hidden">
@@ -267,7 +267,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
            </div>
         </div>
 
-        {/* Right Sidebar: Users - REDUCED WIDTH BY 1/3 (w-48 -> w-32) */}
+        {/* Right Sidebar: Users */}
         <div 
           className={`absolute lg:relative inset-y-0 right-0 w-36 bg-[#f3f4f6] border-l border-gray-300 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
           ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:block'}`}
@@ -282,8 +282,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* Input Panel - ALWAYS VISIBLE AT BOTTOM */}
-      <div className="p-2 bg-[#d4dce8] border-t border-gray-400 shrink-0">
+      {/* Input Panel - Fixed Visibility & Styling */}
+      <div className="p-2 bg-[#d4dce8] border-t border-gray-400 shrink-0 z-[60]">
         <form onSubmit={handleSend} className="flex gap-1.5 h-10">
           <div className="flex-1 bg-white border-2 border-gray-500 px-3 flex items-center shadow-inner rounded-sm group focus-within:border-blue-700 transition-colors">
              <span className="text-[10px] font-black text-blue-900 mr-2 hidden sm:inline select-none">[{userName}]</span>
@@ -296,8 +296,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               onFocus={() => { if(window.innerWidth < 1024) { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); } }}
              />
           </div>
-          <button type="submit" className="bg-[#c0c0c0] border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.6)] px-4 flex items-center justify-center active:shadow-none active:translate-y-[1px] transition-all hover:bg-white group">
-            <Send size={16} className="text-gray-800 group-hover:text-blue-800" />
+          <button type="submit" className="bg-white border-2 border-white shadow-[1px_1px_0px_1px_rgba(0,0,0,0.3)] px-4 flex items-center justify-center active:shadow-none active:translate-y-[1px] transition-all hover:bg-gray-50 group min-w-[50px]">
+            <Send size={18} className="text-blue-700 group-hover:scale-110 transition-transform" />
           </button>
         </form>
       </div>
