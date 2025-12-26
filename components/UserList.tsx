@@ -12,17 +12,16 @@ interface UserListProps {
 
 const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, currentUser, currentOps = [] }) => {
   
-  const uniqueUsers = Array.from(new Set(users));
+  const uniqueUsers = Array.from(new Set(users)).sort((a, b) => a.localeCompare(b));
 
   const getRankInfo = (user: string) => {
-    // Klasik mIRC hiyerarşisi
-    if (user === 'Admin') return { icon: <Crown size={10} fill="#FFD700" className="text-yellow-600" />, prefix: '&' };
-    if (user === 'GeminiBot') return { icon: <Heart size={10} fill="#ef4444" className="text-red-500" />, prefix: '@' };
-    if (['SevimLi', 'Ercan', 'Esraa'].includes(user)) return { icon: <Crown size={10} fill="#FFA500" className="text-orange-500" />, prefix: '&' };
-    if (['NoNNiCK', 'Renk', 'w00t'].includes(user)) return { icon: <Crown size={10} fill="#FFA500" className="text-orange-500" />, prefix: '@' };
+    // Klasik mIRC hiyerarşisi prefixleri
+    if (user === 'Admin') return { prefix: '&', color: 'text-red-700' };
+    if (user === 'GeminiBot') return { prefix: '@', color: 'text-green-700' };
+    if (['SevimLi', 'Ercan', 'Esraa'].includes(user)) return { prefix: '&', color: 'text-red-700' };
+    if (['NoNNiCK', 'Renk', 'w00t'].includes(user)) return { prefix: '@', color: 'text-green-700' };
     
-    // Voice/Normal kullanıcılar (%)
-    return { icon: <Shield size={10} fill="#444" className="text-gray-700" />, prefix: '%' };
+    return { prefix: '%', color: 'text-[#000080]' };
   };
 
   return (
@@ -35,20 +34,20 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, curren
           return (
             <div 
               key={`${user}-${idx}`} 
-              className={`flex items-center gap-1 px-1.5 py-0 hover:bg-blue-50 cursor-pointer select-none border-b border-gray-50/50 ${isMe ? 'bg-blue-50' : ''}`}
+              className={`flex items-center gap-0.5 px-2 py-0.5 hover:bg-blue-50 cursor-pointer select-none border-b border-gray-50 ${isMe ? 'bg-blue-50 ring-1 ring-inset ring-blue-100' : ''}`}
               onClick={(e) => onUserClick?.(e, user)}
             >
-              <span className="shrink-0 scale-90">{rank.icon}</span>
-              <span className="text-blue-900 text-[10px] font-bold truncate">
-                {rank.prefix}{user}
+              <span className={`text-[11px] font-bold w-3 shrink-0 ${rank.color}`}>{rank.prefix}</span>
+              <span className={`text-[11px] font-bold truncate ${isMe ? 'text-black' : rank.color}`}>
+                {user}
               </span>
             </div>
           );
         })}
       </div>
       
-      <div className="mt-auto p-1 bg-gray-50 border-t border-gray-100 text-[8px] text-gray-400 font-bold uppercase text-center">
-         {uniqueUsers.length} Users
+      <div className="mt-auto p-1 bg-gray-50 border-t border-gray-200 text-[9px] text-gray-500 font-bold uppercase text-center shrink-0">
+         {uniqueUsers.length} Users Online
       </div>
     </div>
   );

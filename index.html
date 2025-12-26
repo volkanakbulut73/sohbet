@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Workigom Chat | workigomchat.online</title>
   <meta name="description" content="Gerçek insanlarla, güvenli ve seviyeli sohbet platformu.">
-  <meta name="theme-color" content="#d4dce8">
+  <meta name="theme-color" content="#000080">
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968804.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -14,7 +14,6 @@
       --mirc-navy: #000080;
       --mirc-bg: #d4dce8;
       --terminal-green: #00ff99;
-      --dark-bg: #0b0f14;
     }
     body, html {
       background-color: white;
@@ -25,6 +24,8 @@
       font-family: 'Courier New', Courier, monospace;
       -webkit-tap-highlight-color: transparent;
       overflow: hidden;
+      /* Masaüstünde taşmaları önlemek için */
+      position: relative;
     }
     #root {
       height: 100%;
@@ -35,25 +36,24 @@
       padding-top: env(safe-area-inset-top, 0px);
     }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 3px; }
-    ::-webkit-scrollbar-track { background: #f1f1f1; }
-    ::-webkit-scrollbar-thumb { background: #ccc; }
+    /* Scrollbar - mIRC stili ince */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #d4dce8; }
+    ::-webkit-scrollbar-thumb { background: #000080; }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .fade-in { animation: fadeIn 0.2s ease-out; }
+    .fade-in { animation: fadeIn 0.15s ease-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .cursor-blink {
       display: inline-block;
-      width: 8px;
-      height: 15px;
-      background-color: #00ff99;
+      width: 7px;
+      height: 14px;
+      background-color: #000;
       animation: blink 1s step-end infinite;
       vertical-align: middle;
-      margin-left: 4px;
     }
     @keyframes blink { 50% { opacity: 0; } }
   </style>

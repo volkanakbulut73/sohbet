@@ -8,12 +8,13 @@ import RegistrationForm from './components/RegistrationForm';
 import AdminDashboard from './components/AdminDashboard';
 import { ChatModuleProps } from './types';
 import { storageService } from './services/storageService';
-import { Menu, X, Send, Lock, Clock, Smile } from 'lucide-react';
+import { Menu, X, Send, Lock, Clock, Smile, Users as UsersIcon } from 'lucide-react';
 
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
   const [viewportHeight, setViewportHeight] = useState('100%');
+  const [showUserList, setShowUserList] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const getInitialView = (): AppView => {
@@ -100,95 +101,129 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   
   if (view === 'login' || (view === 'landing' && embedded)) {
     return (
-      <div className="fixed inset-0 bg-[#0b0f14] flex items-center justify-center p-4 z-[100] font-mono">
-        <div className="w-full max-w-sm bg-gray-900 border border-gray-800 p-8 shadow-2xl">
-          <div className="text-center mb-8"><Lock size={40} className="text-[#00ff99] mx-auto mb-2"/><h2 className="text-white font-black uppercase italic text-sm">GİRİŞ PANELİ</h2></div>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input type="email" placeholder="Email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full bg-black border border-gray-800 p-3 text-white text-xs outline-none focus:border-[#00ff99]" />
-            <input type="password" placeholder="Şifre" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-black border border-gray-800 p-3 text-white text-xs outline-none focus:border-[#00ff99]" />
-            {loginError && <p className="text-red-500 text-[10px] font-bold text-center">{loginError}</p>}
-            <button disabled={isLoggingIn} className="w-full bg-[#00ff99] text-black py-3 text-xs font-black uppercase">GİRİŞ YAP</button>
-          </form>
-          <button onClick={() => setView('register')} className="w-full text-[#00ff99] text-[10px] font-black uppercase mt-4 hover:underline">Kayıt Başvurusu →</button>
+      <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 z-[100] font-mono">
+        <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-[2px_2px_10px_rgba(0,0,0,0.2)]">
+          <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold flex justify-between items-center">
+            <span>Connect</span>
+            <X size={14} className="cursor-pointer" />
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex justify-center mb-2">
+              <div className="bg-white p-3 border-2 border-gray-400">
+                <Lock size={32} className="text-[#000080]" />
+              </div>
+            </div>
+            <form onSubmit={handleLogin} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-700">E-MAIL:</label>
+                <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full bg-white border border-gray-400 p-1 text-xs outline-none focus:border-[#000080]" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-700">PASSWORD:</label>
+                <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-white border border-gray-400 p-1 text-xs outline-none focus:border-[#000080]" />
+              </div>
+              {loginError && <p className="text-red-600 text-[10px] font-bold text-center">{loginError}</p>}
+              <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white shadow-[1px_1px_0_gray] text-black py-1.5 text-xs font-bold active:translate-y-[1px] active:shadow-none uppercase">GİRİŞ YAP</button>
+            </form>
+            <div className="border-t border-gray-400 pt-2 flex justify-between items-center">
+               <button onClick={() => setView('register')} className="text-[#000080] text-[10px] font-bold hover:underline italic">Kayıt Ol...</button>
+               <span className="text-[9px] text-gray-500 uppercase">mIRC v1.1.1</span>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   if (view === 'register') return <RegistrationForm onClose={() => setView(embedded ? 'login' : 'landing')} onSuccess={() => setView('pending')} />;
-  if (view === 'pending') return <div className="fixed inset-0 bg-black flex items-center justify-center p-4 text-white font-mono text-center"><div className="space-y-4"><Clock size={48} className="mx-auto text-orange-500"/><h2 className="text-xl font-bold uppercase">Onay Bekleniyor</h2><button onClick={() => setView('landing')} className="text-[#00ff99] border border-[#00ff99] px-6 py-2">Geri Dön</button></div></div>;
+  if (view === 'pending') return <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 text-[#000080] font-mono text-center italic"><div className="space-y-4 border-2 border-white p-8"><Clock size={48} className="mx-auto"/><h2 className="text-lg font-bold">ONAY BEKLENİYOR...</h2><button onClick={() => setView('landing')} className="text-[10px] border border-[#000080] px-4 py-1">Geri Dön</button></div></div>;
 
   return (
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`w-full flex flex-col bg-white overflow-hidden font-mono ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
+      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Header Area */}
-      <div className="bg-[#d4dce8] border-b border-gray-400 shrink-0 p-1 flex items-center justify-between safe-top z-10">
-        <div className="flex gap-1">
-          <button onClick={() => setIsLeftDrawerOpen(true)} className="bg-gradient-to-b from-gray-100 to-gray-400 border border-gray-600 px-3 py-1 text-[10px] font-bold text-blue-900 rounded-sm shadow-sm active:translate-y-0.5">Menü</button>
-          <button className="text-red-700 text-[10px] font-bold px-2 hidden sm:block">Radyo</button>
+      {/* 1. Status Bar - Klasik mIRC */}
+      <div className="bg-[#000080] text-white px-2 py-1 flex items-center justify-between safe-top z-10 text-[11px] font-bold shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="opacity-80">IRC</span>
+          <span className="truncate">Connected to workigomchat.online (6667)</span>
         </div>
-        <div className="flex-1 text-center truncate px-2"><span className="text-[10px] font-bold text-gray-600 uppercase">Workigom Network 1.1.1</span></div>
-        <button className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 px-3 py-1 text-[10px] font-bold text-white rounded-sm shadow-sm active:translate-y-0.5">Özel</button>
+        <div className="flex items-center gap-2">
+           <button onClick={() => setShowUserList(!showUserList)} className="hover:bg-blue-700 p-0.5"><UsersIcon size={14} /></button>
+           <button onClick={() => setIsLeftDrawerOpen(true)} className="sm:hidden"><Menu size={14} /></button>
+        </div>
       </div>
 
-      {/* 2. Channel Tabs */}
-      <div className="bg-[#eef2f7] border-b border-gray-300 flex shrink-0 overflow-x-auto no-scrollbar py-0.5 px-1 gap-1">
-        <button onClick={() => setActiveTab('Status')} className={`px-2 py-0.5 text-[10px] font-bold border ${activeTab === 'Status' ? 'bg-white border-gray-400' : 'text-blue-800 border-transparent hover:bg-gray-200'}`}>Status</button>
+      {/* 2. Channel Tabs - Geveze/mIRC stili */}
+      <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-0.5 px-1 gap-0.5">
+        <button onClick={() => setActiveTab('Status')} className={`px-2 py-0.5 text-[10px] font-bold border ${activeTab === 'Status' ? 'bg-white border-gray-400 shadow-inner' : 'text-[#000080] border-transparent hover:bg-gray-200'}`}>Status</button>
         {['#Sohbet', '#Yardim'].map(chan => (
-          <button key={chan} onClick={() => setActiveTab(chan)} className={`px-2 py-0.5 text-[10px] font-bold border flex items-center gap-1 ${activeTab === chan ? 'bg-white border-gray-400' : 'text-blue-800 border-transparent hover:bg-gray-200'}`}>{chan} <span className="text-gray-400 text-[8px]">x</span></button>
+          <button key={chan} onClick={() => setActiveTab(chan)} className={`px-2 py-0.5 text-[10px] font-bold border flex items-center gap-1 ${activeTab === chan ? 'bg-white border-gray-400 shadow-inner' : 'text-[#000080] border-transparent hover:bg-gray-200'}`}>{chan} <span className="text-red-600 text-[8px] opacity-50">x</span></button>
         ))}
       </div>
 
-      {/* 3. Main Area: mIRC Hiyerarşisi */}
-      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative">
+      {/* 3. Main Area */}
+      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative mx-0.5 mb-0.5 border border-gray-400">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
-          {isAILoading && <div className="absolute top-0 left-0 right-0 h-[1px] bg-blue-500 animate-pulse z-10" />}
+          {isAILoading && <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500 animate-pulse z-10" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* User List */}
-        <div className="w-24 md:w-32 border-l border-gray-300 bg-white shrink-0 flex flex-col">
-          <UserList 
-            users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t', 'aLin', 'Arazi', 'Asya', 'Ace', 'Bol', 'DeryureK', 'CeyLin', 'DiVeeT', 'Kaya', 'Letch']} 
-            currentUser={userName} 
-            onUserClick={(e, n) => initiatePrivateChat(n)}
-            onClose={() => {}} 
-            currentOps={['Admin', 'GeminiBot', 'SevimLi']}
-          />
-        </div>
+        {/* User List - Masaüstünde görünür, mobilde toggle ile gelir */}
+        {showUserList && (
+          <div className="w-28 md:w-36 border-l border-gray-300 bg-white shrink-0 flex flex-col overflow-hidden">
+            <div className="bg-gray-100 p-1 border-b border-gray-200 flex justify-center italic text-[9px] font-bold text-gray-500 uppercase">User List</div>
+            <UserList 
+              users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t', 'aLin', 'Arazi', 'Asya', 'Ace', 'Bol', 'DeryureK', 'CeyLin', 'DiVeeT', 'Kaya', 'Letch']} 
+              currentUser={userName} 
+              onUserClick={(e, n) => initiatePrivateChat(n)}
+              onClose={() => {}} 
+              currentOps={['Admin', 'GeminiBot', 'SevimLi']}
+            />
+          </div>
+        )}
       </div>
 
-      {/* 4. Input Area: mIRC Stili Klavye Dostu */}
-      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-400 p-1 px-1.5 md:p-2 z-20">
+      {/* 4. Input Area - Geveze stili ince ve net */}
+      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 px-1.5 z-20">
         <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-2xl mx-auto">
-          <div className="flex-1 bg-white border border-gray-400 h-8 md:h-9 px-2 flex items-center shadow-inner rounded-sm">
+          <div className="bg-white border border-gray-500 h-8 px-2 flex items-center shadow-inner rounded-sm w-12 md:w-16 shrink-0 justify-center">
+            <span className="text-[#000080] text-[10px] font-bold truncate">{userName}</span>
+          </div>
+          <div className="flex-1 bg-white border border-gray-500 h-8 px-2 flex items-center shadow-inner rounded-sm">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[11px] md:text-[12px] outline-none font-medium h-full text-black"
-              placeholder="Mesaj yaz..."
+              className="flex-1 bg-transparent text-[12px] outline-none font-medium h-full text-black placeholder:text-gray-300"
+              placeholder="Mesaj gönder..."
               autoFocus
             />
           </div>
-          <button type="submit" className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-3 md:px-4 h-8 md:h-9 text-[10px] font-bold rounded-sm shadow-sm active:translate-y-0.5 uppercase">GÖNDER</button>
+          <button type="submit" className="bg-[#d4dce8] border border-gray-600 text-black px-4 h-8 text-[10px] font-bold rounded-sm shadow-[1px_1px_0_white_inset] active:translate-y-[1px] active:shadow-none uppercase">GÖNDER</button>
         </form>
-        {/* Sitenin kendi navigasyon barı için mobilde minik bir boşluk bırakıyoruz */}
-        <div className="h-10 sm:h-0 block md:hidden" />
+        {/* Sitenin alt menüleri için mobilde minik boşluk */}
+        <div className="h-2 sm:h-0 block md:hidden" />
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Menu Drawer */}
       {isLeftDrawerOpen && (
         <div className="fixed inset-0 z-[1000]">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#0b0f14] p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center text-white border-b border-gray-800 pb-4 font-bold uppercase italic text-xs"><span>SERVER MENU</span><X size={20} className="cursor-pointer" onClick={() => setIsLeftDrawerOpen(false)} /></div>
-            {['#Sohbet', '#Yardim'].map(c => <button key={c} onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} className="w-full text-left p-2 text-gray-400 hover:text-white text-xs font-bold uppercase">{c}</button>)}
-            <button onClick={() => setView('landing')} className="absolute bottom-10 left-6 right-6 p-3 bg-red-600 text-white font-bold text-[10px] rounded uppercase shadow-lg">Güvenli Çıkış</button>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
+          <div className="absolute right-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-l border-white p-4 space-y-4 shadow-2xl">
+            <div className="bg-[#000080] text-white p-2 font-bold text-[11px] flex justify-between items-center">
+               <span>MENU</span>
+               <X size={16} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
+            </div>
+            <div className="space-y-1">
+              {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => (
+                <button key={c} onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} className="w-full text-left p-2 text-[#000080] hover:bg-white text-xs font-bold uppercase transition-colors">{c}</button>
+              ))}
+            </div>
+            <button onClick={() => setView('landing')} className="w-full p-2 bg-red-600 text-white font-bold text-[10px] rounded uppercase mt-10">GÜVENLİ ÇIKIŞ</button>
           </div>
         </div>
       )}
