@@ -8,13 +8,13 @@ import RegistrationForm from './components/RegistrationForm';
 import AdminDashboard from './components/AdminDashboard';
 import { ChatModuleProps } from './types';
 import { storageService } from './services/storageService';
-import { Menu, X, Send, Lock, Clock, Smile, Users as UsersIcon } from 'lucide-react';
+import { Menu, X, Send, Lock, Clock, Smile, Users as UsersIcon, Hash } from 'lucide-react';
 
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
   const [viewportHeight, setViewportHeight] = useState('100%');
-  const [showUserList, setShowUserList] = useState(true);
+  const [showUserList, setShowUserList] = useState(false); // Mobilde default kapalı
   const containerRef = useRef<HTMLDivElement>(null);
 
   const getInitialView = (): AppView => {
@@ -39,27 +39,28 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   const [inputText, setInputText] = useState('');
 
-  // Sadece mobilde klavye açıldığında daralma efektini uygula
+  // Mobil klavye ve viewport yönetimi
   useEffect(() => {
     const handleVisualViewportResize = () => {
-      if (window.visualViewport && window.innerWidth < 768) {
+      if (window.visualViewport) {
+        // embedded modda container'ın yüksekliğini visualViewport'a göre daraltıyoruz
         setViewportHeight(`${window.visualViewport.height}px`);
-      } else {
-        setViewportHeight('100%');
       }
     };
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleVisualViewportResize);
+      window.visualViewport.addEventListener('scroll', handleVisualViewportResize);
     }
     
     handleVisualViewportResize();
     return () => {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleVisualViewportResize);
+        window.visualViewport.removeEventListener('scroll', handleVisualViewportResize);
       }
     };
-  }, []);
+  }, [embedded]);
 
   useEffect(() => {
     if (externalUser && externalUser.trim() !== "") {
@@ -115,15 +116,15 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             </div>
             <form onSubmit={handleLogin} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-700">E-MAIL:</label>
-                <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full bg-white border border-gray-400 p-1 text-xs outline-none focus:border-[#000080]" />
+                <label className="text-[10px] font-bold text-gray-700 uppercase">E-MAIL:</label>
+                <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full bg-white border border-gray-400 p-2 text-sm outline-none focus:border-[#000080]" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-700">PASSWORD:</label>
-                <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-white border border-gray-400 p-1 text-xs outline-none focus:border-[#000080]" />
+                <label className="text-[10px] font-bold text-gray-700 uppercase">PASSWORD:</label>
+                <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-white border border-gray-400 p-2 text-sm outline-none focus:border-[#000080]" />
               </div>
               {loginError && <p className="text-red-600 text-[10px] font-bold text-center">{loginError}</p>}
-              <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white shadow-[1px_1px_0_gray] text-black py-1.5 text-xs font-bold active:translate-y-[1px] active:shadow-none uppercase">GİRİŞ YAP</button>
+              <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white shadow-[1px_1px_0_gray] text-black py-2 text-xs font-bold active:translate-y-[1px] active:shadow-none uppercase">GİRİŞ YAP</button>
             </form>
             <div className="border-t border-gray-400 pt-2 flex justify-between items-center">
                <button onClick={() => setView('register')} className="text-[#000080] text-[10px] font-bold hover:underline italic">Kayıt Ol...</button>
@@ -136,94 +137,130 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   }
 
   if (view === 'register') return <RegistrationForm onClose={() => setView(embedded ? 'login' : 'landing')} onSuccess={() => setView('pending')} />;
-  if (view === 'pending') return <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 text-[#000080] font-mono text-center italic"><div className="space-y-4 border-2 border-white p-8"><Clock size={48} className="mx-auto"/><h2 className="text-lg font-bold">ONAY BEKLENİYOR...</h2><button onClick={() => setView('landing')} className="text-[10px] border border-[#000080] px-4 py-1">Geri Dön</button></div></div>;
+  if (view === 'pending') return <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 text-[#000080] font-mono text-center italic"><div className="space-y-4 border-2 border-white p-8"><Clock size={48} className="mx-auto"/><h2 className="text-lg font-bold uppercase">Onay Bekleniyor</h2><button onClick={() => setView('landing')} className="text-[10px] border border-[#000080] px-4 py-1">Geri Dön</button></div></div>;
 
   return (
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
+      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Status Bar - Klasik mIRC */}
-      <div className="bg-[#000080] text-white px-2 py-1 flex items-center justify-between safe-top z-10 text-[11px] font-bold shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="opacity-80">IRC</span>
-          <span className="truncate">Connected to workigomchat.online (6667)</span>
-        </div>
+      {/* 1. Status Bar */}
+      <div className="bg-[#000080] text-white px-2 py-1.5 flex items-center justify-between safe-top z-10 text-[11px] font-bold shrink-0 border-b border-white/10">
         <div className="flex items-center gap-2">
-           <button onClick={() => setShowUserList(!showUserList)} className="hover:bg-blue-700 p-0.5"><UsersIcon size={14} /></button>
-           <button onClick={() => setIsLeftDrawerOpen(true)} className="sm:hidden"><Menu size={14} /></button>
+          <Menu size={18} className="cursor-pointer sm:hidden" onClick={() => setIsLeftDrawerOpen(true)} />
+          <span className="truncate">Connected: workigomchat.online</span>
+        </div>
+        <div className="flex items-center gap-3">
+           <button onClick={() => setShowUserList(!showUserList)} className="hover:bg-blue-700 p-0.5 rounded"><UsersIcon size={16} /></button>
         </div>
       </div>
 
-      {/* 2. Channel Tabs - Geveze/mIRC stili */}
-      <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-0.5 px-1 gap-0.5">
-        <button onClick={() => setActiveTab('Status')} className={`px-2 py-0.5 text-[10px] font-bold border ${activeTab === 'Status' ? 'bg-white border-gray-400 shadow-inner' : 'text-[#000080] border-transparent hover:bg-gray-200'}`}>Status</button>
+      {/* 2. Channel Tabs - Mobilde her zaman görünür ve kaydırılabilir */}
+      <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1">
+        <button 
+          onClick={() => setActiveTab('Status')} 
+          className={`px-3 py-1 text-[10px] font-bold border transition-all whitespace-nowrap ${activeTab === 'Status' ? 'bg-white border-gray-500 text-black shadow-inner' : 'bg-gray-200 border-transparent text-[#000080]'}`}
+        >
+          Status
+        </button>
         {['#Sohbet', '#Yardim'].map(chan => (
-          <button key={chan} onClick={() => setActiveTab(chan)} className={`px-2 py-0.5 text-[10px] font-bold border flex items-center gap-1 ${activeTab === chan ? 'bg-white border-gray-400 shadow-inner' : 'text-[#000080] border-transparent hover:bg-gray-200'}`}>{chan} <span className="text-red-600 text-[8px] opacity-50">x</span></button>
+          <button 
+            key={chan} 
+            onClick={() => setActiveTab(chan)} 
+            className={`px-3 py-1 text-[10px] font-bold border transition-all flex items-center gap-1 whitespace-nowrap ${activeTab === chan ? 'bg-white border-gray-500 text-black shadow-inner' : 'bg-gray-200 border-transparent text-[#000080]'}`}
+          >
+            {chan} <span className="text-red-700 text-[8px] opacity-50 ml-1">x</span>
+          </button>
         ))}
+        {/* Özel Mesajlar Sekmesi */}
+        <div className="flex gap-1">
+           {/* Dinamik özel mesaj tabları buraya gelebilir */}
+        </div>
       </div>
 
       {/* 3. Main Area */}
-      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative mx-0.5 mb-0.5 border border-gray-400">
+      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative mx-1 my-0.5 border border-gray-400">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
-          {isAILoading && <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500 animate-pulse z-10" />}
+          {isAILoading && <div className="absolute top-0 left-0 right-0 h-[3px] bg-blue-500 animate-pulse z-10 shadow-sm" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* User List - Masaüstünde görünür, mobilde toggle ile gelir */}
+        {/* User List Panel (Overlay on mobile) */}
         {showUserList && (
-          <div className="w-28 md:w-36 border-l border-gray-300 bg-white shrink-0 flex flex-col overflow-hidden">
-            <div className="bg-gray-100 p-1 border-b border-gray-200 flex justify-center italic text-[9px] font-bold text-gray-500 uppercase">User List</div>
+          <div className="absolute right-0 top-0 bottom-0 w-32 md:w-40 border-l border-gray-300 bg-white z-[30] flex flex-col shadow-2xl md:shadow-none md:relative md:block">
+            <div className="bg-gray-100 p-1 border-b border-gray-200 flex justify-between items-center px-2">
+              <span className="italic text-[9px] font-bold text-gray-500 uppercase">User List</span>
+              <X size={14} className="md:hidden cursor-pointer" onClick={() => setShowUserList(false)} />
+            </div>
             <UserList 
               users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t', 'aLin', 'Arazi', 'Asya', 'Ace', 'Bol', 'DeryureK', 'CeyLin', 'DiVeeT', 'Kaya', 'Letch']} 
               currentUser={userName} 
               onUserClick={(e, n) => initiatePrivateChat(n)}
-              onClose={() => {}} 
+              onClose={() => setShowUserList(false)} 
               currentOps={['Admin', 'GeminiBot', 'SevimLi']}
             />
           </div>
         )}
       </div>
 
-      {/* 4. Input Area - Geveze stili ince ve net */}
-      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 px-1.5 z-20">
-        <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-2xl mx-auto">
-          <div className="bg-white border border-gray-500 h-8 px-2 flex items-center shadow-inner rounded-sm w-12 md:w-16 shrink-0 justify-center">
-            <span className="text-[#000080] text-[10px] font-bold truncate">{userName}</span>
+      {/* 4. Input Area - Mobilde site nav barı üzerinde kalacak şekilde düzenlendi */}
+      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 md:p-2 z-20 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]">
+        <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto">
+          <div className="hidden sm:flex bg-white border border-gray-500 h-9 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
+            <span className="text-[#000080] text-[11px] font-bold truncate">{userName}</span>
           </div>
-          <div className="flex-1 bg-white border border-gray-500 h-8 px-2 flex items-center shadow-inner rounded-sm">
+          <div className="flex-1 bg-white border border-gray-500 h-10 px-3 flex items-center shadow-inner rounded-sm">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[12px] outline-none font-medium h-full text-black placeholder:text-gray-300"
-              placeholder="Mesaj gönder..."
+              className="flex-1 bg-transparent text-[14px] md:text-[13px] outline-none font-medium h-full text-black placeholder:text-gray-400"
+              placeholder="Mesajınızı buraya yazın..."
               autoFocus
             />
           </div>
-          <button type="submit" className="bg-[#d4dce8] border border-gray-600 text-black px-4 h-8 text-[10px] font-bold rounded-sm shadow-[1px_1px_0_white_inset] active:translate-y-[1px] active:shadow-none uppercase">GÖNDER</button>
+          <button 
+            type="submit" 
+            className="bg-[#000080] text-white px-5 h-10 text-[11px] font-bold rounded-sm shadow-md active:translate-y-[1px] active:shadow-none uppercase flex items-center justify-center gap-2"
+          >
+            <span className="hidden sm:inline">GÖNDER</span>
+            <Send size={14} className="sm:hidden" />
+          </button>
         </form>
-        {/* Sitenin alt menüleri için mobilde minik boşluk */}
-        <div className="h-2 sm:h-0 block md:hidden" />
+        {/* Güvenli alan boşluğu: Mobilde site navigasyonunun üstünde kalması için */}
+        <div className="h-10 sm:h-0" />
       </div>
 
-      {/* Mobile Menu Drawer */}
+      {/* Mobile Sidebar Drawer */}
       {isLeftDrawerOpen && (
         <div className="fixed inset-0 z-[1000]">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-l border-white p-4 space-y-4 shadow-2xl">
-            <div className="bg-[#000080] text-white p-2 font-bold text-[11px] flex justify-between items-center">
-               <span>MENU</span>
-               <X size={16} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[#d4dce8] border-r border-white p-0 shadow-2xl flex flex-col">
+            <div className="bg-[#000080] text-white p-3 font-bold text-[12px] flex justify-between items-center shadow-lg">
+               <span className="flex items-center gap-2"><Hash size={16}/> SERVER NAVIGATION</span>
+               <X size={20} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
             </div>
-            <div className="space-y-1">
+            <div className="p-4 space-y-2 overflow-y-auto flex-1">
+              <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 tracking-widest border-b border-gray-300 pb-1">Channels</p>
               {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => (
-                <button key={c} onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} className="w-full text-left p-2 text-[#000080] hover:bg-white text-xs font-bold uppercase transition-colors">{c}</button>
+                <button 
+                  key={c} 
+                  onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} 
+                  className={`w-full text-left p-3 text-sm font-bold uppercase transition-all rounded ${activeTab === c ? 'bg-[#000080] text-white' : 'text-[#000080] hover:bg-white/50'}`}
+                >
+                  {c}
+                </button>
               ))}
+              
+              <p className="text-[10px] text-gray-500 font-bold uppercase mt-6 mb-2 tracking-widest border-b border-gray-300 pb-1">Settings</p>
+              <button className="w-full text-left p-3 text-gray-700 text-sm font-bold uppercase hover:bg-white/50 rounded">Nick Değiştir</button>
+              <button className="w-full text-left p-3 text-gray-700 text-sm font-bold uppercase hover:bg-white/50 rounded">Profilim</button>
             </div>
-            <button onClick={() => setView('landing')} className="w-full p-2 bg-red-600 text-white font-bold text-[10px] rounded uppercase mt-10">GÜVENLİ ÇIKIŞ</button>
+            <div className="p-4 border-t border-gray-300 bg-gray-100">
+               <button onClick={() => window.location.href = '/'} className="w-full p-3 bg-red-600 text-white font-bold text-[11px] rounded uppercase shadow-lg active:scale-95 transition-transform">GÜVENLİ ÇIKIŞ YAP</button>
+            </div>
           </div>
         </div>
       )}
