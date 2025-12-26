@@ -13,6 +13,7 @@ import { Menu, X, Send, Lock, Clock, Smile, Users as UsersIcon, Hash } from 'luc
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
+  // Gömülü modda yüksekliği ebeveyn div belirlemeli, standalone modda dinamik hesaplanır.
   const [viewportHeight, setViewportHeight] = useState('100%');
   const [showUserList, setShowUserList] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,25 +42,23 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   useEffect(() => {
     const handleVisualViewportResize = () => {
-      if (window.visualViewport) {
-        // Mobilde klavye açıldığında yüksekliği dinamik güncelle
+      // Sadece ana sitede (workigomchat.online) tam ekran modundayken dinamik hesapla.
+      // workigom.com içindeyken (%100) kalsın.
+      if (window.visualViewport && !embedded) {
         setViewportHeight(`${window.visualViewport.height}px`);
       }
     };
 
-    if (window.visualViewport) {
+    if (window.visualViewport && !embedded) {
       window.visualViewport.addEventListener('resize', handleVisualViewportResize);
-      window.visualViewport.addEventListener('scroll', handleVisualViewportResize);
     }
     
-    handleVisualViewportResize();
     return () => {
-      if (window.visualViewport) {
+      if (window.visualViewport && !embedded) {
         window.visualViewport.removeEventListener('resize', handleVisualViewportResize);
-        window.visualViewport.removeEventListener('scroll', handleVisualViewportResize);
       }
     };
-  }, []);
+  }, [embedded]);
 
   useEffect(() => {
     if (externalUser && externalUser.trim() !== "") {
@@ -142,11 +141,11 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
+      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'h-full relative' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Status Bar - Üst boşluk mobilde optimize edildi */}
-      <div className="bg-[#000080] text-white px-2 py-1.5 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10">
+      {/* 1. Status Bar - Üst boşluk mobilde optimize edildi (safe-top sadece standalone modda) */}
+      <div className={`bg-[#000080] text-white px-2 py-1.5 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10 ${!embedded ? 'safe-top' : ''}`}>
         <div className="flex items-center gap-2">
           <Menu size={18} className="cursor-pointer sm:hidden" onClick={() => setIsLeftDrawerOpen(true)} />
           <span className="truncate sm:inline hidden">Connected: workigomchat.online</span>
@@ -157,7 +156,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* 2. Channel Tabs - Mobilde daha ince ve net */}
+      {/* 2. Channel Tabs */}
       <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 shadow-sm">
         <button 
           onClick={() => setActiveTab('Status')} 
@@ -201,7 +200,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area - Mesaj kutusu her zaman altta ve görünür */}
+      {/* 4. Input Area - Mesaj kutusu her zaman altta (Spacer kaldırıldı) */}
       <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 md:p-2 z-20">
         <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto">
           <div className="hidden sm:flex bg-white border border-gray-500 h-9 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
@@ -222,7 +221,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             className="bg-[#000080] text-white px-5 h-10 text-[11px] font-bold rounded-sm shadow-md active:translate-y-[1px] active:shadow-none uppercase flex items-center justify-center gap-2"
           >
             <span className="hidden sm:inline">GÖNDER</span>
-            <Send size={14} className="sm:hidden" />
+            <Send size={16} className="sm:hidden" />
           </button>
         </form>
       </div>
