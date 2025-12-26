@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserX, UserCheck, Shield, ShieldAlert, Crown, Star, ShieldCheck, MoreVertical, Hammer, Ban, ArrowUpCircle, ArrowDownCircle, X, Users, Heart } from 'lucide-react';
+import { Shield, Crown, Star, MoreVertical, Hammer, ArrowUpCircle, ArrowDownCircle, X, Users, Heart } from 'lucide-react';
 
 interface UserListProps {
   users: string[];
@@ -19,72 +19,55 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, onActi
   const canManage = isAdmin || currentOps.includes(currentUser);
 
   const getRank = (user: string) => {
-    if (user === 'GeminiBot') return { icon: <Heart size={12} className="text-pink-500 fill-pink-500" />, prefix: '@', color: 'text-pink-600' };
-    if (user.includes('Admin') || (isAdmin && user === currentUser)) return { icon: <Crown size={12} className="text-yellow-600 fill-yellow-500" />, prefix: '', color: 'text-yellow-700' };
-    if (currentOps.includes(user)) return { icon: <Shield size={12} className="text-blue-600 fill-blue-500" />, prefix: '@', color: 'text-blue-700' };
-    return { icon: <Star size={11} className="text-gray-400" />, prefix: '', color: 'text-gray-600' };
+    const isMe = user.toLowerCase() === currentUser.toLowerCase();
+    if (user === 'GeminiBot') return { icon: <Heart size={14} className="text-red-500" />, prefix: '@' };
+    if (user.toLowerCase().includes('admin')) return { icon: <Crown size={14} className="text-yellow-600" />, prefix: '' };
+    if (isMe) return { icon: <Shield size={14} className="text-black" />, prefix: '' };
+    return { icon: <Star size={14} className="text-gray-300" />, prefix: '' };
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white text-[12px] select-none font-mono relative">
-      {/* List Header */}
-      <div className="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center shrink-0">
-        <span className="text-black font-black uppercase tracking-tighter flex items-center gap-2">
-          <Users size={16} /> AKTİF ÜYELER
-        </span>
-        <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full">
-          <X size={16} />
+    <div className="w-full h-full flex flex-col bg-white text-[13px] select-none font-mono">
+      {/* Header matching screenshot overlay look */}
+      <div className="bg-white p-4 border-b border-gray-100 flex justify-between items-center shrink-0">
+        <span className="text-gray-300 text-[10px] font-black uppercase tracking-widest">ACTIVE</span>
+        <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-400">
+          <X size={18} />
         </button>
       </div>
 
-      <div className="bg-gray-50/50 p-2 px-4 border-b border-gray-200 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-        ACTIVE
-      </div>
-
-      <div className="flex-1 overflow-y-auto py-2 custom-scrollbar no-scrollbar">
+      <div className="flex-1 overflow-y-auto no-scrollbar">
         {uniqueUsers.map((user, idx) => {
           const rank = getRank(user);
           const isBlocked = blockedUsers.includes(user);
-          const isOp = currentOps.includes(user);
-          const displayUser = String(user);
+          const isMe = user.toLowerCase() === currentUser.toLowerCase();
           
           return (
-            <div key={`${displayUser}-${idx}`} className="relative group">
+            <div key={`${user}-${idx}`} className="relative group">
               <div 
-                className={`flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors ${isBlocked ? 'opacity-40' : ''}`}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${isMe ? 'bg-gray-100/50' : ''} ${isBlocked ? 'opacity-30' : ''}`}
                 onClick={(e) => {
-                  if (canManage && displayUser !== currentUser && displayUser !== 'GeminiBot') {
-                    setSelectedUser(selectedUser === displayUser ? null : displayUser);
+                  if (canManage && !isMe && user !== 'GeminiBot') {
+                    setSelectedUser(selectedUser === user ? null : user);
                   } else {
-                    onUserClick?.(e, displayUser);
+                    onUserClick?.(e, user);
                   }
                 }}
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className="shrink-0">{rank.icon}</span>
-                  <span className={`truncate font-bold text-[13px] ${rank.color}`}>
-                    {rank.prefix}{displayUser}
-                  </span>
-                </div>
-                {canManage && displayUser !== currentUser && displayUser !== 'GeminiBot' && (
-                  <MoreVertical size={14} className="text-gray-300 group-hover:text-gray-500 shrink-0" />
-                )}
+                <span className="shrink-0">{rank.icon}</span>
+                <span className={`truncate font-bold tracking-tight ${isMe ? 'text-black uppercase' : 'text-gray-700'}`}>
+                  {rank.prefix}{user}
+                </span>
               </div>
 
               {/* Action Menu (Popup) */}
-              {selectedUser === displayUser && (
-                <div className="absolute right-4 top-8 z-[100] bg-white border border-gray-200 shadow-xl py-1 w-32 rounded-lg fade-in">
-                  {!isOp ? (
-                    <button onClick={() => { onAction?.(displayUser, 'op'); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-blue-50 text-blue-700 flex items-center gap-2 text-[11px] font-bold">
-                      <ArrowUpCircle size={14} /> OP YETKİSİ
-                    </button>
-                  ) : (
-                    <button onClick={() => { onAction?.(displayUser, 'deop'); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-600 flex items-center gap-2 text-[11px] font-bold">
-                      <ArrowDownCircle size={14} /> YETKİ AL
-                    </button>
-                  )}
-                  <button onClick={() => { onAction?.(displayUser, 'kick'); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 text-[11px] font-bold">
+              {selectedUser === user && (
+                <div className="absolute right-4 top-10 z-[100] bg-white border border-gray-200 shadow-2xl py-1 w-40 rounded-sm fade-in">
+                   <button onClick={() => { onAction?.(user, 'kick'); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 text-[11px] font-bold">
                     <Hammer size={14} /> ODADAN AT
+                  </button>
+                  <button onClick={() => { onUserClick?.(null as any, user); setSelectedUser(null); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-600 flex items-center gap-2 text-[11px] font-bold">
+                    <Users size={14} /> ÖZEL MESAJ
                   </button>
                 </div>
               )}
@@ -93,13 +76,12 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, onActi
         })}
       </div>
       
-      {/* Current User Status Area */}
-      <div className="mt-auto bg-gray-900 border-t border-gray-800 p-4 pb-20 sm:pb-4">
-        <div className="flex items-center gap-2 text-white font-black uppercase tracking-tighter truncate text-[11px]">
-           <div className="w-2 h-2 bg-[#00ff99] rounded-full animate-pulse shadow-[0_0_8px_#00ff99]"></div>
-           {currentUser}
+      {/* Bottom status matching the grey bar style in screenshot */}
+      <div className="mt-auto bg-gray-100/50 p-4 border-t border-gray-200">
+        <div className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[9px]">
+           <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_4px_#22c55e]"></div>
+           STATUS: ONLINE
         </div>
-        <p className="text-[9px] text-gray-500 font-bold mt-1">BAĞLI / ONLINE</p>
       </div>
 
       {selectedUser && <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setSelectedUser(null)} />}

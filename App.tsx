@@ -6,9 +6,8 @@ import LandingPage from './components/LandingPage';
 import RegistrationForm from './components/RegistrationForm';
 import AdminDashboard from './components/AdminDashboard';
 import { ChatModuleProps } from './types';
-import { CHAT_MODULE_CONFIG } from './config';
 import { storageService } from './services/storageService';
-import { Menu, X, Hash, Users, LogOut, MessageSquare, Send, Lock, Clock, Settings, ChevronLeft, Plus, Home, Heart, User } from 'lucide-react';
+import { Menu, X, Hash, Users, LogOut, MessageSquare, Send, Lock, Clock, Settings, ChevronLeft, Plus, Home, Heart, User, LogIn } from 'lucide-react';
 
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
@@ -168,8 +167,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             const success = await storageService.adminLogin(adminForm.username, adminForm.password);
             if (success) setView('admin_panel'); else setLoginError('Hata!');
           }} className="space-y-4">
-            <input type="text" placeholder="Admin Nick" value={adminForm.username} onChange={e => setAdminForm({...adminForm, username: e.target.value})} className="w-full bg-black border border-gray-800 p-3 text-white text-xs" />
-            <input type="password" placeholder="Şifre" value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} className="w-full bg-black border border-gray-800 p-3 text-white text-xs" />
+            <input type="text" placeholder="Admin Nick" value={adminForm.username} onChange={e => setAdminForm({...adminForm, username: e.target.value})} className="w-full bg-black border border-gray-700 p-3 text-white text-xs" />
+            <input type="password" placeholder="Şifre" value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} className="w-full bg-black border border-gray-700 p-3 text-white text-xs" />
             <button className="w-full bg-[#00ff99] text-black py-4 text-xs font-black uppercase">Giriş</button>
           </form>
         </div>
@@ -180,87 +179,95 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   return (
     <div className={`h-screen-safe w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
       
-      {/* Header - As per screenshot */}
-      <div className="safe-top bg-[#1a1f26] border-b border-gray-800 shrink-0 z-50">
-        <div className="h-12 flex items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setView(embedded ? 'login' : 'landing')}
-              className="w-8 h-8 rounded-full bg-gray-800/50 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-            >
-              <ChevronLeft size={20} />
+      {/* 1. Header Area - Exactly as screenshot */}
+      <div className="safe-top bg-black border-b border-gray-800 shrink-0 z-50">
+        <div className="h-14 flex items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsLeftDrawerOpen(true)} className="p-1 text-white hover:bg-gray-800 rounded-sm">
+              <Menu size={24} />
             </button>
             <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-[14px] font-black text-white tracking-tight">Global Sohbet</span>
-                <span className="text-[9px] text-[#00ff99] font-bold">V1.1.1</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[14px] font-black text-white tracking-tighter italic uppercase">GLOBAL SOHBET</span>
+                <span className="text-[9px] text-gray-500 font-bold uppercase">V1.1.1</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 bg-[#00ff99] rounded-full animate-pulse shadow-[0_0_8px_#00ff99]"></div>
-                <span className="text-[10px] text-gray-400 font-bold">Hattasız Bağlantı: <span className="text-gray-300">{userName}</span></span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></div>
+                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                  BAĞLANTI: <span className="text-gray-200">{userName?.toUpperCase()}</span>
+                </span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-             <button onClick={() => setIsRightDrawerOpen(!isRightDrawerOpen)} className="p-2 text-gray-400 hover:text-white">
-               <Users size={20} />
+          <div className="flex items-center gap-3">
+             <button onClick={() => setIsRightDrawerOpen(!isRightDrawerOpen)} className="p-2 text-gray-400 hover:text-white transition-colors">
+               <Users size={22} />
+             </button>
+             <button onClick={() => setView(embedded ? 'login' : 'landing')} className="p-2 text-gray-400 hover:text-white transition-colors">
+               <LogIn size={22} className="rotate-180" />
              </button>
           </div>
         </div>
       </div>
 
-      {/* Sub-Header / Branding */}
-      <div className="bg-[#0b0f14] py-3 px-6 flex items-center justify-between shrink-0">
-        <div className="flex flex-col">
-          <h2 className="text-[10px] font-black text-[#00ff99] uppercase tracking-widest italic">Global Sohbet V1.1.1</h2>
-          <h3 className="text-[12px] font-black text-white uppercase tracking-tighter">BAĞLANTI: {userName?.toUpperCase()}</h3>
-        </div>
-        <button onClick={() => setIsLeftDrawerOpen(true)} className="p-2 text-white">
-          <Menu size={24} />
-        </button>
-      </div>
-
-      {/* Tabs Row */}
-      <div className="bg-gray-800 flex shrink-0 overflow-x-auto no-scrollbar">
-        {['#sohbet', 'GEMINIBOT', ...privateChats.filter(n => n !== 'GeminiBot')].map(tab => (
+      {/* 2. Tabs Row */}
+      <div className="bg-black flex shrink-0 border-b border-gray-800 overflow-x-auto no-scrollbar">
+        <div className="flex items-center h-10">
           <button 
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border-b-2 ${activeTab === tab ? 'bg-white text-black border-[#00ff99]' : 'text-gray-400 border-transparent hover:text-white'}`}
+            onClick={() => setActiveTab('#sohbet')}
+            className={`h-full px-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === '#sohbet' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
           >
-            {tab.startsWith('#') ? <Hash size={12} className="inline mr-1" /> : ''}
-            {tab}
+            # #SOHBET
           </button>
-        ))}
+          <button 
+            onClick={() => setActiveTab('GEMINIBOT')}
+            className={`h-full px-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'GEMINIBOT' ? 'bg-gray-400 text-black' : 'text-gray-500 hover:text-gray-300 border-l border-gray-800'}`}
+          >
+            <MessageSquare size={12} /> GEMINIBOT
+          </button>
+          {privateChats.filter(n => n !== 'GeminiBot').map(tab => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`h-full px-6 text-[10px] font-black uppercase tracking-widest transition-all border-l border-gray-800 ${activeTab === tab ? 'bg-white text-black' : 'text-gray-500'}`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Main Chat Area */}
+      {/* 3. Main Chat Container */}
       <div className="flex-1 flex overflow-hidden relative min-h-0 bg-white">
-        {/* Left Drawer (Mobile) */}
+        {/* Left Mobile Drawer */}
         {isLeftDrawerOpen && (
           <>
-            <div className="fixed inset-0 bg-black/60 z-[100] lg:hidden" onClick={() => setIsLeftDrawerOpen(false)} />
+            <div className="fixed inset-0 bg-black/60 z-[100]" onClick={() => setIsLeftDrawerOpen(false)} />
             <div className="fixed inset-y-0 left-0 w-64 bg-gray-900 z-[110] p-4 flex flex-col fade-in">
               <div className="flex justify-between items-center mb-6">
-                <span className="text-white font-black text-sm italic">MENÜ</span>
-                <X size={20} className="text-gray-500" onClick={() => setIsLeftDrawerOpen(false)} />
+                <span className="text-white font-black text-sm italic uppercase tracking-widest">Kanal Menüsü</span>
+                <X size={24} className="text-gray-500 cursor-pointer" onClick={() => setIsLeftDrawerOpen(false)} />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 overflow-y-auto flex-1">
                 {['#sohbet', '#yardim', '#teknoloji', '#is-dunyasi'].map(c => (
-                  <button key={c} onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} className={`w-full text-left px-4 py-3 text-xs font-bold rounded-sm ${activeTab === c ? 'bg-[#00ff99] text-black' : 'text-gray-400 hover:bg-gray-800'}`}>
-                    {c}
+                  <button 
+                    key={c} 
+                    onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} 
+                    className={`w-full text-left px-4 py-3 text-xs font-bold rounded-sm border-l-4 transition-all ${activeTab === c ? 'bg-white text-black border-green-500' : 'text-gray-400 border-transparent hover:bg-gray-800'}`}
+                  >
+                    {c.toUpperCase()}
                   </button>
                 ))}
               </div>
-              <button onClick={() => setView('landing')} className="mt-auto flex items-center gap-2 text-red-500 text-xs font-bold p-4">
-                <LogOut size={16} /> ÇIKIŞ YAP
+              <button onClick={() => setView('landing')} className="mt-auto flex items-center gap-2 text-red-500 text-xs font-black p-4 border-t border-gray-800">
+                <LogOut size={16} /> GÜVENLİ ÇIKIŞ
               </button>
             </div>
           </>
         )}
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {isAILoading && <div className="h-1 bg-[#00ff99] animate-pulse shrink-0" />}
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {isAILoading && <div className="absolute top-0 left-0 right-0 h-1 bg-green-500 animate-pulse z-10" />}
           <MessageList 
             messages={messages} 
             currentUser={userName} 
@@ -269,11 +276,11 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           />
         </div>
 
-        {/* Right User List Panel */}
+        {/* Right User List - exactly as screenshot rank mapping */}
         {isRightDrawerOpen && (
-          <div className="absolute inset-y-0 right-0 w-64 bg-gray-100 border-l border-gray-300 z-50 fade-in flex flex-col">
+          <div className="absolute inset-y-0 right-0 w-64 bg-white border-l border-gray-200 z-50 fade-in shadow-2xl">
             <UserList 
-              users={[userName, 'GeminiBot', 'Admin']} 
+              users={[userName, 'GeminiBot', 'Admin', 'Fatih demirkaya', 'mehmet aslan']} 
               currentUser={userName} 
               onUserClick={(e, n) => { initiatePrivateChat(n); setIsRightDrawerOpen(false); }}
               onClose={() => setIsRightDrawerOpen(false)} 
@@ -283,46 +290,48 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* FAB - Floating Action Button */}
-      <div className="fixed bottom-24 right-6 z-40">
-        <button className="w-14 h-14 bg-gray-900 rounded-full flex items-center justify-center text-white shadow-2xl border-2 border-white/10 active:scale-95 transition-all">
-          <Plus size={32} />
-        </button>
-      </div>
-
-      {/* Input Panel - Fixed visibility */}
-      <div className="bg-white border-t border-gray-200 p-2 sm:p-4 pb-20 sm:pb-24">
-        <form onSubmit={handleSend} className="flex gap-2">
-          <div className="flex-1 bg-gray-100 rounded-full px-4 flex items-center focus-within:ring-2 ring-[#00ff99]/30 transition-all h-12">
-            <input 
-              type="text" 
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[15px] outline-none font-medium h-full placeholder-gray-400 text-black"
-              placeholder="Mesaj yazın..."
-            />
-          </div>
-          <button type="submit" className="w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center active:scale-90 transition-all">
-            <Send size={20} />
+      {/* 4. FAB + Input Area */}
+      <div className="relative bg-white pb-20 sm:pb-6">
+        {/* Floating Action Button - Mobile Only */}
+        <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-40 sm:hidden">
+          <button className="w-14 h-14 bg-[#1a1f26] rounded-full flex items-center justify-center text-white shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-2 border-white/20 active:scale-95 transition-all">
+            <Plus size={32} />
           </button>
-        </form>
+        </div>
+
+        <div className="p-3 bg-white border-t border-gray-100">
+          <form onSubmit={handleSend} className="flex gap-2 max-w-4xl mx-auto">
+            <div className="flex-1 bg-gray-100 rounded-full px-5 flex items-center focus-within:ring-2 ring-black/5 transition-all h-12">
+              <input 
+                type="text" 
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                className="flex-1 bg-transparent text-[15px] outline-none font-medium h-full placeholder-gray-400 text-black"
+                placeholder="Mesaj yazın..."
+              />
+            </div>
+            <button type="submit" className="w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0 shadow-lg">
+              <Send size={20} className="ml-0.5" />
+            </button>
+          </form>
+        </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around px-2 z-50">
+      {/* 5. Bottom Navigation - Mobile Only */}
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 sm:hidden">
         {[
-          { id: 'home', icon: <Home size={22} />, label: 'Ana Sayfa' },
-          { id: 'requests', icon: <Heart size={22} />, label: 'Talepler' },
-          { id: 'sohbet', icon: <MessageSquare size={22} />, label: 'Sohbet' },
-          { id: 'profile', icon: <User size={22} />, label: 'Profil' }
+          { id: 'home', icon: <Home size={24} />, label: 'Ana Sayfa' },
+          { id: 'requests', icon: <Heart size={24} />, label: 'Talepler' },
+          { id: 'sohbet', icon: <MessageSquare size={24} />, label: 'Sohbet' },
+          { id: 'profile', icon: <User size={24} />, label: 'Profil' }
         ].map(nav => (
           <button 
             key={nav.id}
             onClick={() => setActiveNav(nav.id)}
-            className={`flex flex-col items-center gap-1 ${activeNav === nav.id ? 'text-black font-bold' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeNav === nav.id ? 'text-black' : 'text-gray-300'}`}
           >
             {nav.icon}
-            <span className="text-[9px] uppercase font-black">{nav.label}</span>
+            <span className={`text-[9px] uppercase font-black tracking-widest ${activeNav === nav.id ? 'opacity-100' : 'opacity-0'}`}>{nav.label}</span>
           </button>
         ))}
       </div>

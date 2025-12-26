@@ -52,78 +52,37 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     switch (msg.type) {
       case MessageType.SYSTEM:
         return (
-          <div className="mirc-text py-0.5 animate-in slide-in-from-left-1 duration-200 text-[11px] sm:text-[13px] font-mono">
-            <span className="text-gray-400 mr-1.5">{time}</span>
-            <span className="text-blue-700 font-bold">-- </span>
-            <span className="text-blue-700 italic">{displayText}</span>
-          </div>
-        );
-      case MessageType.ACTION:
-        return (
-          <div className="mirc-text py-0.5 text-purple-700 italic text-[11px] sm:text-[13px] font-mono">
-            <span className="text-gray-400 mr-1.5">{time}</span>
-            * <span 
-                className="cursor-pointer hover:underline font-bold" 
-                onClick={(e) => handleNickClick(e, msg.sender)}
-                onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
-              >
-                {msg.sender}
-              </span> {displayText}
+          <div className="mirc-text py-1 text-[13px] font-mono flex gap-3">
+            <span className="text-gray-300 shrink-0">{time}</span>
+            <div className="flex gap-2">
+              <span className="text-blue-800 font-bold">--</span>
+              <span className="text-blue-800 italic font-medium">{displayText}</span>
+            </div>
           </div>
         );
       case MessageType.AI:
         return (
-          <div className="mirc-text py-0.75 mb-0.5 text-[11px] sm:text-[13px] font-mono">
-            <span className="text-gray-400 mr-1.5">{time}</span>
-            <span 
-              className="text-red-700 font-bold cursor-pointer hover:underline"
-              onClick={(e) => handleNickClick(e, 'GeminiBot')}
-              onContextMenu={(e) => handleNickContextMenu(e, 'GeminiBot')}
-            >
-              {`<@GeminiBot>`}
-            </span> <span className="text-black">{displayText}</span>
-          </div>
-        );
-      case MessageType.IMAGE:
-        return (
-          <div className="mirc-text py-1 flex flex-col group text-[11px] sm:text-[13px] font-mono">
-            <div className="flex items-center">
-              <span className="text-gray-400 shrink-0 mr-1">{time}</span>
-              <span 
-                className={`text-blue-800 shrink-0 mr-1 font-bold cursor-pointer hover:underline`}
-                onClick={(e) => handleNickClick(e, msg.sender)}
-                onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
-              >
-                {`<${msg.sender}>`}
-              </span>
-              <span className="text-gray-500 text-[9px] italic underline">Görsel paylaştı:</span>
-            </div>
-            <div className="ml-8 sm:ml-12 mt-1 border-2 border-gray-200 shadow-sm inline-block rounded max-w-[85%] overflow-hidden bg-black/5">
-              <img 
-                src={displayText} 
-                alt="Shared content" 
-                className="max-h-64 object-contain hover:scale-105 transition-transform cursor-zoom-in"
-                loading="lazy"
-                onClick={() => window.open(displayText, '_blank')}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
+          <div className="mirc-text py-1 text-[13px] font-mono flex gap-3">
+            <span className="text-gray-300 shrink-0">{time}</span>
+            <div className="flex gap-2">
+              <span className="text-gray-800 font-bold">{"<@GeminiBot>"}</span>
+              <span className="text-black">{displayText}</span>
             </div>
           </div>
         );
       default:
-        const isMe = msg.sender === currentUser;
-        const nickColor = isMe ? 'text-gray-800' : 'text-blue-800';
         return (
-          <div className="mirc-text py-0.5 flex items-start group text-[11px] sm:text-[13px] font-mono">
-            <span className="text-gray-400 shrink-0 mr-1.5 select-none">{time}</span>
-            <span 
-              className={`${nickColor} shrink-0 mr-1.5 font-bold cursor-pointer hover:underline active:text-blue-500 transition-colors`}
-              onClick={(e) => handleNickClick(e, msg.sender)}
-              onContextMenu={(e) => handleNickContextMenu(e, msg.sender)}
-            >
-              {`<${msg.sender}>`}
-            </span>
-            <span className="text-black break-words selection:bg-blue-100">{displayText}</span>
+          <div className="mirc-text py-1 text-[13px] font-mono flex gap-3 items-start">
+            <span className="text-gray-300 shrink-0">{time}</span>
+            <div className="flex gap-2 min-w-0">
+              <span 
+                className={`font-bold shrink-0 cursor-pointer hover:underline text-black`}
+                onClick={(e) => handleNickClick(e, msg.sender)}
+              >
+                {`<${msg.sender}>`}
+              </span>
+              <span className="text-black break-words">{displayText}</span>
+            </div>
           </div>
         );
     }
@@ -132,19 +91,19 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="h-full overflow-y-auto p-4 bg-white flex flex-col font-mono custom-scrollbar no-scrollbar"
+      className="h-full overflow-y-auto p-4 bg-white flex flex-col font-mono no-scrollbar"
     >
       <div className="flex-1">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center opacity-10 select-none">
             <div className="text-center">
-              <p className="text-4xl font-black italic">mIRC</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest">Connect Module</p>
+              <p className="text-5xl font-black italic">mIRC</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest mt-2">Connect Module v1.1.1</p>
             </div>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id}>
+          messages.map((msg, i) => (
+            <div key={msg.id || i}>
               {renderMessageLine(msg)}
             </div>
           ))
