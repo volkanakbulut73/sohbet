@@ -20,42 +20,34 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
 
   const renderMessageLine = (msg: Message) => {
     if (blockedUsers.includes(msg.sender)) return null;
-
     const text = typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text);
 
-    // Sistem Mesajı: -- Nick kanala giriş yaptı tarzı
     if (msg.type === MessageType.SYSTEM) {
       return (
-        <div className="flex gap-1 text-[11px] py-0 leading-tight text-gray-400 font-mono">
-          <span className="text-blue-800 font-bold shrink-0">--</span>
-          <span className="text-blue-800 font-bold">{text}</span>
+        <div className="flex gap-1 text-[10px] py-0 leading-[1.1] text-blue-800 font-mono font-bold">
+          <span>--</span>
+          <span className="break-words">{text}</span>
         </div>
       );
     }
 
-    // AI Mesajı (Bot)
     if (msg.type === MessageType.AI) {
       return (
-        <div className="flex gap-1 text-[11px] py-0 leading-tight font-mono">
-          <div className="flex gap-1 shrink-0">
-            <span className="text-green-700 font-bold">{"<@GeminiBot>"}</span>
-          </div>
+        <div className="flex gap-1 text-[10px] py-0 leading-[1.1] font-mono">
+          <span className="text-green-700 font-bold shrink-0">{"<@GeminiBot>"}</span>
           <span className="text-black break-words">{text}</span>
         </div>
       );
     }
 
-    // Klasik kullanıcı mesajı: <nick> mesaj
     return (
-      <div className="flex gap-1 text-[11px] py-0 leading-tight font-mono items-start">
-        <div className="flex gap-1 shrink-0 min-w-0">
-          <span 
-            className="font-bold cursor-pointer hover:underline text-gray-800"
-            onClick={(e) => onNickClick?.(e, msg.sender)}
-          >
-            {`<${msg.sender}>`}
-          </span>
-        </div>
+      <div className="flex gap-1 text-[10px] py-0 leading-[1.1] font-mono items-start">
+        <span 
+          className="font-bold shrink-0 cursor-pointer hover:underline text-gray-800"
+          onClick={(e) => onNickClick?.(e, msg.sender)}
+        >
+          {`<${msg.sender}>`}
+        </span>
         <span className="text-black break-words flex-1">{text}</span>
       </div>
     );
@@ -64,13 +56,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="h-full overflow-y-auto px-2 py-1 bg-white flex flex-col font-mono"
+      className="h-full overflow-y-auto px-1.5 py-1 bg-white flex flex-col font-mono"
     >
       {messages.length === 0 ? (
         <div className="flex-1 flex items-center justify-center opacity-5 select-none pointer-events-none">
           <div className="text-center">
-            <p className="text-5xl font-black italic">mIRC</p>
-            <p className="text-[10px] font-bold tracking-widest mt-1 uppercase">v1.1.1 Connected</p>
+            <p className="text-4xl font-black italic">mIRC</p>
+            <p className="text-[8px] font-bold tracking-widest mt-1 uppercase">v1.1.1 Connected</p>
           </div>
         </div>
       ) : (
