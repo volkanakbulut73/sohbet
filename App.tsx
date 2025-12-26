@@ -185,33 +185,41 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   }
 
   return (
-    <div className={`h-full w-full flex flex-col bg-[#f0f2f5] overflow-hidden select-none font-mono ${className}`}>
-      {/* Header Panel */}
-      <div className="h-10 bg-[#000080] flex items-center justify-between px-3 text-white shrink-0 z-50 border-b border-white/20">
+    <div className={`h-full w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
+      {/* Header Panel - mIRC Dark Theme */}
+      <div className="h-12 bg-[#1a1f26] flex items-center justify-between px-3 text-white shrink-0 z-50 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <button onClick={() => setIsLeftDrawerOpen(!isLeftDrawerOpen)} className="p-1.5 hover:bg-white/20 rounded-sm">
-            <Menu size={18} />
+          <button 
+            onClick={() => { setIsLeftDrawerOpen(!isLeftDrawerOpen); setIsRightDrawerOpen(false); }} 
+            className={`p-2 rounded-sm transition-colors ${isLeftDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
+          >
+            <Menu size={20} />
           </button>
-          <div className="flex items-center gap-2">
-             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-             <span className="text-[11px] font-black tracking-tight uppercase italic">Workigom Connect</span>
+          <div className="flex flex-col">
+             <div className="flex items-center gap-2">
+                <span className="text-[12px] font-black tracking-tight uppercase italic text-white">Global Sohbet</span>
+                <span className="text-[9px] bg-[#00ff99]/20 text-[#00ff99] px-1 rounded font-bold">V1.1.1</span>
+             </div>
+             <div className="flex items-center gap-1.5 opacity-60">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-[8px] font-bold uppercase tracking-widest">Bağlantı: {userName}</span>
+             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-2 px-2 py-0.5 bg-black/20 rounded border border-white/10">
-             <Globe size={10} className="text-blue-300" />
-             <span className="text-[9px] font-bold">HOST: {CHAT_MODULE_CONFIG.DOMAIN}</span>
-          </div>
-          <button onClick={() => setIsRightDrawerOpen(!isRightDrawerOpen)} className={`p-1.5 rounded-sm transition-colors ${isRightDrawerOpen ? 'bg-white text-[#000080]' : 'hover:bg-white/10'}`}>
-            <Users size={18} />
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => { setIsRightDrawerOpen(!isRightDrawerOpen); setIsLeftDrawerOpen(false); }} 
+            className={`p-2 rounded-sm transition-colors ${isRightDrawerOpen ? 'bg-[#00ff99] text-black' : 'hover:bg-white/10'}`}
+          >
+            <Users size={20} />
           </button>
-          <button onClick={() => setView(embedded ? 'login' : 'landing')} className="p-1.5 hover:bg-red-600 rounded-sm transition-colors">
-             <LogOut size={18} />
+          <button onClick={() => setView(embedded ? 'login' : 'landing')} className="p-2 hover:bg-red-600 rounded-sm transition-colors">
+             <LogOut size={20} />
           </button>
         </div>
       </div>
 
-      {/* Tabs Row */}
+      {/* Tabs Row - Classic mIRC Gray */}
       <div className="h-9 bg-[#d4dce8] border-b border-gray-400 flex items-center gap-0.5 px-1 shrink-0 overflow-x-auto no-scrollbar">
         {['#sohbet', ...privateChats].map(tab => (
           <button 
@@ -227,13 +235,16 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
       {/* Main Container */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Sidebar (Channels) */}
-        <div className={`absolute lg:relative inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-[60] transition-transform duration-300 ease-in-out ${isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-48'}`}>
+        {/* Left Sidebar (Channels) - MOBILE OVERLAY */}
+        <div 
+          className={`absolute lg:relative inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
+          ${isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-48 lg:hidden'}`}
+        >
           <div className="p-2 h-full flex flex-col">
              <div className="bg-white border border-gray-500 flex-1 overflow-y-auto shadow-inner">
                 <div className="bg-gray-800 text-[#00ff99] p-2 text-[10px] font-black flex justify-between items-center border-b border-gray-700">
-                  <span>CHANNELS</span>
-                  <X size={14} className="lg:hidden cursor-pointer" onClick={() => setIsLeftDrawerOpen(false)} />
+                  <span>KANALLAR</span>
+                  <X size={14} className="cursor-pointer" onClick={() => setIsLeftDrawerOpen(false)} />
                 </div>
                 <div className="p-1 space-y-0.5">
                    {['#sohbet', '#yardim', '#teknoloji', '#is-dunyasi'].map(c => (
@@ -250,10 +261,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           </div>
         </div>
 
-        {/* Center: Chat Window */}
-        <div className="flex-1 flex flex-col bg-white overflow-hidden relative shadow-lg">
+        {/* Center: Chat Window - ALWAYS 100% WIDTH ON MOBILE */}
+        <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
            {isAILoading && <div className="absolute top-0 left-0 right-0 h-1 bg-[#00ff99] animate-pulse z-20" />}
-           <div className="flex-1 border-r border-gray-200">
+           <div className="flex-1 overflow-hidden">
              <MessageList 
                messages={messages} 
                currentUser={userName} 
@@ -263,8 +274,11 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
            </div>
         </div>
 
-        {/* Right Sidebar: Narrower width for mobile (w-48 instead of w-64) */}
-        <div className={`absolute right-0 top-0 bottom-0 w-48 bg-[#f3f4f6] border-l-2 border-gray-300 z-[60] transition-transform duration-300 ease-in-out ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:w-44'}`}>
+        {/* Right Sidebar: Users - MOBILE OVERLAY */}
+        <div 
+          className={`absolute lg:relative inset-y-0 right-0 w-48 bg-[#f3f4f6] border-l border-gray-300 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
+          ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:w-44 lg:block'}`}
+        >
            <UserList 
             users={[userName, 'GeminiBot', 'Admin']} 
             currentUser={userName} 
@@ -275,29 +289,29 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* Input Panel */}
+      {/* Input Panel - Fixed height to avoid squashing */}
       <div className="p-2 bg-[#d4dce8] border-t border-gray-400 shrink-0">
-        <form onSubmit={handleSend} className="flex gap-2 h-11">
+        <form onSubmit={handleSend} className="flex gap-1.5 h-11">
           <div className="flex-1 bg-white border-2 border-gray-500 px-3 flex items-center shadow-inner rounded-sm group focus-within:border-blue-700 transition-colors">
-             <span className="text-[10px] font-black text-blue-900 mr-3 hidden sm:inline select-none">[{userName}]</span>
+             <span className="text-[10px] font-black text-blue-900 mr-2 hidden sm:inline select-none">[{userName}]</span>
              <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               className="flex-1 text-[13px] outline-none bg-transparent font-bold h-full placeholder-gray-400"
               placeholder="Mesaj yazın..."
-              onFocus={() => { if(window.innerWidth < 768) { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); } }}
+              onFocus={() => { if(window.innerWidth < 1024) { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); } }}
              />
           </div>
-          <button type="submit" className="bg-[#c0c0c0] border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.6)] px-6 flex items-center justify-center active:shadow-none active:translate-y-[1px] transition-all hover:bg-white group">
-            <Send size={20} className="text-gray-800 group-hover:text-blue-800" />
+          <button type="submit" className="bg-[#c0c0c0] border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.6)] px-5 flex items-center justify-center active:shadow-none active:translate-y-[1px] transition-all hover:bg-white group">
+            <Send size={18} className="text-gray-800 group-hover:text-blue-800" />
           </button>
         </form>
       </div>
 
-      {/* Mobile Overlays */}
+      {/* Mobile Backdrops */}
       {(isLeftDrawerOpen || isRightDrawerOpen) && (
-        <div className="fixed inset-0 bg-black/40 z-[45] lg:hidden backdrop-blur-[1px]" onClick={() => { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); }} />
+        <div className="fixed inset-0 bg-black/40 z-[65] lg:hidden backdrop-blur-[1px]" onClick={() => { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); }} />
       )}
     </div>
   );
