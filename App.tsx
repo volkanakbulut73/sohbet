@@ -42,7 +42,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   useEffect(() => {
     const handleResize = () => {
       if (window.visualViewport) {
-        // Gömülü modda kapsayıcının tam boyunu al, standalone modda dinamik boy kullan.
+        // Gömülü modda kapsayıcının tam boyunu al (üst site yönetir), 
+        // standalone modda (chat domaini) visualViewport kullan.
         setViewportHeight(embedded ? '100%' : `${window.visualViewport.height}px`);
       }
     };
@@ -143,12 +144,12 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full ${embedded ? 'absolute inset-0 h-full' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Status Bar - Gömülü modda üst boşluk tamamen kaldırıldı (0px) */}
-      <div className={`bg-[#000080] text-white px-2 py-1 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10 ${!embedded ? 'safe-top' : ''}`}>
+      {/* 1. Status Bar - Gömülü modda üst boşluk (safe-area) tamamen sıfırlandı */}
+      <div className={`bg-[#000080] text-white px-2 py-1 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10 ${!embedded ? 'safe-top' : 'pt-1'}`}>
         <div className="flex items-center gap-2">
           <Menu size={18} className="cursor-pointer sm:hidden" onClick={() => setIsLeftDrawerOpen(true)} />
           <span className="truncate sm:inline hidden">Connected: workigomchat.online</span>
-          <span className="truncate sm:hidden text-[10px] py-1">IRC Online</span>
+          <span className="truncate sm:hidden text-[10px] py-1 uppercase tracking-tighter">IRC Online</span>
         </div>
         <div className="flex items-center gap-3">
            <button onClick={() => setShowUserList(!showUserList)} className="hover:bg-blue-700 p-1 rounded transition-colors"><UsersIcon size={16} /></button>
@@ -181,7 +182,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* User List Panel */}
+        {/* User List Panel (Overlay on mobile) */}
         {showUserList && (
           <div className="absolute right-0 top-0 bottom-0 w-32 md:w-40 border-l border-gray-300 bg-white z-[30] flex flex-col shadow-2xl md:shadow-none md:relative">
             <div className="bg-gray-100 p-1 border-b border-gray-200 flex justify-between items-center px-2">
@@ -199,8 +200,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area - Mesaj kutusunun alt bar arkasında kalmaması için pb-[80px] eklendi */}
-      <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-50 ${embedded ? 'sm:pb-1.5 pb-[80px]' : ''}`}>
+      {/* 4. Input Area - Mobilde ana sitenin navigasyon barını (pb-[85px]) kurtaracak düzenleme */}
+      <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-50 ${embedded ? 'sm:pb-1.5 pb-[85px]' : ''}`}>
         <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-2xl mx-auto">
           <div className="hidden sm:flex bg-white border border-gray-500 h-8 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
             <span className="text-[#000080] text-[10px] font-bold truncate">{userName}</span>
@@ -217,7 +218,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           </div>
           <button 
             type="submit" 
-            className="bg-[#000080] text-white px-4 h-10 text-[11px] font-bold rounded-sm shadow active:bg-blue-800 transition-colors flex items-center justify-center"
+            className="bg-[#000080] text-white px-4 h-10 text-[11px] font-bold rounded-sm shadow active:bg-blue-800 transition-colors flex items-center justify-center shrink-0"
           >
             <Send size={18} />
           </button>
@@ -228,25 +229,25 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       {isLeftDrawerOpen && (
         <div className="fixed inset-0 z-[1000]">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white p-0 shadow-2xl flex flex-col">
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white p-0 shadow-2xl flex flex-col font-mono">
             <div className="bg-[#000080] text-white p-3 font-bold text-[12px] flex justify-between items-center">
                <span className="flex items-center gap-2 uppercase tracking-tighter">IRC NAVIGATION</span>
                <X size={20} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
             </div>
-            <div className="p-4 space-y-2 overflow-y-auto flex-1">
-              <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 border-b border-gray-300 pb-1">Channels</p>
+            <div className="p-4 space-y-2 overflow-y-auto flex-1 bg-[#d4dce8]">
+              <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 border-b border-gray-400 pb-1">Channels</p>
               {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => (
                 <button 
                   key={c} 
                   onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} 
-                  className={`w-full text-left p-2.5 text-sm font-bold uppercase transition-all rounded ${activeTab === c ? 'bg-[#000080] text-white' : 'text-[#000080] hover:bg-white/50'}`}
+                  className={`w-full text-left p-2.5 text-xs font-bold uppercase transition-all border border-transparent hover:border-white ${activeTab === c ? 'bg-[#000080] text-white' : 'text-[#000080] hover:bg-white/50'}`}
                 >
                   {c}
                 </button>
               ))}
             </div>
-            <div className="p-4 border-t border-gray-300 bg-gray-100">
-               <button onClick={() => setView('landing')} className="w-full p-3 bg-red-600 text-white font-bold text-[11px] rounded uppercase">ÇIKIŞ</button>
+            <div className="p-4 border-t border-gray-400 bg-gray-200">
+               <button onClick={() => setView('landing')} className="w-full p-3 bg-red-800 text-white font-bold text-[11px] rounded uppercase shadow-md active:translate-y-0.5">ÇIKIŞ YAP</button>
             </div>
           </div>
         </div>
