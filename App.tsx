@@ -52,9 +52,12 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         const isCurrentlyOpen = height < window.innerHeight * 0.8;
         setIsKeyboardOpen(isCurrentlyOpen);
         
-        // Sadece tam ekran (non-embedded) modda viewport yüksekliğini set et
-        if (!embedded) {
+        // Mobil cihazlarda embedded olsa bile viewport yüksekliğini kullanmak daha güvenlidir
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile || !embedded) {
           setViewportHeight(`${height}px`);
+        } else {
+          setViewportHeight('100%');
         }
       }
     };
@@ -142,19 +145,19 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   return (
     <div 
       ref={containerRef}
-      style={{ height: embedded ? '100%' : viewportHeight }}
-      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative w-full h-full' : 'fixed inset-0'} ${className}`}
+      style={{ height: viewportHeight }}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative w-full' : 'fixed inset-0'} ${className}`}
     >
       
       {/* 1. Header (Status Bar) */}
-      <div className={`bg-[#000080] text-white px-3 py-1.5 flex items-center justify-between z-50 text-[12px] font-bold shrink-0 border-b border-white/20 ${!embedded ? 'safe-top' : ''}`}>
+      <div className={`bg-[#000080] text-white px-3 py-1.5 flex items-center justify-between z-[60] text-[12px] font-bold shrink-0 border-b border-white/20 ${!embedded ? 'safe-top' : ''}`}>
         <div className="flex items-center gap-3">
           <button onClick={() => setView('landing')} className="hover:bg-white/10 p-1">
              <ChevronLeft size={20} />
           </button>
           <div className="flex flex-col">
             <span className="flex items-center gap-1 uppercase tracking-tighter text-[13px]">
-              <span className="text-green-400">●</span> Global Sohbet <span className="text-[10px] bg-green-600 px-1 ml-1">V1.1.1</span>
+              <span className="text-green-400">●</span> GLOBAL SOHBET <span className="text-[10px] bg-green-600 px-1 ml-1 font-bold">V1.1.1</span>
             </span>
             <span className="text-[10px] opacity-80 font-normal">Hatasız Bağlantı: {userName}</span>
           </div>
@@ -165,7 +168,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 2. Tabs (Channels) */}
-      <div className="bg-black text-white/90 border-b border-gray-600 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 z-40">
+      <div className="bg-black text-white/90 border-b border-gray-600 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 z-50">
         <button className="px-2 py-1 text-gray-400" onClick={() => setIsLeftDrawerOpen(true)}><Menu size={18} /></button>
         <div className="flex-1 flex gap-1">
           {['Status', '#Sohbet', '#Yardim'].map(tab => (
@@ -189,7 +192,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
         {/* User List Panel */}
         {showUserList && (
-          <div className="absolute right-0 top-0 bottom-0 w-48 border-l border-gray-300 bg-white z-[60] flex flex-col shadow-2xl">
+          <div className="absolute right-0 top-0 bottom-0 w-48 border-l border-gray-300 bg-white z-[70] flex flex-col shadow-2xl">
             <div className="bg-gray-100 p-2 border-b border-gray-200 flex justify-between items-center px-3">
               <span className="italic text-[10px] font-bold text-gray-600 uppercase tracking-tighter">Online Kişiler</span>
               <X size={16} className="cursor-pointer" onClick={() => setShowUserList(false)} />
@@ -205,7 +208,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area (Kırmızı Kutulu Alan) */}
+      {/* 4. Input Area */}
       <div className="shrink-0 bg-white border-t border-gray-200 p-2 md:p-3 z-50">
         <form onSubmit={handleSend} className="flex items-center gap-2 w-full max-w-screen-xl mx-auto">
           <div className="flex-1 bg-white border-2 border-gray-300 h-11 px-3 flex items-center shadow-sm rounded-lg overflow-hidden focus-within:border-[#000080]">
