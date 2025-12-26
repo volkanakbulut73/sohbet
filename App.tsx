@@ -114,14 +114,14 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         ))}
       </div>
 
-      {/* 3. Main Area: Chat + Fixed User List */}
+      {/* 3. Main Area: Chat + User List */}
       <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
           {isAILoading && <div className="absolute top-0 left-0 right-0 h-[1px] bg-blue-500 animate-pulse z-10" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* MIRC Style User List (Daraltılmış) */}
+        {/* User List */}
         <div className="w-28 md:w-32 border-l border-gray-300 bg-white shrink-0 flex flex-col">
           <div className="p-0.5 border-b border-gray-200">
              <input type="text" placeholder="Nick..." className="w-full text-[9px] p-0.5 bg-gray-50 border border-gray-200 outline-none uppercase" />
@@ -136,32 +136,32 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* 4. Input Area - FIX: 2 Tık Yukarı Alındı ve Mobil Menü Engeli Kaldırıldı */}
-      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-400 px-2 pt-2 pb-16 md:pb-10 safe-bottom z-[100] relative">
-        <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto mb-1">
-          <div className="flex-1 bg-white border border-gray-400 h-9 px-2 flex items-center shadow-inner rounded-sm">
+      {/* 4. Input Area - KESİN ÇÖZÜM: pb-28 ve mb-4 ile kutu mobil menülerin üstüne çıkarıldı */}
+      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-400 px-3 pt-3 pb-28 md:pb-12 safe-bottom z-[999] relative shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+        <form onSubmit={handleSend} className="flex items-center gap-2 w-full max-w-screen-2xl mx-auto mb-4">
+          <div className="flex-1 bg-white border border-gray-400 h-11 px-3 flex items-center shadow-inner rounded-sm ring-1 ring-black/5">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[11px] outline-none font-medium h-full text-black"
-              placeholder="Mesaj yaz..."
+              className="flex-1 bg-transparent text-[12px] outline-none font-medium h-full text-black placeholder:text-gray-400"
+              placeholder="Mesajınızı buraya yazın..."
               autoFocus
             />
           </div>
-          <button type="button" className="text-yellow-500 shrink-0 hover:scale-110 transition-transform"><Smile size={20} fill="currentColor" /></button>
-          <button type="submit" className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-4 h-9 text-[10px] font-bold rounded-sm shadow-sm shrink-0 active:translate-y-0.5 transition-all">Gönder</button>
+          <button type="button" className="text-yellow-500 shrink-0 hover:scale-110 transition-transform active:scale-95"><Smile size={24} fill="currentColor" /></button>
+          <button type="submit" className="bg-gradient-to-b from-blue-500 to-blue-700 border border-blue-900 text-white px-5 h-11 text-[11px] font-black rounded-sm shadow-md shrink-0 active:translate-y-0.5 transition-all uppercase italic tracking-tighter">GÖNDER</button>
         </form>
       </div>
 
       {/* Mobile Drawer */}
       {isLeftDrawerOpen && (
-        <div className="fixed inset-0 z-[200]">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#0b0f14] p-6 space-y-4">
+        <div className="fixed inset-0 z-[1000]">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#0b0f14] p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center text-white border-b border-gray-800 pb-4 font-bold uppercase italic text-xs"><span>SERVER MENU</span><X size={20} className="cursor-pointer" onClick={() => setIsLeftDrawerOpen(false)} /></div>
             {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => <button key={c} onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} className="w-full text-left p-2 text-gray-400 hover:text-white transition-all text-xs font-bold uppercase">{c}</button>)}
-            <button onClick={() => setView('landing')} className="absolute bottom-10 left-6 right-6 p-3 bg-red-600 text-white font-bold text-[10px] rounded uppercase">Güvenli Çıkış</button>
+            <button onClick={() => setView('landing')} className="absolute bottom-10 left-6 right-6 p-3 bg-red-600 text-white font-bold text-[10px] rounded uppercase shadow-lg">Güvenli Çıkış</button>
           </div>
         </div>
       )}
