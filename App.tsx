@@ -14,6 +14,7 @@ type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_lo
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
   const [viewportHeight, setViewportHeight] = useState('100%');
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -42,22 +43,29 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   useEffect(() => {
     const handleResize = () => {
       if (window.visualViewport) {
-        // Gömülü modda 100% kullan, standalone modda viewport yüksekliği kullan.
-        setViewportHeight(embedded ? '100%' : `${window.visualViewport.height}px`);
+        const vh = window.visualViewport.height;
+        const wh = window.innerHeight;
+        
+        // Klavye tespiti: Görünür alan ekranın %85'inden küçükse klavye açıktır
+        const keyboardActive = vh < wh * 0.85;
+        setIsKeyboardOpen(keyboardActive);
+        
+        // Yüksekliği tam olarak görünen alana (klavye üstü dahil) ayarla
+        setViewportHeight(`${vh}px`);
       }
     };
 
+    window.visualViewport?.addEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('scroll', handleResize);
     window.addEventListener('resize', handleResize);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize);
-    }
     
     handleResize();
     return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
       window.removeEventListener('resize', handleResize);
-      if (window.visualViewport) window.visualViewport.removeEventListener('resize', handleResize);
     };
-  }, [embedded]);
+  }, []);
 
   useEffect(() => {
     if (externalUser && externalUser.trim() !== "") {
@@ -140,10 +148,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full transition-[height] duration-75 ${embedded ? 'fixed top-0 left-0 z-[999]' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Status Bar - Gömülü modda üst boşluğu tamamen sildik (pt-0) */}
+      {/* 1. Status Bar */}
       <div className={`bg-[#000080] text-white px-2 py-1 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10 ${!embedded ? 'safe-top' : 'pt-0'}`}>
         <div className="flex items-center gap-2">
           <Menu size={18} className="cursor-pointer sm:hidden" onClick={() => setIsLeftDrawerOpen(true)} />
@@ -199,8 +207,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area - Mesaj kutusunun görünmesi için alt boşluk pb-32 (128px) yapıldı */}
-      <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-50 ${embedded ? 'sm:pb-1.5 pb-32' : ''}`}>
+      {/* 4. Input Area - Klavye açıkken pb-0, kapalıyken pb-24 (96px) ile alt barı kurtarır */}
+      <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-50 transition-all ${embedded ? (isKeyboardOpen ? 'pb-1' : 'pb-24 sm:pb-1.5') : ''}`}>
         <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-2xl mx-auto">
           <div className="hidden sm:flex bg-white border border-gray-500 h-8 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
             <span className="text-[#000080] text-[10px] font-bold truncate">{userName}</span>
@@ -212,7 +220,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               onChange={e => setInputText(e.target.value)}
               className="flex-1 bg-transparent text-[16px] md:text-[13px] outline-none font-medium h-full text-black placeholder:text-gray-400"
               placeholder="Mesaj gönder..."
-              autoFocus
             />
           </div>
           <button 
