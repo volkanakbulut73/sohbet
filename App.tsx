@@ -13,7 +13,6 @@ import { Menu, X, Send, Lock, Clock, Smile, Users as UsersIcon, Hash } from 'luc
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
-  // Gömülü modda yüksekliği ebeveyn div belirlemeli, standalone modda dinamik hesaplanır.
   const [viewportHeight, setViewportHeight] = useState('100%');
   const [showUserList, setShowUserList] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,23 +39,24 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   const [inputText, setInputText] = useState('');
 
+  // Mobil klavye ve yükseklik senkronizasyonu
   useEffect(() => {
-    const handleVisualViewportResize = () => {
-      // Sadece ana sitede (workigomchat.online) tam ekran modundayken dinamik hesapla.
-      // workigom.com içindeyken (%100) kalsın.
-      if (window.visualViewport && !embedded) {
-        setViewportHeight(`${window.visualViewport.height}px`);
+    const handleResize = () => {
+      if (window.visualViewport) {
+        // Eğer standalone ise tam boy, embedded ise kapsayıcısının boyu
+        setViewportHeight(embedded ? '100%' : `${window.visualViewport.height}px`);
       }
     };
 
-    if (window.visualViewport && !embedded) {
-      window.visualViewport.addEventListener('resize', handleVisualViewportResize);
+    window.addEventListener('resize', handleResize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
     }
     
+    handleResize();
     return () => {
-      if (window.visualViewport && !embedded) {
-        window.visualViewport.removeEventListener('resize', handleVisualViewportResize);
-      }
+      window.removeEventListener('resize', handleResize);
+      if (window.visualViewport) window.visualViewport.removeEventListener('resize', handleResize);
     };
   }, [embedded]);
 
@@ -100,7 +100,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   
   if (view === 'login' || (view === 'landing' && embedded)) {
     return (
-      <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 z-[100] font-mono">
+      <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 z-[100] font-mono overflow-hidden">
         <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-[2px_2px_10px_rgba(0,0,0,0.2)]">
           <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold flex justify-between items-center">
             <span>Connect</span>
@@ -141,15 +141,15 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'h-full relative' : 'fixed inset-0'} ${className}`}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono absolute inset-0 w-full ${className}`}
     >
       
-      {/* 1. Status Bar - Üst boşluk mobilde optimize edildi (safe-top sadece standalone modda) */}
-      <div className={`bg-[#000080] text-white px-2 py-1.5 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10 ${!embedded ? 'safe-top' : ''}`}>
+      {/* 1. Status Bar - Mobil Üst Boşluk Fix */}
+      <div className={`bg-[#000080] text-white px-2 py-1 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10 ${!embedded ? 'safe-top' : ''}`}>
         <div className="flex items-center gap-2">
           <Menu size={18} className="cursor-pointer sm:hidden" onClick={() => setIsLeftDrawerOpen(true)} />
           <span className="truncate sm:inline hidden">Connected: workigomchat.online</span>
-          <span className="truncate sm:hidden text-[10px]">IRC Online</span>
+          <span className="truncate sm:hidden text-[10px] py-1">IRC Online</span>
         </div>
         <div className="flex items-center gap-3">
            <button onClick={() => setShowUserList(!showUserList)} className="hover:bg-blue-700 p-1 rounded transition-colors"><UsersIcon size={16} /></button>
@@ -157,7 +157,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 2. Channel Tabs */}
-      <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 shadow-sm">
+      <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-0.5 px-1 gap-1">
         <button 
           onClick={() => setActiveTab('Status')} 
           className={`px-3 py-1 text-[10px] font-bold border transition-all whitespace-nowrap ${activeTab === 'Status' ? 'bg-white border-gray-500 text-black shadow-inner' : 'bg-gray-200 border-transparent text-[#000080]'}`}
@@ -175,10 +175,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         ))}
       </div>
 
-      {/* 3. Main Area */}
+      {/* 3. Main Area - flex-1 min-h-0 mesaj listesinin inputu aşağı itmesini engeller */}
       <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative mx-1 my-0.5 border border-gray-400">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
-          {isAILoading && <div className="absolute top-0 left-0 right-0 h-[3px] bg-blue-500 animate-pulse z-10 shadow-sm" />}
+          {isAILoading && <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500 animate-pulse z-10" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
@@ -200,28 +200,27 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area - Mesaj kutusu her zaman altta (Spacer kaldırıldı) */}
-      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 md:p-2 z-20">
-        <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto">
-          <div className="hidden sm:flex bg-white border border-gray-500 h-9 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
-            <span className="text-[#000080] text-[11px] font-bold truncate">{userName}</span>
+      {/* 4. Input Area - Mesaj kutusu her zaman altta (shrink-0 zorunludur) */}
+      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-20">
+        <form onSubmit={handleSend} className="flex items-center gap-1 w-full">
+          <div className="hidden sm:flex bg-white border border-gray-500 h-8 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
+            <span className="text-[#000080] text-[10px] font-bold truncate">{userName}</span>
           </div>
-          <div className="flex-1 bg-white border border-gray-500 h-10 px-3 flex items-center shadow-inner rounded-sm">
+          <div className="flex-1 bg-white border border-gray-500 h-10 px-2 flex items-center shadow-inner rounded-sm overflow-hidden">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[15px] md:text-[13px] outline-none font-medium h-full text-black placeholder:text-gray-400"
+              className="flex-1 bg-transparent text-[16px] md:text-[13px] outline-none font-medium h-full text-black placeholder:text-gray-400"
               placeholder="Mesaj gönder..."
               autoFocus
             />
           </div>
           <button 
             type="submit" 
-            className="bg-[#000080] text-white px-5 h-10 text-[11px] font-bold rounded-sm shadow-md active:translate-y-[1px] active:shadow-none uppercase flex items-center justify-center gap-2"
+            className="bg-[#000080] text-white px-4 h-10 text-[11px] font-bold rounded-sm shadow active:bg-blue-800 transition-colors uppercase flex items-center justify-center gap-2"
           >
-            <span className="hidden sm:inline">GÖNDER</span>
-            <Send size={16} className="sm:hidden" />
+            <Send size={16} />
           </button>
         </form>
       </div>
@@ -231,24 +230,24 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         <div className="fixed inset-0 z-[1000]">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white p-0 shadow-2xl flex flex-col">
-            <div className="bg-[#000080] text-white p-3 font-bold text-[12px] flex justify-between items-center shadow-lg">
-               <span className="flex items-center gap-2"><Hash size={16}/> IRC NAVIGATION</span>
+            <div className="bg-[#000080] text-white p-3 font-bold text-[12px] flex justify-between items-center">
+               <span className="flex items-center gap-2 uppercase tracking-tighter">IRC NAVIGATION</span>
                <X size={20} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
             </div>
             <div className="p-4 space-y-2 overflow-y-auto flex-1">
-              <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 tracking-widest border-b border-gray-300 pb-1">Channels</p>
+              <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 border-b border-gray-300 pb-1">Channels</p>
               {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => (
                 <button 
                   key={c} 
                   onClick={() => { setActiveTab(c); setIsLeftDrawerOpen(false); }} 
-                  className={`w-full text-left p-3 text-sm font-bold uppercase transition-all rounded ${activeTab === c ? 'bg-[#000080] text-white' : 'text-[#000080] hover:bg-white/50'}`}
+                  className={`w-full text-left p-2.5 text-sm font-bold uppercase transition-all rounded ${activeTab === c ? 'bg-[#000080] text-white' : 'text-[#000080] hover:bg-white/50'}`}
                 >
                   {c}
                 </button>
               ))}
             </div>
             <div className="p-4 border-t border-gray-300 bg-gray-100">
-               <button onClick={() => setView('landing')} className="w-full p-3 bg-red-600 text-white font-bold text-[11px] rounded uppercase shadow-lg active:scale-95 transition-transform">GÜVENLİ ÇIKIŞ</button>
+               <button onClick={() => setView('landing')} className="w-full p-3 bg-red-600 text-white font-bold text-[11px] rounded uppercase">ÇIKIŞ</button>
             </div>
           </div>
         </div>

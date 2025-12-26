@@ -13,7 +13,6 @@
     :root {
       --mirc-navy: #000080;
       --mirc-bg: #d4dce8;
-      --terminal-green: #00ff99;
     }
     body, html {
       background-color: transparent;
@@ -29,6 +28,8 @@
     #root {
       height: 100%;
       width: 100%;
+      display: flex;
+      flex-direction: column;
     }
     
     .safe-top {
@@ -36,19 +37,17 @@
     }
 
     /* Scrollbar */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-track { background: #d4dce8; }
-    ::-webkit-scrollbar-thumb { background: #000080; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #000080; border-radius: 4px; }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .fade-in { animation: fadeIn 0.1s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    /* input zoom behavior on mobile devices */
+    /* Mobil klavye optimizasyonu */
     @media screen and (max-width: 768px) {
       input { font-size: 16px !important; }
+      body { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
     }
   </style>
 <script type="importmap">
