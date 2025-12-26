@@ -6,7 +6,6 @@ import { ChatModuleProps } from './types';
 
 /**
  * Workigom Chat SDK
- * Bu fonksiyon, modülü herhangi bir DOM elementine enjekte eder.
  */
 export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {}) => {
   const rootElement = document.getElementById(elementId);
@@ -15,18 +14,18 @@ export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {})
     return null;
   }
 
-  // Konteynırın stilini ayarla (üst boşlukları ve taşmaları kesin olarak engelle)
-  rootElement.style.position = 'relative';
+  // Parent element'in yüksekliğini ve taşmalarını chat için zorunlu hale getiriyoruz.
+  rootElement.style.height = rootElement.style.height || '600px';
+  rootElement.style.minHeight = '400px';
+  rootElement.style.maxHeight = '100%';
   rootElement.style.overflow = 'hidden';
-  rootElement.style.padding = '0';
-  rootElement.style.margin = '0';
+  rootElement.style.position = 'relative';
   rootElement.style.display = 'flex';
   rootElement.style.flexDirection = 'column';
 
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      {/* SDK üzerinden çağrıldığında ZORUNLU olarak 'embedded' aktif edilir */}
       <App {...props} embedded={true} />
     </React.StrictMode>
   );
@@ -34,7 +33,6 @@ export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {})
   return root;
 };
 
-// Tarayıcı ortamında global erişim sağla (window.initWorkigomChat)
 if (typeof window !== 'undefined') {
   (window as any).initWorkigomChat = initWorkigomChat;
   

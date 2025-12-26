@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Workigom Chat | workigomchat.online</title>
-  <meta name="description" content="Gerçek insanlarla, güvenli ve seviyeli sohbet platformu.">
   <meta name="theme-color" content="#000080">
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968804.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,7 +18,6 @@
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
-      outline: none;
     }
 
     body, html {
@@ -28,8 +26,8 @@
       height: 100%;
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
-      overflow: hidden;
       background-color: transparent;
+      overflow: hidden; /* Dış kaydırmayı engelle */
     }
     
     #root {
@@ -37,7 +35,6 @@
       width: 100%;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -54,6 +51,7 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
+    /* Mobil için input odaklandığında zoom'u engelle */
     @media screen and (max-width: 768px) {
       input, textarea {
         font-size: 16px !important;
