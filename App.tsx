@@ -8,16 +8,15 @@ import RegistrationForm from './components/RegistrationForm';
 import { ChatModuleProps } from './types';
 import { storageService } from './services/storageService';
 import { 
-  Menu, X, Send, Lock, Clock, 
-  Users as UsersIcon, Hash, 
-  ChevronLeft
+  Menu, X, Lock, Clock, 
+  Users as UsersIcon, Hash 
 } from 'lucide-react';
 
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
-  const [viewportHeight, setViewportHeight] = useState('100dvh');
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  // Mobil klavye açıldığında dinamik olarak hesaplanacak viewport yüksekliği
+  const [viewportHeight, setViewportHeight] = useState('100%');
   const [showUserList, setShowUserList] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -42,40 +41,33 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   const [inputText, setInputText] = useState('');
 
-  // Mobil Klavye ve Viewport Yükseklik Yönetimi
+  // MOBİL KLAVYE VE VIEWPORT YÜKSEKLİK YÖNETİMİ (KESİN ÇÖZÜM)
   useEffect(() => {
     const handleViewportChange = () => {
       if (window.visualViewport) {
-        const height = window.visualViewport.height;
-        const viewportHeight = window.innerHeight;
-        const isCurrentlyOpen = height < viewportHeight * 0.85;
+        // Visual Viewport yüksekliği, klavye açıldığında gerçek görünen alanı verir.
+        // Bu yüksekliği ana kapsayıcıya set ettiğimizde input kutusu klavye üzerine yapışır.
+        setViewportHeight(`${window.visualViewport.height}px`);
         
-        setIsKeyboardOpen(isCurrentlyOpen);
-        
-        // Mobil tarayıcılarda adres çubuğu ve klavye etkisini sıfırlamak için kesin yükseklik ataması
-        if (embedded) {
-          setViewportHeight(`${height}px`);
-        } else {
-          setViewportHeight(`${height}px`);
-        }
-        
-        // Klavye açıldığında input'un olduğu yere kaydır
-        if (isCurrentlyOpen) {
-          window.scrollTo(0, 0);
-          document.body.scrollTop = 0;
-        }
+        // Tarayıcının klavye açıldığında sayfayı yukarı kaydırmasını önle
+        window.scrollTo(0, 0);
       }
     };
 
-    window.visualViewport?.addEventListener('resize', handleViewportChange);
-    window.visualViewport?.addEventListener('scroll', handleViewportChange);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener('scroll', handleViewportChange);
+    }
     
     handleViewportChange();
+    
     return () => {
-      window.visualViewport?.removeEventListener('resize', handleViewportChange);
-      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleViewportChange);
+      }
     };
-  }, [embedded]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,19 +143,19 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative w-full h-full' : 'fixed inset-0'} ${className}`}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono fixed inset-0 m-0 p-0 ${className}`}
     >
-      {/* 1. Tabs (Room List) - En Üste Çekildi, Boşluklar Kaldırıldı */}
-      <div className="bg-black text-white/90 border-b border-gray-800 flex shrink-0 overflow-x-auto no-scrollbar py-0.5 px-1 gap-1 z-50">
-        <button className="px-1.5 py-1 text-gray-400 hover:text-white shrink-0" onClick={() => setIsLeftDrawerOpen(true)}>
+      {/* 1. Header & Tabs - En Üstte Sıfır Boşluk */}
+      <div className="bg-black text-white border-b border-gray-800 flex shrink-0 overflow-x-auto no-scrollbar px-1 z-50 h-9 items-center mt-0">
+        <button className="px-2 text-gray-400 hover:text-white shrink-0" onClick={() => setIsLeftDrawerOpen(true)}>
           <Menu size={18} />
         </button>
-        <div className="flex-1 flex gap-0.5 overflow-x-auto no-scrollbar">
+        <div className="flex-1 flex gap-0.5 overflow-x-auto no-scrollbar h-full items-center">
           {['Status', '#Sohbet', '#Yardim'].map(tab => (
             <button 
               key={tab} 
               onClick={() => setActiveTab(tab.startsWith('#') ? tab.toLowerCase() : tab)} 
-              className={`px-3 py-1.5 text-[10px] font-black uppercase transition-all whitespace-nowrap border-b-2 leading-none h-8 flex items-center ${activeTab === (tab.startsWith('#') ? tab.toLowerCase() : tab) ? 'border-white text-white bg-white/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+              className={`px-3 h-full text-[11px] font-black uppercase transition-all whitespace-nowrap border-b-2 flex items-center ${activeTab === (tab.startsWith('#') ? tab.toLowerCase() : tab) ? 'border-white text-white bg-white/10' : 'border-transparent text-gray-500'}`}
             >
               {tab}
             </button>
@@ -171,94 +163,83 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
         <button 
           onClick={() => setShowUserList(!showUserList)} 
-          className={`px-2 py-1 text-[10px] font-black uppercase flex items-center gap-1 transition-all shrink-0 ${showUserList ? 'text-green-400 bg-green-950/30' : 'text-gray-400 hover:text-white'}`}
+          className={`px-2 h-full text-[10px] font-black uppercase flex items-center gap-1 shrink-0 ${showUserList ? 'text-green-400 bg-green-950/20' : 'text-gray-400'}`}
         >
           <UsersIcon size={14} />
-          <span className="hidden xs:inline">Online</span>
         </button>
       </div>
 
-      {/* 2. Main Area (Message Area) */}
-      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative z-10 border-x border-gray-300">
+      {/* 2. Main Content Area */}
+      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
-          {isAILoading && <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500 animate-pulse z-20" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* User List Panel (Overlay on mobile) */}
+        {/* User List Overlay */}
         {showUserList && (
-          <div className="absolute right-0 top-0 bottom-0 w-44 border-l border-gray-300 bg-white z-[70] flex flex-col shadow-2xl">
-            <div className="bg-gray-100 p-2 border-b border-gray-200 flex justify-between items-center px-2">
-              <span className="italic text-[9px] font-black text-gray-600 uppercase tracking-tighter">Online</span>
-              <X size={14} className="cursor-pointer text-gray-400 hover:text-black" onClick={() => setShowUserList(false)} />
+          <div className="absolute right-0 top-0 bottom-0 w-44 border-l border-gray-300 bg-white z-[70] flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
+            <div className="bg-gray-100 p-2 border-b border-gray-200 flex justify-between items-center px-2 shrink-0">
+              <span className="italic text-[9px] font-black text-gray-600 uppercase">Online</span>
+              <X size={14} className="cursor-pointer text-gray-400" onClick={() => setShowUserList(false)} />
             </div>
             <UserList 
-              users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t', 'aLin', 'Arazi', 'Asya', 'Ace', 'Bol', 'DeryureK', 'CeyLin', 'DiVeeT', 'Kaya', 'Letch']} 
+              users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t']} 
               currentUser={userName} 
               onUserClick={(e, n) => initiatePrivateChat(n)}
               onClose={() => setShowUserList(false)} 
-              currentOps={['Admin', 'GeminiBot']}
             />
           </div>
         )}
       </div>
 
-      {/* 3. Input Area - Mobil Görünüm Fixli */}
-      <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 pb-2 z-50 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]`}>
-        <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-xl mx-auto">
-          <div className="flex-1 bg-white border border-gray-400 h-10 px-2 flex items-center shadow-inner rounded-sm overflow-hidden focus-within:border-[#000080] focus-within:ring-1 focus-within:ring-[#000080]/20">
+      {/* 3. Input Area - Mesaj Kutusu her zaman altta ve görünür */}
+      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 z-50">
+        <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-xl mx-auto h-11">
+          <div className="flex-1 bg-white border border-gray-400 h-full px-2 flex items-center shadow-inner rounded-sm overflow-hidden focus-within:border-[#000080]">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[15px] outline-none font-medium h-full text-black placeholder:text-gray-400 font-mono"
+              className="flex-1 bg-transparent text-[16px] outline-none font-medium h-full text-black placeholder:text-gray-400 font-mono"
               placeholder="Mesajınızı yazın..."
               autoComplete="off"
+              enterKeyHint="send"
               onFocus={() => {
-                // Klavye açıldığında bazı mobil tarayıcılarda viewport'un düzgün güncellenmesini zorla
-                setTimeout(() => window.scrollTo(0, 0), 100);
+                // Klavye açıldığında bazen sayfa zıplar, window.visualViewport bunu çözer
+                // ama ekstra güvenlik için scrollTo 0 ekliyoruz.
+                setTimeout(() => window.scrollTo(0, 0), 50);
               }}
             />
           </div>
           <button 
             type="submit" 
-            className="h-10 px-4 bg-[#000080] text-white rounded-sm flex items-center justify-center shadow-sm active:bg-black transition-colors shrink-0 text-[11px] font-black uppercase tracking-tighter"
+            className="h-full px-4 bg-[#000080] text-white rounded-sm flex items-center justify-center font-black uppercase text-[11px]"
           >
             GÖNDER
           </button>
         </form>
       </div>
 
-      {/* Mobile Sidebar Drawer */}
+      {/* Sidebar Drawer */}
       {isLeftDrawerOpen && (
         <div className="fixed inset-0 z-[1000]">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white shadow-2xl flex flex-col font-mono">
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white shadow-2xl flex flex-col font-mono animate-in slide-in-from-left duration-200">
             <div className="bg-[#000080] text-white p-3 font-bold text-[13px] flex justify-between items-center">
-               <span className="flex items-center gap-2 uppercase tracking-tighter">Kanallar</span>
+               <span className="uppercase tracking-tighter">Navigasyon</span>
                <X size={20} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
             </div>
             <div className="p-4 space-y-2 overflow-y-auto flex-1">
-              <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 border-b border-gray-400 pb-1">Aktif Odalar</p>
-              {['#Sohbet', '#Yardim', '#Radyo', '#Oyun', '#Kelime'].map(c => (
+              {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => (
                 <button 
                   key={c} 
                   onClick={() => { setActiveTab(c.toLowerCase()); setIsLeftDrawerOpen(false); }} 
-                  className={`w-full text-left p-2.5 text-xs font-bold uppercase transition-all border ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white border-[#000080]' : 'text-[#000080] hover:bg-white/50 border-transparent'}`}
+                  className={`w-full text-left p-3 text-xs font-black uppercase border ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white border-[#000080]' : 'text-[#000080] hover:bg-white/50 border-transparent'}`}
                 >
                   <Hash size={12} className="inline mr-2" />
                   {c}
                 </button>
               ))}
-              
-              <div className="mt-6 space-y-2">
-                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2 border-b border-gray-400 pb-1">Sistem</p>
-                <button onClick={() => setView('landing')} className="w-full text-left p-2.5 text-xs font-bold uppercase text-blue-900">Ana Sayfa</button>
-                <button className="w-full text-left p-2.5 text-xs font-bold uppercase text-blue-900">Ayarlar</button>
-              </div>
-            </div>
-            <div className="p-4 border-t border-gray-400 bg-gray-200">
-               <button onClick={() => setView('landing')} className="w-full p-3 bg-red-800 text-white font-bold text-[11px] rounded uppercase shadow-md active:bg-red-900">OTURUMU KAPAT</button>
             </div>
           </div>
         </div>

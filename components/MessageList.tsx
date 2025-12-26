@@ -14,6 +14,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
 
   useEffect(() => {
     if (scrollRef.current) {
+      // Mesaj geldiğinde en alta kaydır
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
@@ -60,10 +61,15 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
       ref={scrollRef}
       className="h-full overflow-y-auto px-3 py-2 bg-white flex flex-col font-mono selection:bg-blue-100"
     >
+      {/* 
+          ListView StackFromBottom mantığı için: 
+          Boşlukları dolduran bir flex div ve ardından mesajlar.
+      */}
+      <div className="flex-1 min-h-0" /> 
+      
       {messages.length === 0 ? (
-        <div className="flex-1 flex flex-col items-start justify-start space-y-1 pt-4">
+        <div className="space-y-1 pt-4">
           <p className="text-[#000080] font-bold text-[12px]">*** Mirch Online Bağlantısı Kuruldu.</p>
-          <p className="text-[#000080] font-bold text-[12px]">*** Kullanıcı Doğrulaması Başarılı.</p>
           <p className="text-gray-400 italic text-[11px]">Sohbete başlamak için bir mesaj yazın...<span className="cursor-blink"></span></p>
         </div>
       ) : (

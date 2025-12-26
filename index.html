@@ -15,16 +15,29 @@
       --mirc-bg: #d4dce8;
       --mirc-border: #808080;
     }
-    body, html {
-      background-color: transparent;
+    
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
       margin: 0;
       padding: 0;
+    }
+
+    /* ÜST BOŞLUĞU SIFIRLAMAK İÇİN KRİTİK AYARLAR */
+    html, body {
+      background-color: #000;
+      margin: 0 !important;
+      padding: 0 !important;
       height: 100%;
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
-      -webkit-tap-highlight-color: transparent;
       overflow: hidden;
-      position: fixed; /* iOS scroll zıplama sorununu çözer */
+      position: fixed; /* iOS'ta sayfa zıplamasını ve üst boşluğu önler */
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
     }
     
     #root {
@@ -33,19 +46,11 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      background-color: var(--mirc-bg);
+      position: absolute;
+      top: 0;
+      left: 0;
     }
-    
-    .safe-top {
-      padding-top: env(safe-area-inset-top, 0px);
-    }
-    
-    .safe-bottom {
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: #f0f0f0; }
-    ::-webkit-scrollbar-thumb { background: #000080; border-radius: 0px; }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -61,15 +66,10 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    .workigom-embedded-view {
-      border-radius: 0;
-      box-shadow: none;
-    }
-
-    /* Mobil klavye açıldığında input alanının ekran dışına çıkmasını önlemek için */
-    @supports (height: 100dvh) {
-      body, html, #root {
-        height: 100dvh;
+    /* iOS Input Focus Zoom Engelleme */
+    @media screen and (max-width: 768px) {
+      input, textarea, select {
+        font-size: 16px !important;
       }
     }
   </style>
