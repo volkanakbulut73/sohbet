@@ -195,7 +195,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           <div className="flex items-center gap-2">
              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
              <span className="text-[11px] font-black tracking-tight uppercase italic">Workigom Connect</span>
-             <span className="text-[9px] bg-white/10 px-1.5 rounded-sm opacity-60 ml-2">v{CHAT_MODULE_CONFIG.VERSION}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -264,8 +263,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
            </div>
         </div>
 
-        {/* Right Sidebar: User List with clear separator */}
-        <div className={`absolute right-0 top-0 bottom-0 w-64 bg-[#f3f4f6] border-l-2 border-gray-300 z-[60] transition-transform duration-300 ease-in-out ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:w-48'}`}>
+        {/* Right Sidebar: Narrower width for mobile (w-48 instead of w-64) */}
+        <div className={`absolute right-0 top-0 bottom-0 w-48 bg-[#f3f4f6] border-l-2 border-gray-300 z-[60] transition-transform duration-300 ease-in-out ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:w-44'}`}>
            <UserList 
             users={[userName, 'GeminiBot', 'Admin']} 
             currentUser={userName} 
