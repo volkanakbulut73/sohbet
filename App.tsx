@@ -48,9 +48,14 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     const handleViewportChange = () => {
       if (window.visualViewport) {
         const height = window.visualViewport.height;
+        // Klavye tespiti: Görünür alan toplam ekranın %80'inden azsa klavye açık varsayılır
         const isCurrentlyOpen = height < window.innerHeight * 0.8;
         setIsKeyboardOpen(isCurrentlyOpen);
-        setViewportHeight(`${height}px`);
+        
+        // Sadece tam ekran (non-embedded) modda viewport yüksekliğini set et
+        if (!embedded) {
+          setViewportHeight(`${height}px`);
+        }
       }
     };
 
@@ -62,7 +67,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       window.visualViewport?.removeEventListener('resize', handleViewportChange);
       window.visualViewport?.removeEventListener('scroll', handleViewportChange);
     };
-  }, []);
+  }, [embedded]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,12 +142,12 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   return (
     <div 
       ref={containerRef}
-      style={{ height: viewportHeight }}
-      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full fixed inset-0 ${className}`}
+      style={{ height: embedded ? '100%' : viewportHeight }}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative w-full h-full' : 'fixed inset-0'} ${className}`}
     >
       
       {/* 1. Header (Status Bar) */}
-      <div className={`bg-[#000080] text-white px-3 py-1.5 flex items-center justify-between z-20 text-[12px] font-bold shrink-0 border-b border-white/20 safe-top`}>
+      <div className={`bg-[#000080] text-white px-3 py-1.5 flex items-center justify-between z-50 text-[12px] font-bold shrink-0 border-b border-white/20 ${!embedded ? 'safe-top' : ''}`}>
         <div className="flex items-center gap-3">
           <button onClick={() => setView('landing')} className="hover:bg-white/10 p-1">
              <ChevronLeft size={20} />
@@ -160,8 +165,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 2. Tabs (Channels) */}
-      <div className="bg-black text-white/90 border-b border-gray-600 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1">
-        <button className="px-2 py-1 text-gray-400"><Menu size={18} onClick={() => setIsLeftDrawerOpen(true)} /></button>
+      <div className="bg-black text-white/90 border-b border-gray-600 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 z-40">
+        <button className="px-2 py-1 text-gray-400" onClick={() => setIsLeftDrawerOpen(true)}><Menu size={18} /></button>
         <div className="flex-1 flex gap-1">
           {['Status', '#Sohbet', '#Yardim'].map(tab => (
             <button 
@@ -176,15 +181,15 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 3. Main Area (Message Area) */}
-      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative">
+      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative z-10">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
           {isAILoading && <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500 animate-pulse z-20" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* User List Panel (Overlay on mobile) */}
+        {/* User List Panel */}
         {showUserList && (
-          <div className="absolute right-0 top-0 bottom-0 w-48 border-l border-gray-300 bg-white z-[30] flex flex-col shadow-2xl">
+          <div className="absolute right-0 top-0 bottom-0 w-48 border-l border-gray-300 bg-white z-[60] flex flex-col shadow-2xl">
             <div className="bg-gray-100 p-2 border-b border-gray-200 flex justify-between items-center px-3">
               <span className="italic text-[10px] font-bold text-gray-600 uppercase tracking-tighter">Online Kişiler</span>
               <X size={16} className="cursor-pointer" onClick={() => setShowUserList(false)} />
@@ -201,34 +206,35 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 4. Input Area (Kırmızı Kutulu Alan) */}
-      <div className="shrink-0 bg-white border-t border-gray-300 p-2 md:p-3 z-40">
+      <div className="shrink-0 bg-white border-t border-gray-200 p-2 md:p-3 z-50">
         <form onSubmit={handleSend} className="flex items-center gap-2 w-full max-w-screen-xl mx-auto">
-          <div className="flex-1 bg-white border-2 border-gray-300 h-12 px-3 flex items-center shadow-sm rounded-md overflow-hidden">
+          <div className="flex-1 bg-white border-2 border-gray-300 h-11 px-3 flex items-center shadow-sm rounded-lg overflow-hidden focus-within:border-[#000080]">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               className="flex-1 bg-transparent text-[16px] outline-none font-medium h-full text-black placeholder:text-gray-400"
               placeholder="Mesajınızı yazın..."
+              autoComplete="off"
             />
           </div>
           <button 
             type="submit" 
-            className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center shadow-lg active:bg-black transition-colors shrink-0"
+            className="w-11 h-11 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md active:bg-black transition-colors shrink-0"
           >
             <Menu size={22} />
           </button>
         </form>
       </div>
 
-      {/* 5. Bottom Navigation (Sadece klavye kapalıyken ve mobilde göster) */}
+      {/* 5. Bottom Navigation */}
       {!isKeyboardOpen && (
-        <div className="shrink-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 safe-bottom">
-           <button className="flex flex-col items-center gap-1 text-gray-400"><Home size={22} /><span className="text-[9px] font-bold uppercase tracking-tighter">Ana Sayfa</span></button>
-           <button className="flex flex-col items-center gap-1 text-gray-400"><Heart size={22} /><span className="text-[9px] font-bold uppercase tracking-tighter">Talepler</span></button>
-           <button className="bg-gray-800 text-white p-3 rounded-full -translate-y-4 shadow-xl border-4 border-[#d4dce8]"><Plus size={24} /></button>
-           <button className="flex flex-col items-center gap-1 text-[#000080]"><MessageCircle size={22} /><span className="text-[9px] font-bold uppercase tracking-tighter">Sohbet</span></button>
-           <button className="flex flex-col items-center gap-1 text-gray-400"><UserIcon size={22} /><span className="text-[9px] font-bold uppercase tracking-tighter">Profil</span></button>
+        <div className="shrink-0 bg-white border-t border-gray-200 flex justify-around items-center h-14 z-50">
+           <button className="flex flex-col items-center gap-0.5 text-gray-400"><Home size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Ana Sayfa</span></button>
+           <button className="flex flex-col items-center gap-0.5 text-gray-400"><Heart size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Talepler</span></button>
+           <button className="bg-gray-800 text-white p-3 rounded-full -translate-y-4 shadow-xl border-4 border-[#d4dce8]"><Plus size={22} /></button>
+           <button className="flex flex-col items-center gap-0.5 text-[#000080]"><MessageCircle size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Sohbet</span></button>
+           <button className="flex flex-col items-center gap-0.5 text-gray-400"><UserIcon size={20} /><span className="text-[9px] font-bold uppercase tracking-tighter">Profil</span></button>
         </div>
       )}
 
