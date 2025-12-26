@@ -14,7 +14,7 @@ type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_lo
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
   const [viewportHeight, setViewportHeight] = useState('100%');
-  const [showUserList, setShowUserList] = useState(false); // Mobilde default kapalı
+  const [showUserList, setShowUserList] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const getInitialView = (): AppView => {
@@ -39,11 +39,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   const [inputText, setInputText] = useState('');
 
-  // Mobil klavye ve viewport yönetimi
   useEffect(() => {
     const handleVisualViewportResize = () => {
       if (window.visualViewport) {
-        // embedded modda container'ın yüksekliğini visualViewport'a göre daraltıyoruz
+        // Mobilde klavye açıldığında yüksekliği dinamik güncelle
         setViewportHeight(`${window.visualViewport.height}px`);
       }
     };
@@ -60,7 +59,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         window.visualViewport.removeEventListener('scroll', handleVisualViewportResize);
       }
     };
-  }, [embedded]);
+  }, []);
 
   useEffect(() => {
     if (externalUser && externalUser.trim() !== "") {
@@ -106,7 +105,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-[2px_2px_10px_rgba(0,0,0,0.2)]">
           <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold flex justify-between items-center">
             <span>Connect</span>
-            <X size={14} className="cursor-pointer" />
+            <X size={14} className="cursor-pointer" onClick={() => setView('landing')} />
           </div>
           <div className="p-4 space-y-4">
             <div className="flex justify-center mb-2">
@@ -143,22 +142,23 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative' : 'fixed inset-0'} ${className}`}
+      className={`w-full flex flex-col bg-[#d4dce8] overflow-hidden font-mono ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
     >
       
-      {/* 1. Status Bar */}
-      <div className="bg-[#000080] text-white px-2 py-1.5 flex items-center justify-between safe-top z-10 text-[11px] font-bold shrink-0 border-b border-white/10">
+      {/* 1. Status Bar - Üst boşluk mobilde optimize edildi */}
+      <div className="bg-[#000080] text-white px-2 py-1.5 flex items-center justify-between z-10 text-[11px] font-bold shrink-0 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Menu size={18} className="cursor-pointer sm:hidden" onClick={() => setIsLeftDrawerOpen(true)} />
-          <span className="truncate">Connected: workigomchat.online</span>
+          <span className="truncate sm:inline hidden">Connected: workigomchat.online</span>
+          <span className="truncate sm:hidden text-[10px]">IRC Online</span>
         </div>
         <div className="flex items-center gap-3">
-           <button onClick={() => setShowUserList(!showUserList)} className="hover:bg-blue-700 p-0.5 rounded"><UsersIcon size={16} /></button>
+           <button onClick={() => setShowUserList(!showUserList)} className="hover:bg-blue-700 p-1 rounded transition-colors"><UsersIcon size={16} /></button>
         </div>
       </div>
 
-      {/* 2. Channel Tabs - Mobilde her zaman görünür ve kaydırılabilir */}
-      <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1">
+      {/* 2. Channel Tabs - Mobilde daha ince ve net */}
+      <div className="bg-[#d4dce8] border-b border-gray-400 flex shrink-0 overflow-x-auto no-scrollbar py-1 px-1 gap-1 shadow-sm">
         <button 
           onClick={() => setActiveTab('Status')} 
           className={`px-3 py-1 text-[10px] font-bold border transition-all whitespace-nowrap ${activeTab === 'Status' ? 'bg-white border-gray-500 text-black shadow-inner' : 'bg-gray-200 border-transparent text-[#000080]'}`}
@@ -171,13 +171,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             onClick={() => setActiveTab(chan)} 
             className={`px-3 py-1 text-[10px] font-bold border transition-all flex items-center gap-1 whitespace-nowrap ${activeTab === chan ? 'bg-white border-gray-500 text-black shadow-inner' : 'bg-gray-200 border-transparent text-[#000080]'}`}
           >
-            {chan} <span className="text-red-700 text-[8px] opacity-50 ml-1">x</span>
+            {chan} <span className="text-red-700 text-[8px] opacity-60 ml-0.5">x</span>
           </button>
         ))}
-        {/* Özel Mesajlar Sekmesi */}
-        <div className="flex gap-1">
-           {/* Dinamik özel mesaj tabları buraya gelebilir */}
-        </div>
       </div>
 
       {/* 3. Main Area */}
@@ -189,9 +185,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
         {/* User List Panel (Overlay on mobile) */}
         {showUserList && (
-          <div className="absolute right-0 top-0 bottom-0 w-32 md:w-40 border-l border-gray-300 bg-white z-[30] flex flex-col shadow-2xl md:shadow-none md:relative md:block">
+          <div className="absolute right-0 top-0 bottom-0 w-32 md:w-40 border-l border-gray-300 bg-white z-[30] flex flex-col shadow-2xl md:shadow-none md:relative">
             <div className="bg-gray-100 p-1 border-b border-gray-200 flex justify-between items-center px-2">
-              <span className="italic text-[9px] font-bold text-gray-500 uppercase">User List</span>
+              <span className="italic text-[9px] font-bold text-gray-500 uppercase tracking-tighter">User List</span>
               <X size={14} className="md:hidden cursor-pointer" onClick={() => setShowUserList(false)} />
             </div>
             <UserList 
@@ -205,8 +201,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area - Mobilde site nav barı üzerinde kalacak şekilde düzenlendi */}
-      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 md:p-2 z-20 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]">
+      {/* 4. Input Area - Mesaj kutusu her zaman altta ve görünür */}
+      <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 md:p-2 z-20">
         <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto">
           <div className="hidden sm:flex bg-white border border-gray-500 h-9 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
             <span className="text-[#000080] text-[11px] font-bold truncate">{userName}</span>
@@ -216,8 +212,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[14px] md:text-[13px] outline-none font-medium h-full text-black placeholder:text-gray-400"
-              placeholder="Mesajınızı buraya yazın..."
+              className="flex-1 bg-transparent text-[15px] md:text-[13px] outline-none font-medium h-full text-black placeholder:text-gray-400"
+              placeholder="Mesaj gönder..."
               autoFocus
             />
           </div>
@@ -229,17 +225,15 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             <Send size={14} className="sm:hidden" />
           </button>
         </form>
-        {/* Güvenli alan boşluğu: Mobilde site navigasyonunun üstünde kalması için */}
-        <div className="h-10 sm:h-0" />
       </div>
 
       {/* Mobile Sidebar Drawer */}
       {isLeftDrawerOpen && (
         <div className="fixed inset-0 z-[1000]">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[#d4dce8] border-r border-white p-0 shadow-2xl flex flex-col">
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white p-0 shadow-2xl flex flex-col">
             <div className="bg-[#000080] text-white p-3 font-bold text-[12px] flex justify-between items-center shadow-lg">
-               <span className="flex items-center gap-2"><Hash size={16}/> SERVER NAVIGATION</span>
+               <span className="flex items-center gap-2"><Hash size={16}/> IRC NAVIGATION</span>
                <X size={20} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
             </div>
             <div className="p-4 space-y-2 overflow-y-auto flex-1">
@@ -253,13 +247,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
                   {c}
                 </button>
               ))}
-              
-              <p className="text-[10px] text-gray-500 font-bold uppercase mt-6 mb-2 tracking-widest border-b border-gray-300 pb-1">Settings</p>
-              <button className="w-full text-left p-3 text-gray-700 text-sm font-bold uppercase hover:bg-white/50 rounded">Nick Değiştir</button>
-              <button className="w-full text-left p-3 text-gray-700 text-sm font-bold uppercase hover:bg-white/50 rounded">Profilim</button>
             </div>
             <div className="p-4 border-t border-gray-300 bg-gray-100">
-               <button onClick={() => window.location.href = '/'} className="w-full p-3 bg-red-600 text-white font-bold text-[11px] rounded uppercase shadow-lg active:scale-95 transition-transform">GÜVENLİ ÇIKIŞ YAP</button>
+               <button onClick={() => setView('landing')} className="w-full p-3 bg-red-600 text-white font-bold text-[11px] rounded uppercase shadow-lg active:scale-95 transition-transform">GÜVENLİ ÇIKIŞ</button>
             </div>
           </div>
         </div>
