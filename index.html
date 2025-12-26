@@ -16,17 +16,21 @@
       --terminal-green: #00ff99;
       --dark-bg: #0b0f14;
     }
-    body {
+    body, html {
       background-color: var(--dark-bg);
       margin: 0;
       padding: 0;
-      overflow-x: hidden;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
       font-family: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
       -webkit-tap-highlight-color: transparent;
     }
     #root {
-      min-height: 100vh;
-      width: 100vw;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
     }
     
     .cursor-blink {
@@ -44,19 +48,13 @@
       50% { opacity: 0; }
     }
 
-    .fade-in {
-      animation: fadeIn 0.8s ease-out forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
     /* Klasik mIRC Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0b0f14; }
-    ::-webkit-scrollbar-thumb { background: #1a202c; border: 1px solid #333; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     
     html { scroll-behavior: smooth; }
   </style>

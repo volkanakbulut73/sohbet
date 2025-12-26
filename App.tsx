@@ -9,7 +9,7 @@ import AdminDashboard from './components/AdminDashboard';
 import { ChatModuleProps } from './types';
 import { CHAT_MODULE_CONFIG } from './config';
 import { storageService } from './services/storageService';
-import { Menu, X, Hash, Users, Globe, LogOut, MessageSquare, Send, Lock, ChevronRight, Mail, ShieldCheck, Clock, Settings, User, MonitorSmartphone } from 'lucide-react';
+import { Menu, X, Hash, Users, LogOut, MessageSquare, Send, Lock, Clock, Settings } from 'lucide-react';
 
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat' | 'admin_login' | 'admin_panel';
 
@@ -90,8 +90,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         <div className="w-full max-w-sm bg-gray-900 border border-gray-800 p-8 space-y-8 shadow-2xl relative">
           <div className="text-center space-y-2">
             <Lock size={40} className="text-[#00ff99] mx-auto mb-2" />
-            <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Sohbete Giriş Yap</h2>
-            <p className="text-[10px] text-gray-500 uppercase font-bold italic tracking-widest">Workigom Güvenli Sohbet Ağı</p>
+            <h2 className="text-xl font-black text-white uppercase italic tracking-tighter text-center">Sohbete Giriş Yap</h2>
+            <p className="text-[10px] text-gray-500 uppercase font-bold italic tracking-widest text-center">Workigom Güvenli Sohbet Ağı</p>
           </div>
           
           <form onSubmit={handleLogin} className="space-y-4">
@@ -128,11 +128,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             <button onClick={() => setView('register')} className="text-[#00ff99] text-[10px] font-black uppercase hover:underline">
               Henüz üye değil misiniz? Başvuru yapın →
             </button>
-            {!embedded && (
-              <button onClick={() => setView('landing')} className="text-gray-600 text-[9px] font-bold uppercase hover:text-gray-400">
-                Geri Dön
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -149,7 +144,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           <h2 className="text-2xl font-black text-white uppercase italic">Başvurunuz İnceleniyor</h2>
           <p className="text-gray-400 text-sm leading-relaxed">
             Güvenliğiniz için belgeleriniz moderatörlerimiz tarafından kontrol ediliyor. 
-            Onaylandığında e-posta ile bilgilendirileceksiniz.
           </p>
           <button onClick={() => setView(embedded ? 'login' : 'landing')} className="text-[#00ff99] text-[10px] font-black uppercase border border-[#00ff99]/30 px-6 py-2">
             Tamam
@@ -177,7 +171,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
             <input type="text" placeholder="Admin Nick" value={adminForm.username} onChange={e => setAdminForm({...adminForm, username: e.target.value})} className="w-full bg-black border border-gray-800 p-3 text-white text-xs" />
             <input type="password" placeholder="Şifre" value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} className="w-full bg-black border border-gray-800 p-3 text-white text-xs" />
             <button className="w-full bg-[#00ff99] text-black py-4 text-xs font-black uppercase">Giriş</button>
-            <button type="button" onClick={() => setView('landing')} className="w-full text-[10px] text-gray-500 uppercase">Geri</button>
           </form>
         </div>
       </div>
@@ -185,7 +178,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   }
 
   return (
-    <div className={`h-full w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
+    <div className={`h-screen w-full flex flex-col bg-[#0b0f14] overflow-hidden select-none font-mono ${className}`}>
       {/* Header Panel - mIRC Dark Theme */}
       <div className="h-12 bg-[#1a1f26] flex items-center justify-between px-3 text-white shrink-0 z-50 border-b border-gray-800">
         <div className="flex items-center gap-3">
@@ -234,7 +227,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* Main Container */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative min-h-0">
         {/* Left Sidebar (Channels) - MOBILE OVERLAY */}
         <div 
           className={`absolute lg:relative inset-y-0 left-0 w-64 bg-[#d4dce8] border-r border-gray-400 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
@@ -274,10 +267,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
            </div>
         </div>
 
-        {/* Right Sidebar: Users - MOBILE OVERLAY */}
+        {/* Right Sidebar: Users - REDUCED WIDTH BY 1/3 (w-48 -> w-32) */}
         <div 
-          className={`absolute lg:relative inset-y-0 right-0 w-48 bg-[#f3f4f6] border-l border-gray-300 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
-          ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:w-44 lg:block'}`}
+          className={`absolute lg:relative inset-y-0 right-0 w-36 bg-[#f3f4f6] border-l border-gray-300 z-[70] transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none
+          ${isRightDrawerOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:block'}`}
         >
            <UserList 
             users={[userName, 'GeminiBot', 'Admin']} 
@@ -289,9 +282,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* Input Panel - Fixed height to avoid squashing */}
+      {/* Input Panel - ALWAYS VISIBLE AT BOTTOM */}
       <div className="p-2 bg-[#d4dce8] border-t border-gray-400 shrink-0">
-        <form onSubmit={handleSend} className="flex gap-1.5 h-11">
+        <form onSubmit={handleSend} className="flex gap-1.5 h-10">
           <div className="flex-1 bg-white border-2 border-gray-500 px-3 flex items-center shadow-inner rounded-sm group focus-within:border-blue-700 transition-colors">
              <span className="text-[10px] font-black text-blue-900 mr-2 hidden sm:inline select-none">[{userName}]</span>
              <input 
@@ -303,8 +296,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               onFocus={() => { if(window.innerWidth < 1024) { setIsLeftDrawerOpen(false); setIsRightDrawerOpen(false); } }}
              />
           </div>
-          <button type="submit" className="bg-[#c0c0c0] border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.6)] px-5 flex items-center justify-center active:shadow-none active:translate-y-[1px] transition-all hover:bg-white group">
-            <Send size={18} className="text-gray-800 group-hover:text-blue-800" />
+          <button type="submit" className="bg-[#c0c0c0] border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.6)] px-4 flex items-center justify-center active:shadow-none active:translate-y-[1px] transition-all hover:bg-white group">
+            <Send size={16} className="text-gray-800 group-hover:text-blue-800" />
           </button>
         </form>
       </div>
