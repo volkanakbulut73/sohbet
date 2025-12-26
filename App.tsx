@@ -94,16 +94,16 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   if (view === 'pending') return <div className="fixed inset-0 bg-black flex items-center justify-center p-4 text-white font-mono text-center"><div className="space-y-4"><Clock size={48} className="mx-auto text-orange-500"/><h2 className="text-xl font-bold uppercase">Onay Bekleniyor</h2><button onClick={() => setView('landing')} className="text-[#00ff99] border border-[#00ff99] px-6 py-2">Geri Dön</button></div></div>;
 
   return (
-    <div className={`h-screen-safe w-full flex flex-col bg-white overflow-hidden font-mono ${className}`}>
+    <div className={`${embedded ? 'h-full' : 'h-screen-safe'} w-full flex flex-col bg-white overflow-hidden font-mono ${className}`}>
       
       {/* 1. Header Area */}
       <div className="bg-[#d4dce8] border-b border-gray-400 shrink-0 p-1 flex items-center justify-between safe-top">
         <div className="flex gap-1">
-          <button onClick={() => setIsLeftDrawerOpen(true)} className="bg-gradient-to-b from-gray-100 to-gray-400 border border-gray-600 px-3 py-1 text-[10px] font-bold text-blue-900 rounded-sm">Menü</button>
+          <button onClick={() => setIsLeftDrawerOpen(true)} className="bg-gradient-to-b from-gray-100 to-gray-400 border border-gray-600 px-3 py-1 text-[10px] font-bold text-blue-900 rounded-sm shadow-sm">Menü</button>
           <button className="text-red-700 text-[10px] font-bold px-2">Radyo</button>
         </div>
         <div className="flex-1 text-center truncate px-2"><span className="text-[10px] font-bold text-gray-600 uppercase">Workigom Network 1.1.1</span></div>
-        <button className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 px-3 py-1 text-[10px] font-bold text-white rounded-sm">Özel</button>
+        <button className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 px-3 py-1 text-[10px] font-bold text-white rounded-sm shadow-sm">Özel</button>
       </div>
 
       {/* 2. Channel Tabs */}
@@ -115,19 +115,19 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 3. Main Area: Chat + Fixed User List */}
-      <div className="flex-1 flex overflow-hidden min-h-0 bg-white">
+      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
           {isAILoading && <div className="absolute top-0 left-0 right-0 h-[1px] bg-blue-500 animate-pulse z-10" />}
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
-        {/* MIRC Style User List */}
+        {/* MIRC Style User List (Daraltılmış) */}
         <div className="w-28 md:w-32 border-l border-gray-300 bg-white shrink-0 flex flex-col">
           <div className="p-0.5 border-b border-gray-200">
              <input type="text" placeholder="Nick..." className="w-full text-[9px] p-0.5 bg-gray-50 border border-gray-200 outline-none uppercase" />
           </div>
           <UserList 
-            users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t', 'aLin', 'Arazi', 'karmor', 'Asya', 'Ace', 'Bol', 'DeryureK', 'CeyLin', 'DiVeeT', 'Kaya', 'Letch']} 
+            users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t', 'aLin', 'Arazi', 'Asya', 'Ace', 'Bol', 'DeryureK', 'CeyLin', 'DiVeeT', 'Kaya', 'Letch']} 
             currentUser={userName} 
             onUserClick={(e, n) => initiatePrivateChat(n)}
             onClose={() => {}} 
@@ -136,8 +136,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* 4. Input Area - FIX: 2 Tık Yukarı Kaydırıldı ve Görünürlük Arttırıldı */}
-      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-400 p-2 pb-5 md:pb-4 safe-bottom z-50 relative">
+      {/* 4. Input Area - FIX: 2 Tık Yukarı Alındı ve Mobil Menü Engeli Kaldırıldı */}
+      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-400 px-2 pt-2 pb-16 md:pb-10 safe-bottom z-[100] relative">
         <form onSubmit={handleSend} className="flex items-center gap-1.5 w-full max-w-screen-2xl mx-auto mb-1">
           <div className="flex-1 bg-white border border-gray-400 h-9 px-2 flex items-center shadow-inner rounded-sm">
             <input 
@@ -149,8 +149,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               autoFocus
             />
           </div>
-          <button type="button" className="text-yellow-500 shrink-0"><Smile size={20} fill="currentColor" /></button>
-          <button type="submit" className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-4 h-9 text-[10px] font-bold rounded-sm shadow-sm shrink-0">Gönder</button>
+          <button type="button" className="text-yellow-500 shrink-0 hover:scale-110 transition-transform"><Smile size={20} fill="currentColor" /></button>
+          <button type="submit" className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-4 h-9 text-[10px] font-bold rounded-sm shadow-sm shrink-0 active:translate-y-0.5 transition-all">Gönder</button>
         </form>
       </div>
 
