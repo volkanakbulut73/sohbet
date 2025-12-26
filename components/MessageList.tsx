@@ -24,7 +24,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
 
     if (msg.type === MessageType.SYSTEM) {
       return (
-        <div className="flex gap-1 text-[11px] py-0.5 leading-tight text-[#000080] font-mono font-bold">
+        <div className="flex gap-1 text-[12px] py-0.5 leading-tight text-[#000080] font-mono font-bold">
           <span className="shrink-0">***</span>
           <span className="break-words">{text}</span>
         </div>
@@ -33,7 +33,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
 
     if (msg.type === MessageType.AI) {
       return (
-        <div className="flex gap-1 text-[11px] py-0.5 leading-tight font-mono">
+        <div className="flex gap-1 text-[12px] py-0.5 leading-tight font-mono">
           <span className="text-[#008000] font-bold shrink-0">{"<@GeminiBot>"}</span>
           <span className="text-black break-words">{text}</span>
         </div>
@@ -43,7 +43,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     const isMe = msg.sender === currentUser;
 
     return (
-      <div className="flex gap-1 text-[11px] py-0.5 leading-tight font-mono items-start">
+      <div className="flex gap-1 text-[12px] py-0.5 leading-tight font-mono items-start">
         <span 
           className={`font-bold shrink-0 cursor-pointer hover:underline ${isMe ? 'text-[#000080]' : 'text-[#800000]'}`}
           onClick={(e) => onNickClick?.(e, msg.sender)}
@@ -58,14 +58,13 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="h-full overflow-y-auto px-2 py-1 bg-white flex flex-col font-mono"
+      className="h-full overflow-y-auto px-3 py-2 bg-white flex flex-col font-mono selection:bg-blue-100"
     >
       {messages.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center opacity-10 select-none pointer-events-none">
-          <div className="text-center">
-            <p className="text-5xl font-black italic text-[#000080]">mIRC</p>
-            <p className="text-[10px] font-bold tracking-widest mt-2 uppercase text-gray-500">v1.1.1 Connected</p>
-          </div>
+        <div className="flex-1 flex flex-col items-start justify-start space-y-1 pt-4">
+          <p className="text-[#000080] font-bold text-[12px]">*** Mirch Online Bağlantısı Kuruldu.</p>
+          <p className="text-[#000080] font-bold text-[12px]">*** Kullanıcı Doğrulaması Başarılı.</p>
+          <p className="text-gray-400 italic text-[11px]">Sohbete başlamak için bir mesaj yazın...<span className="cursor-blink"></span></p>
         </div>
       ) : (
         messages.map((msg, i) => (

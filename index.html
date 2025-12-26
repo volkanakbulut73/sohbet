@@ -13,41 +13,63 @@
     :root {
       --mirc-navy: #000080;
       --mirc-bg: #d4dce8;
+      --mirc-border: #808080;
     }
     body, html {
-      background-color: transparent;
+      background-color: #000;
       margin: 0;
       padding: 0;
       height: 100%;
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
       -webkit-tap-highlight-color: transparent;
-      /* Gömülü modda ana sitenin scroll'unu bozmamak için mobil dışında kısıtlama yapmıyoruz */
+      overflow: hidden; /* Body scroll engellenir, iç konteynerler scroll edilir */
     }
     
     #root {
       height: 100%;
       width: 100%;
-      display: flex;
-      flex-direction: column;
     }
     
     .safe-top {
       padding-top: env(safe-area-inset-top, 0px);
     }
+    
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
 
-    ::-webkit-scrollbar { width: 3px; height: 3px; }
-    ::-webkit-scrollbar-track { background: #d4dce8; }
-    ::-webkit-scrollbar-thumb { background: #000080; border-radius: 4px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #f0f0f0; }
+    ::-webkit-scrollbar-thumb { background: #000080; border-radius: 0px; }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+    /* mIRC klasik buton stili */
+    .mirc-button {
+      box-shadow: inset 1px 1px #fff, inset -1px -1px #808080, 1px 1px #000;
+      background: #d4dce8;
+      border: 1px solid #000;
+    }
+    .mirc-button:active {
+      box-shadow: inset -1px -1px #fff, inset 1px 1px #808080;
+    }
+
     @media screen and (max-width: 768px) {
       input { font-size: 16px !important; }
-      /* Mobilde klavye açıldığında sayfanın saçma sapan scroll olmasını engeller */
-      body { position: relative; overflow: hidden; }
     }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 8px;
+      height: 2px;
+      background-color: #000;
+      animation: blink 1s infinite;
+      vertical-align: bottom;
+      margin-left: 2px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
   </style>
 <script type="importmap">
 {
