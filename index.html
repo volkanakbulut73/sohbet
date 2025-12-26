@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Workigom Chat | workigomchat.online</title>
   <meta name="description" content="Gerçek insanlarla, güvenli ve seviyeli sohbet platformu.">
   <meta name="theme-color" content="#0b0f14">
@@ -14,6 +14,7 @@
       --mirc-bg: #d4dce8;
       --terminal-green: #00ff99;
       --dark-bg: #0b0f14;
+      --header-bg: #111827;
     }
     body, html {
       background-color: var(--dark-bg);
@@ -23,6 +24,7 @@
       height: 100%;
       width: 100%;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
     #root {
       height: 100%;
@@ -52,8 +54,25 @@
     ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.5); }
     
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Mobile Height Fix */
+    .h-screen-safe {
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* Animation */
     .fade-in { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Custom Mobile Top Spacing Fix */
+    @supports (padding-top: env(safe-area-inset-top)) {
+      .safe-top {
+        padding-top: env(safe-area-inset-top);
+      }
+    }
   </style>
 <script type="importmap">
 {
