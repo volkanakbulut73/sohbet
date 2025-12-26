@@ -50,8 +50,13 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         const keyboardActive = vh < wh * 0.85;
         setIsKeyboardOpen(keyboardActive);
         
-        // Yüksekliği tam olarak görünen alana (klavye üstü dahil) ayarla
-        setViewportHeight(`${vh}px`);
+        // Sadece mobilde dinamik yükseklik kullan, masaüstünde 100% bırak
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+          setViewportHeight(`${vh}px`);
+        } else {
+          setViewportHeight('100%');
+        }
       }
     };
 
@@ -148,7 +153,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full transition-[height] duration-75 ${embedded ? 'fixed top-0 left-0 z-[999]' : 'fixed inset-0'} ${className}`}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full ${embedded ? 'relative h-full' : 'fixed inset-0'} ${className}`}
     >
       
       {/* 1. Status Bar */}
@@ -207,7 +212,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 4. Input Area - Klavye açıkken pb-0, kapalıyken pb-24 (96px) ile alt barı kurtarır */}
+      {/* 4. Input Area */}
       <div className={`shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1 md:p-1.5 z-50 transition-all ${embedded ? (isKeyboardOpen ? 'pb-1' : 'pb-24 sm:pb-1.5') : ''}`}>
         <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-2xl mx-auto">
           <div className="hidden sm:flex bg-white border border-gray-500 h-8 px-2 items-center shadow-inner rounded-sm w-20 shrink-0 justify-center">
