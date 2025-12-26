@@ -24,20 +24,13 @@
       padding: 0;
     }
 
-    /* ÜST BOŞLUĞU SIFIRLAMAK İÇİN KRİTİK AYARLAR */
-    html, body {
-      background-color: #000;
+    body, html {
       margin: 0 !important;
       padding: 0 !important;
       height: 100%;
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
-      overflow: hidden;
-      position: fixed; /* iOS'ta sayfa zıplamasını ve üst boşluğu önler */
-      left: 0;
-      top: 0;
-      right: 0;
-      bottom: 0;
+      background-color: transparent; /* Parent sitenin rengini alması için */
     }
     
     #root {
@@ -46,10 +39,6 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      background-color: var(--mirc-bg);
-      position: absolute;
-      top: 0;
-      left: 0;
     }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -66,9 +55,9 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* iOS Input Focus Zoom Engelleme */
+    /* Mobil için input odaklanmasında zoom engelleme */
     @media screen and (max-width: 768px) {
-      input, textarea, select {
+      input, textarea {
         font-size: 16px !important;
       }
     }

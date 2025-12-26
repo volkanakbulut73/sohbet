@@ -15,7 +15,7 @@ import {
 type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
-  // Mobil klavye açıldığında dinamik olarak hesaplanacak viewport yüksekliği
+  // Yüksekliği parent konteynerine göre %100 yapıyoruz.
   const [viewportHeight, setViewportHeight] = useState('100%');
   const [showUserList, setShowUserList] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,30 +41,27 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
   const [inputText, setInputText] = useState('');
 
-  // MOBİL KLAVYE VE VIEWPORT YÜKSEKLİK YÖNETİMİ (KESİN ÇÖZÜM)
+  // MOBİL KLAVYE İÇİN DİNAMİK YÜKSEKLİK AYARI
   useEffect(() => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
     const handleViewportChange = () => {
-      if (window.visualViewport) {
-        // Visual Viewport yüksekliği, klavye açıldığında gerçek görünen alanı verir.
-        // Bu yüksekliği ana kapsayıcıya set ettiğimizde input kutusu klavye üzerine yapışır.
+      if (window.visualViewport && isMobile) {
+        // Mobil cihazlarda, klavye açıldığında yüksekliği visualViewport kadar kısıtla.
+        // Bu sayede input kutusu her zaman klavye üstünde kalır.
         setViewportHeight(`${window.visualViewport.height}px`);
-        
-        // Tarayıcının klavye açıldığında sayfayı yukarı kaydırmasını önle
-        window.scrollTo(0, 0);
       }
     };
 
-    if (window.visualViewport) {
+    if (window.visualViewport && isMobile) {
       window.visualViewport.addEventListener('resize', handleViewportChange);
-      window.visualViewport.addEventListener('scroll', handleViewportChange);
+      // İlk yüklemede de çalıştır
+      handleViewportChange();
     }
     
-    handleViewportChange();
-    
     return () => {
-      if (window.visualViewport) {
+      if (window.visualViewport && isMobile) {
         window.visualViewport.removeEventListener('resize', handleViewportChange);
-        window.visualViewport.removeEventListener('scroll', handleViewportChange);
       }
     };
   }, []);
@@ -102,11 +99,11 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   
   if (view === 'login') {
     return (
-      <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 z-[100] font-mono">
+      <div className="flex-1 bg-[#d4dce8] flex items-center justify-center p-4 min-h-full font-mono">
         <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-[2px_2px_10px_rgba(0,0,0,0.2)]">
           <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold flex justify-between items-center">
             <span>Connect</span>
-            <X size={14} className="cursor-pointer" onClick={() => setView('landing')} />
+            {!embedded && <X size={14} className="cursor-pointer" onClick={() => setView('landing')} />}
           </div>
           <div className="p-4 space-y-4">
             <div className="flex justify-center mb-2">
@@ -137,16 +134,16 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   }
 
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
-  if (view === 'pending') return <div className="absolute inset-0 bg-[#d4dce8] flex items-center justify-center p-4 text-[#000080] font-mono text-center italic"><div className="space-y-4 border-2 border-white p-8 bg-white/50"><Clock size={48} className="mx-auto"/><h2 className="text-lg font-bold uppercase">Onay Bekleniyor</h2><p className="text-[10px]">Başvurunuz incelenmektedir.</p><button onClick={() => setView('landing')} className="text-[10px] border border-[#000080] px-4 py-1">Geri Dön</button></div></div>;
+  if (view === 'pending') return <div className="flex-1 bg-[#d4dce8] flex items-center justify-center p-4 text-[#000080] font-mono text-center italic min-h-full"><div className="space-y-4 border-2 border-white p-8 bg-white/50"><Clock size={48} className="mx-auto"/><h2 className="text-lg font-bold uppercase">Onay Bekleniyor</h2><p className="text-[10px]">Başvurunuz incelenmektedir.</p><button onClick={() => setView('landing')} className="text-[10px] border border-[#000080] px-4 py-1">Geri Dön</button></div></div>;
 
   return (
     <div 
       ref={containerRef}
       style={{ height: viewportHeight }}
-      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono fixed inset-0 m-0 p-0 ${className}`}
+      className={`flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full relative ${className}`}
     >
-      {/* 1. Header & Tabs - En Üstte Sıfır Boşluk */}
-      <div className="bg-black text-white border-b border-gray-800 flex shrink-0 overflow-x-auto no-scrollbar px-1 z-50 h-9 items-center mt-0">
+      {/* 1. Header & Tabs */}
+      <div className="bg-black text-white border-b border-gray-800 flex shrink-0 overflow-x-auto no-scrollbar px-1 z-50 h-9 items-center m-0">
         <button className="px-2 text-gray-400 hover:text-white shrink-0" onClick={() => setIsLeftDrawerOpen(true)}>
           <Menu size={18} />
         </button>
@@ -170,14 +167,14 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
       </div>
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex overflow-hidden min-h-0 bg-white relative">
+      <div className="flex-1 flex overflow-hidden bg-white relative">
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </div>
 
         {/* User List Overlay */}
         {showUserList && (
-          <div className="absolute right-0 top-0 bottom-0 w-44 border-l border-gray-300 bg-white z-[70] flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
+          <div className="absolute right-0 top-0 bottom-0 w-44 border-l border-gray-300 bg-white z-[70] flex flex-col shadow-2xl">
             <div className="bg-gray-100 p-2 border-b border-gray-200 flex justify-between items-center px-2 shrink-0">
               <span className="italic text-[9px] font-black text-gray-600 uppercase">Online</span>
               <X size={14} className="cursor-pointer text-gray-400" onClick={() => setShowUserList(false)} />
@@ -192,7 +189,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         )}
       </div>
 
-      {/* 3. Input Area - Mesaj Kutusu her zaman altta ve görünür */}
+      {/* 3. Input Area - Her Zaman Altta (shrink-0) */}
       <div className="shrink-0 bg-[#d4dce8] border-t border-gray-400 p-1.5 z-50">
         <form onSubmit={handleSend} className="flex items-center gap-1 w-full max-w-screen-xl mx-auto h-11">
           <div className="flex-1 bg-white border border-gray-400 h-full px-2 flex items-center shadow-inner rounded-sm overflow-hidden focus-within:border-[#000080]">
@@ -204,11 +201,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
               placeholder="Mesajınızı yazın..."
               autoComplete="off"
               enterKeyHint="send"
-              onFocus={() => {
-                // Klavye açıldığında bazen sayfa zıplar, window.visualViewport bunu çözer
-                // ama ekstra güvenlik için scrollTo 0 ekliyoruz.
-                setTimeout(() => window.scrollTo(0, 0), 50);
-              }}
             />
           </div>
           <button 
@@ -222,9 +214,9 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
 
       {/* Sidebar Drawer */}
       {isLeftDrawerOpen && (
-        <div className="fixed inset-0 z-[1000]">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLeftDrawerOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white shadow-2xl flex flex-col font-mono animate-in slide-in-from-left duration-200">
+        <div className="absolute inset-0 z-[1000]">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setIsLeftDrawerOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#d4dce8] border-r border-white shadow-2xl flex flex-col font-mono">
             <div className="bg-[#000080] text-white p-3 font-bold text-[13px] flex justify-between items-center">
                <span className="uppercase tracking-tighter">Navigasyon</span>
                <X size={20} onClick={() => setIsLeftDrawerOpen(false)} className="cursor-pointer" />
