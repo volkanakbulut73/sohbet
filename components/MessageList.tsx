@@ -58,23 +58,23 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="h-full overflow-y-auto px-3 py-2 bg-white flex flex-col font-mono selection:bg-blue-100"
+      className="h-full w-full overflow-y-auto px-3 py-2 bg-white flex flex-col font-mono selection:bg-blue-100"
     >
-      {/* 
-          Daha önceki 'flex-1 min-h-0' spacer'ı kaldırıldı. 
-          Mesajlar artık yukarıdan aşağıya standart şekilde akıyor.
-      */}
-      
-      {messages.length === 0 ? (
-        <div className="space-y-1">
-          <p className="text-[#000080] font-bold text-[12px]">*** Mirch Online Bağlantısı Kuruldu.</p>
-          <p className="text-gray-400 italic text-[11px]">Sohbete başlamak için bir mesaj yazın...<span className="cursor-blink"></span></p>
-        </div>
-      ) : (
-        messages.map((msg, i) => (
-          <div key={msg.id || i}>{renderMessageLine(msg)}</div>
-        ))
-      )}
+      {/* Mesajlar yukarıdan aşağıya klasik mIRC akışı */}
+      <div className="flex flex-col min-h-full">
+        {messages.length === 0 ? (
+          <div className="space-y-1">
+            <p className="text-[#000080] font-bold text-[12px]">*** Workigom Chat Bağlantısı Başarılı.</p>
+            <p className="text-gray-400 italic text-[11px]">Sohbete başlamak için bir mesaj yazın...<span className="cursor-blink"></span></p>
+          </div>
+        ) : (
+          messages.map((msg, i) => (
+            <div key={msg.id || i}>{renderMessageLine(msg)}</div>
+          ))
+        )}
+      </div>
+      {/* Alttaki boşluk mesajların input kutusunun altında kalmasını önler */}
+      <div className="h-4 shrink-0"></div>
     </div>
   );
 };

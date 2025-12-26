@@ -15,9 +15,9 @@ export const initWorkigomChat = (elementId: string, props: ChatModuleProps = {})
   }
 
   // Parent element'in yüksekliğini ve taşmalarını chat için zorunlu hale getiriyoruz.
+  // Bu ayarlar, modülün ana sitenin sınırlarını aşmasını engeller.
   rootElement.style.height = rootElement.style.height || '600px';
-  rootElement.style.minHeight = '400px';
-  rootElement.style.maxHeight = '100%';
+  rootElement.style.minHeight = '300px';
   rootElement.style.overflow = 'hidden';
   rootElement.style.position = 'relative';
   rootElement.style.display = 'flex';

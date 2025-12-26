@@ -18,24 +18,22 @@
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
     }
 
     body, html {
-      margin: 0;
-      padding: 0;
       height: 100%;
       width: 100%;
       font-family: 'Courier New', Courier, monospace;
       background-color: transparent;
-      overflow: hidden !important; /* Dış scroll kesinlikle yasak */
-      position: fixed; /* Mobil cihazlarda zıplamayı önler */
+      overflow: hidden !important;
     }
     
     #root {
       height: 100%;
       width: 100%;
       position: relative;
-      overflow: hidden;
     }
     
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -54,7 +52,7 @@
 
     @media screen and (max-width: 768px) {
       input, textarea {
-        font-size: 16px !important; /* Zoom engelleme */
+        font-size: 16px !important; /* Input odaklandığında zoom'u engeller */
       }
     }
   </style>
