@@ -22,7 +22,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   const [view, setView] = useState<AppView>(getInitialView());
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
-  const [isUserListVisible, setIsUserListVisible] = useState(true); // Mobilde kontrol edilebilir
+  const [isUserListVisible, setIsUserListVisible] = useState(true);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
@@ -103,7 +103,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
   return (
     <div className={`h-screen-safe w-full flex flex-col bg-white overflow-hidden font-mono ${className}`}>
       
-      {/* 1. Üst Header - Resimdeki Menü ve Mesajlar Butonları */}
+      {/* 1. Üst Header */}
       <div className="bg-[#d4dce8] border-b border-gray-300 shrink-0 p-1 flex items-center justify-between">
         <div className="flex gap-1">
           <button onClick={() => setIsLeftDrawerOpen(true)} className="bg-gradient-to-b from-gray-100 to-gray-400 border border-gray-600 px-3 py-1 text-[11px] font-bold text-blue-900 rounded-sm shadow-sm">Menü</button>
@@ -114,7 +114,7 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* 2. Kanal Sekmeleri - Resimdeki Status, #Sohbet X yapısı */}
+      {/* 2. Kanal Sekmeleri */}
       <div className="bg-[#eef2f7] border-b border-gray-300 flex shrink-0 overflow-x-auto no-scrollbar py-0.5 px-1 gap-1">
         <button 
           onClick={() => setActiveTab('Status')}
@@ -133,9 +133,8 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         ))}
       </div>
 
-      {/* 3. Ana İçerik: Mesajlar + Sabit Kullanıcı Listesi */}
+      {/* 3. Ana İçerik: Genişletilmiş Mesajlar + Daraltılmış Sabit Kullanıcı Listesi */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Mesaj Listesi Alanı */}
         <div className="flex-1 flex flex-col min-w-0 bg-white">
           <MessageList 
             messages={messages} 
@@ -145,10 +144,10 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           />
         </div>
 
-        {/* MIRC Tarzı Sabit Sağ Panel (Kullanıcı Listesi) */}
-        <div className={`w-40 md:w-48 border-l border-gray-300 bg-white shrink-0 flex flex-col ${isUserListVisible ? 'block' : 'hidden md:block'}`}>
-          <div className="p-1 border-b border-gray-200">
-             <input type="text" placeholder="Nick Ara..." className="w-full text-[10px] p-1 bg-gray-50 border border-gray-200 outline-none" />
+        {/* Kullanıcı Listesi - Daha dar (w-32) ve küçük pikselli */}
+        <div className={`w-32 md:w-36 border-l border-gray-300 bg-white shrink-0 flex flex-col ${isUserListVisible ? 'block' : 'hidden md:block'}`}>
+          <div className="p-1 border-b border-gray-100">
+             <input type="text" placeholder="Nick..." className="w-full text-[9px] p-1 bg-gray-50 border border-gray-200 outline-none uppercase font-bold" />
           </div>
           <UserList 
             users={[userName, 'GeminiBot', 'Admin', 'SevimLi', 'Ercan', 'Esraa', 'NoNNiCK', 'Renk', 'w00t', 'aLin', 'Arazi', 'karmor', 'AstronBnX', 'Asya', 'ayolA', 'Ace', 'Bol', 'bebekSy', 'DeryureK', 'CeyLin', 'DiLay', 'DiVeeT', 'HummeL', 'Hükümdar', 'Boell', 'Kaya', 'kumsal', 'Letch']} 
@@ -160,32 +159,31 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
         </div>
       </div>
 
-      {/* 4. Alt Mesaj Giriş Alanı - Resimdeki Emoji ve Gönder Butonu ile */}
-      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-300 p-2 safe-bottom">
-        <form onSubmit={handleSend} className="flex items-center gap-2 max-w-screen-2xl mx-auto">
-          <div className="flex-1 bg-white border border-gray-400 h-10 px-3 flex items-center shadow-inner rounded-sm">
+      {/* 4. Alt Mesaj Giriş Alanı */}
+      <div className="shrink-0 bg-[#eef2f7] border-t border-gray-300 p-1.5 safe-bottom">
+        <form onSubmit={handleSend} className="flex items-center gap-1.5 max-w-screen-2xl mx-auto">
+          <div className="flex-1 bg-white border border-gray-400 h-9 px-2 flex items-center shadow-inner rounded-sm">
             <input 
               type="text" 
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-[13px] outline-none font-medium h-full text-black"
-              placeholder="Mesajınızı buraya yazın..."
+              className="flex-1 bg-transparent text-[12px] outline-none font-medium h-full text-black"
+              placeholder="Mesaj..."
               autoFocus
             />
           </div>
           <button type="button" className="text-orange-400 hover:scale-110 transition-transform">
-             <Smile size={24} fill="currentColor" className="text-yellow-500" />
+             <Smile size={20} fill="currentColor" className="text-yellow-500" />
           </button>
           <button 
             type="submit" 
-            className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-4 h-10 text-[12px] font-bold rounded-sm shadow-md active:translate-y-0.5 transition-all"
+            className="bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-900 text-white px-3 h-9 text-[11px] font-bold rounded-sm shadow-md active:translate-y-0.5 transition-all"
           >
             Gönder
           </button>
         </form>
       </div>
 
-      {/* Mobilde Menü Çekmecesi */}
       {isLeftDrawerOpen && (
         <div className="fixed inset-0 z-[200]">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsLeftDrawerOpen(false)} />
@@ -201,7 +199,6 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           </div>
         </div>
       )}
-
     </div>
   );
 };
