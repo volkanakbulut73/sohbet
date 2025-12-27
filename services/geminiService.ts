@@ -1,19 +1,18 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    // KURAL: API anahtarını doğrudan process.env.API_KEY üzerinden al
-    // Not: Bazı ortamlarda anahtar build sırasında enjekte edilir.
+    /** 
+     * KURAL: API anahtarı EXCLUSIVELY process.env.API_KEY üzerinden alınmalıdır.
+     * Platform anahtarı enjekte ettiğinde bu değer güncellenecektir.
+     */
     const apiKey = process.env.API_KEY;
 
-    if (!apiKey || apiKey === "undefined") {
-      return "Sistem Mesajı: Workigom AI şu an çevrimdışı (API Key yapılandırması bekleniyor). Lütfen daha sonra tekrar deneyin.";
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    // GoogleGenAI instance'ı her çağrıda taze olarak oluşturulur (Kural gereği).
+    const ai = new GoogleGenAI({ apiKey: apiKey || "" });
     
-    // Creating content parts based on the multi-part example in the documentation
     const parts = [];
     if (imageBase64) {
       parts.push({
@@ -28,7 +27,6 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       text: `PLATFORM: ${CHAT_MODULE_CONFIG.DOMAIN}\nKANAL BAĞLAMI: ${context}\nKULLANICI MESAJI: ${prompt}` 
     });
 
-    // Gemini 3 Flash modelini kullanıyoruz. Contents yapısı parts array'ini içerecek şekilde düzenlendi.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: { parts },
@@ -40,22 +38,22 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
-    // Doğrudan .text property'sine erişim (Kural gereği metod olarak çağrılmaz)
+    // .text property'sine doğrudan erişim.
     const text = response.text;
     
     if (!text) {
-      return "Üzgünüm, şu an yanıt veremiyorum. Lütfen tekrar deneyin.";
+      return "Sistem: Yanıt alınamadı. Lütfen tekrar deneyin.";
     }
     
     return text;
   } catch (error: any) {
-    console.error("Workigom AI Connection Error:", error);
+    console.error("Workigom AI Service Error:", error);
     
-    // mIRC tarzı hata mesajları
-    if (error.message?.includes("API key")) {
-      return "HATA: Servis bağlantısı kurulamadı. Lütfen yönetici (@Admin) ile iletişime geçin.";
+    // API hatası durumunda mIRC tarzı bilgilendirme
+    if (error.message?.includes("API_KEY_INVALID") || error.message?.includes("not found")) {
+      return "HATA: AI servis bağlantısı kurulamadı. Lütfen üst menüden 'AI Yapılandırması'nı kontrol edin.";
     }
     
-    return "SUNUCU MEŞGUL: Şu an çok fazla talep alıyorum, lütfen 15 saniye sonra tekrar deneyin.";
+    return "SİSTEM: Şu an bir bağlantı sorunu yaşıyorum. Lütfen 30 saniye sonra tekrar deneyin.";
   }
 };

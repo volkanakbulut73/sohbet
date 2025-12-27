@@ -44,17 +44,18 @@ const App: React.FC<ChatModuleProps> = () => {
 
   useEffect(() => {
     const checkStatus = async () => {
-      // AI Status
-      if (process.env.API_KEY && process.env.API_KEY !== "undefined") {
-        setHasAiKey(true);
-      } else {
-        const aistudio = (window as any).aistudio;
-        if (aistudio) {
+      // AI Status Check (Rule: Use window.aistudio if available)
+      const aistudio = (window as any).aistudio;
+      if (aistudio) {
+        try {
           const selected = await aistudio.hasSelectedApiKey();
           setHasAiKey(selected);
-        } else {
+        } catch (e) {
           setHasAiKey(false);
         }
+      } else {
+        // Fallback to process.env.API_KEY
+        setHasAiKey(!!process.env.API_KEY && process.env.API_KEY !== "undefined");
       }
 
       // DB Status
@@ -84,12 +85,12 @@ const App: React.FC<ChatModuleProps> = () => {
       try {
         await aistudio.openSelectKey();
         setHasAiKey(true);
-        alert("Workigom AI bağlantısı kuruldu.");
+        // After trigger, we assume success as per instructions
       } catch (e) {
         console.error("Key selection failed", e);
       }
     } else {
-      alert("Bu platformda API anahtarı sistem tarafından otomatik olarak yönetilmektedir.");
+      alert("Bu platformda API anahtarı sistem tarafından yönetilmektedir. Lütfen bir süre sonra tekrar deneyin.");
     }
   };
 
@@ -291,6 +292,16 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 relative ml-auto">
+          {/* AI Connection Trigger */}
+          {isBotRoom && !hasAiKey && (window as any).aistudio && (
+            <button 
+              onClick={handleAiConnect}
+              className="hidden sm:flex items-center gap-2 bg-[#00ff99] text-black px-3 py-1.5 rounded-sm text-[10px] font-black shadow-lg animate-bounce border-2 border-white"
+            >
+              <Cpu size={14} /> AI ANAHTAR SEÇ
+            </button>
+          )}
+
           {isPrivate && !isBotRoom && activeTab !== userName && (
             <div className="flex gap-2">
               <button 
@@ -365,6 +376,29 @@ const App: React.FC<ChatModuleProps> = () => {
       {/* MAIN AREA */}
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative min-w-0 bg-[#f0f0f0] shadow-inner flex flex-col overflow-hidden">
+          {/* AI Selection Message Overlay */}
+          {isBotRoom && !hasAiKey && (window as any).aistudio && (
+            <div className="absolute inset-0 bg-[#f0f2f5]/90 z-30 flex flex-col items-center justify-center p-8 text-center animate-in fade-in">
+              <div className="w-full max-w-sm bg-white border-2 border-[#000080] p-6 shadow-xl space-y-4 mirc-window">
+                  <Cpu size={48} className="text-[#000080] mx-auto animate-pulse" />
+                  <h3 className="text-[#000080] font-black text-lg uppercase italic">AI YAPILANDIRMASI GEREKLİ</h3>
+                  <p className="text-[11px] font-bold text-gray-600 leading-relaxed uppercase">
+                    Workigom AI ile sohbet etmek için bir API anahtarı seçmeniz gerekmektedir. 
+                    Lütfen aşağıdaki butona tıklayarak anahtarınızı bağlayın.
+                  </p>
+                  <button 
+                    onClick={handleAiConnect}
+                    className="w-full bg-[#00ff99] text-black py-3 font-black text-xs uppercase shadow-md hover:bg-white transition-all border-2 border-[#000080]"
+                  >
+                    ANAHTAR SEÇ VE BAĞLAN
+                  </button>
+                  <p className="text-[9px] text-gray-400 italic">
+                    Not: Ücretli bir GCP projesine ait API anahtarı gereklidir.
+                  </p>
+              </div>
+            </div>
+          )}
+
           {/* RADIO ROOM */}
           <div className={`absolute inset-0 bg-[#0b0f14] flex flex-col items-center justify-center p-4 z-20 ${activeTab === '#radyo' ? 'flex' : 'hidden opacity-0 pointer-events-none'}`}>
              <div className="w-full max-w-lg space-y-6 flex flex-col items-center animate-in zoom-in-95 duration-500">
