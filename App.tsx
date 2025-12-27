@@ -9,7 +9,7 @@ import { useChatCore } from './hooks/useChatCore';
 import { storageService } from './services/storageService';
 import { ChatModuleProps } from './types';
 import { 
-  Terminal, Menu, X, Users as UsersIcon, Hash, Send, LogOut, MessageSquare, Shield
+  Terminal, Menu, X, Users as UsersIcon, Hash, Send, LogOut, MessageSquare, Shield, UserPlus, Key
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -29,9 +29,12 @@ const App: React.FC<ChatModuleProps> = () => {
 
   // View değiştikçe body scroll kilidini yönet
   useEffect(() => {
-    if (view === 'chat' || view === 'admin') {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
+    if (view === 'chat' || view === 'admin' || view === 'login' || view === 'register') {
+      // Login ve Register'da da fixed kalarak mobil klavye sorunlarını önlüyoruz
+      if (window.innerWidth < 768) {
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+      }
     } else {
       document.body.style.overflow = 'auto';
       document.body.style.position = 'static';
@@ -41,7 +44,7 @@ const App: React.FC<ChatModuleProps> = () => {
   useEffect(() => {
     const handleViewport = () => {
       setIsMobile(window.innerWidth < 1024);
-      if (containerRef.current && window.visualViewport && (view === 'chat')) {
+      if (containerRef.current && window.visualViewport && (view === 'chat' || view === 'login' || view === 'register')) {
         containerRef.current.style.height = `${window.visualViewport.height}px`;
       }
     };
@@ -68,6 +71,7 @@ const App: React.FC<ChatModuleProps> = () => {
       const user = await storageService.loginUser(loginForm.email, loginForm.password);
       if (user) {
         if (user.status === 'pending') setView('pending');
+        else if (user.status === 'rejected') alert('Başvurunuz reddedilmiştir. Detaylar için iletişime geçiniz.');
         else {
           setUserName(user.nickname);
           localStorage.setItem('mirc_nick', user.nickname);
@@ -76,14 +80,14 @@ const App: React.FC<ChatModuleProps> = () => {
       } else {
         const isAdmin = await storageService.adminLogin(loginForm.email, loginForm.password);
         if (isAdmin) setView('admin');
-        else alert('Hatalı giriş bilgileri.');
+        else alert('E-posta veya şifre hatalı.');
       }
-    } catch (err) { alert('Sistem hatası.'); }
+    } catch (err) { alert('Sistem hatası: Giriş yapılamadı.'); }
     finally { setIsLoggingIn(false); }
   };
 
-  if (view === 'landing') return <LandingPage onEnter={() => setView('register')} onAdminClick={() => setView('login')} />;
-  if (view === 'register') return <RegistrationForm onClose={() => setView('landing')} onSuccess={() => setView('pending')} />;
+  if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onAdminClick={() => setView('login')} />;
+  if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
   if (view === 'admin') return <AdminDashboard onLogout={() => setView('landing')} />;
   
   if (view === 'pending') return (
@@ -101,23 +105,71 @@ const App: React.FC<ChatModuleProps> = () => {
 
   if (view === 'login') {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0b0f14] p-4 min-h-screen">
-        <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-2xl overflow-hidden mirc-window">
-          <div className="bg-[#000080] text-white px-2 py-1 text-xs font-bold flex justify-between items-center">
-            <span className="flex items-center gap-2"><Terminal size={14} /> Workigom v2.1 Login</span>
-            <X size={14} className="cursor-pointer" onClick={() => setView('landing')} />
+      <div className="flex-1 flex items-center justify-center bg-[#0b0f14]/95 backdrop-blur-sm fixed inset-0 z-[2000] p-4">
+        <div className="w-full max-w-[360px] bg-[#d4dce8] border-2 border-white shadow-[15px_15px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden mirc-window">
+          <div className="bg-[#000080] text-white px-3 py-2 text-xs font-black flex justify-between items-center select-none">
+            <span className="flex items-center gap-2"><Key size={14} /> Workigom Chat Access</span>
+            <X size={18} className="cursor-pointer hover:bg-red-600 transition-colors" onClick={() => setView('landing')} />
           </div>
-          <form onSubmit={handleLogin} className="p-8 space-y-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-gray-600 uppercase">E-posta / Nickname</label>
-              <input type="text" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none focus:border-[#000080] text-sm" />
+          
+          <div className="p-8 space-y-8">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-white/50 rounded-full mx-auto flex items-center justify-center border-2 border-[#000080]/20 shadow-inner">
+                <Shield size={32} className="text-[#000080]" />
+              </div>
+              <h3 className="text-sm font-black text-[#000080] uppercase italic tracking-tighter">Sisteme Giriş Yap</h3>
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-gray-600 uppercase">Şifre</label>
-              <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none focus:border-[#000080] text-sm" />
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest">E-posta Adresi</label>
+                <input 
+                  type="email" 
+                  required 
+                  value={loginForm.email} 
+                  onChange={e => setLoginForm({...loginForm, email: e.target.value})} 
+                  className="w-full p-3 border-2 border-gray-400 outline-none focus:border-[#000080] text-sm bg-white shadow-inner font-bold" 
+                  placeholder="örnek@eposta.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Şifre</label>
+                <input 
+                  type="password" 
+                  required 
+                  value={loginForm.password} 
+                  onChange={e => setLoginForm({...loginForm, password: e.target.value})} 
+                  className="w-full p-3 border-2 border-gray-400 outline-none focus:border-[#000080] text-sm bg-white shadow-inner font-bold" 
+                  placeholder="********"
+                />
+              </div>
+              <button 
+                disabled={isLoggingIn} 
+                className="w-full bg-[#d4dce8] border-2 border-white py-4 font-black shadow-[4px_4px_0_gray] active:shadow-none active:translate-y-px uppercase text-xs text-[#000080] flex items-center justify-center gap-2 hover:bg-white transition-all"
+              >
+                {isLoggingIn ? 'Bağlanıyor...' : 'Bağlantıyı Kur'}
+              </button>
+            </form>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t-2 border-gray-300"></div></div>
+              <div className="relative flex justify-center text-[10px] uppercase font-black"><span className="bg-[#d4dce8] px-3 text-gray-500 italic">Veya</span></div>
             </div>
-            <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white py-3 font-black shadow-[3px_3px_0_gray] active:shadow-none active:translate-y-px uppercase text-xs">BAĞLAN</button>
-          </form>
+
+            <div className="space-y-4">
+              <p className="text-[10px] text-center font-bold text-gray-600 italic">Henüz bir hesabınız yok mu?</p>
+              <button 
+                onClick={() => setView('register')}
+                className="w-full bg-[#00ff99] text-black py-4 text-xs font-black shadow-[4px_4px_0_gray] active:shadow-none active:translate-y-px uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+              >
+                <UserPlus size={16} /> Yeni Kayıt Başvurusu Yap
+              </button>
+            </div>
+          </div>
+          
+          <div className="bg-white/50 border-t border-gray-300 p-2 text-[9px] text-gray-500 font-bold uppercase text-center tracking-widest italic">
+            Güvenli Protokol v2.1.0 Aktif
+          </div>
         </div>
       </div>
     );
