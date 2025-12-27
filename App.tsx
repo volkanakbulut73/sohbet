@@ -11,7 +11,7 @@ import { ChatModuleProps } from './types';
 import { 
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
-  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music
+  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -19,7 +19,6 @@ const App: React.FC<ChatModuleProps> = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isRadioOpen, setIsRadioOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   
   // Formatlama Durumları
@@ -51,19 +50,11 @@ const App: React.FC<ChatModuleProps> = () => {
     return () => window.visualViewport?.removeEventListener('resize', handleViewport);
   }, []);
 
-  // Radyo sekmesi tıklandığında radyoyu aç
-  useEffect(() => {
-    if (activeTab === '#radyo') {
-      setIsRadioOpen(true);
-    }
-  }, [activeTab]);
-
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputText.trim()) return;
 
-    // Mesajı format etiketleri ile sarmala
-    let formattedText = inputText.replace(/\n/g, '<br/>'); // Satır başlarını koru
+    let formattedText = inputText.replace(/\n/g, '<br/>');
     if (isBold) formattedText = `<b>${formattedText}</b>`;
     if (isItalic) formattedText = `<i>${formattedText}</i>`;
     if (isUnderline) formattedText = `<u>${formattedText}</u>`;
@@ -72,7 +63,6 @@ const App: React.FC<ChatModuleProps> = () => {
     setInputText('');
     setShowEmojiPicker(false);
     
-    // Focus back to textarea
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
@@ -137,60 +127,28 @@ const App: React.FC<ChatModuleProps> = () => {
       ref={containerRef} 
       className="flex flex-col bg-[#d4dce8] w-full border-2 border-white shadow-2xl overflow-hidden font-mono fixed inset-0 z-[1000]"
     >
-      {/* HEADER - INTEGRATED RADIO WIDGET */}
-      <header className={`bg-[#000080] text-white flex flex-col sm:flex-row items-center px-4 shrink-0 border-b border-white/30 transition-all duration-300 ${isRadioOpen ? 'min-h-[75px] py-1' : 'h-14 py-0'}`}>
-        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
+      {/* HEADER - CLEAN VERSION */}
+      <header className="h-14 bg-[#000080] text-white flex items-center px-4 shrink-0 border-b border-white/30">
+        <div className="flex items-center gap-3 flex-1">
           <div className="flex items-center gap-2.5">
-            <div className="relative shrink-0">
-              <div className="w-3.5 h-3.5 bg-[#00ff99] rounded-full shadow-[0_0_12px_#00ff99] animate-pulse"></div>
+            <div className="w-3.5 h-3.5 bg-[#00ff99] rounded-full shadow-[0_0_12px_#00ff99] animate-pulse"></div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-[10px] font-black tracking-widest text-[#00ff99] leading-none uppercase">Online</span>
             </div>
-            {!isRadioOpen && (
-              <div className="flex flex-col hidden sm:flex">
-                <span className="text-[10px] font-black tracking-widest text-[#00ff99] leading-none uppercase">Online</span>
-              </div>
-            )}
           </div>
-          {!isRadioOpen && <div className="h-7 w-px bg-white/20 hidden sm:block"></div>}
+          <div className="h-7 w-px bg-white/20 hidden sm:block"></div>
           <div className="text-[14px] font-black italic text-white flex items-center gap-1 truncate">
             <span className="text-[#00ff99]">@</span>{userName}
           </div>
         </div>
 
-        {/* RADIO BUTTON OR WIDGET AREA */}
-        <div className="flex items-center gap-2 my-1 sm:my-0">
-          {isRadioOpen ? (
-            <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-sm border border-white/10 animate-in fade-in zoom-in-95">
-               <div className="bg-white p-0.5 border border-[#808080] shadow-inner overflow-hidden rounded-sm flex items-center">
-                  <iframe 
-                    width="345" 
-                    height="65" 
-                    src="https://www.radyod.com/iframe-small" 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-                    allowFullScreen
-                    className="max-w-[calc(100vw-100px)] sm:max-w-[345px]"
-                  ></iframe>
-               </div>
-               <button 
-                  onClick={() => setIsRadioOpen(false)}
-                  className="h-[65px] px-2 bg-red-600 hover:bg-red-700 text-white border border-white/40 shadow-sm transition-colors flex items-center justify-center rounded-sm"
-                  title="Kapat"
-               >
-                  <X size={20} strokeWidth={3} />
-               </button>
+        <div className="flex items-center gap-3 relative ml-auto">
+          {activeTab === '#radyo' && (
+            <div className="flex items-center gap-2 bg-[#00ff99] text-[#000080] px-3 py-1 rounded-sm text-[10px] font-black animate-pulse border border-white">
+              <Volume2 size={14} /> LIVE: RADYO D
             </div>
-          ) : (
-            <button 
-              onClick={() => setIsRadioOpen(true)} 
-              className="flex items-center gap-2 px-4 py-2 text-[10px] font-black border border-white/40 hover:bg-[#00ff99] hover:text-[#000080] hover:border-white transition-all rounded-sm group bg-white/5 shadow-sm"
-            >
-              <Music size={14} className="group-hover:animate-bounce" />
-              {isMobile ? 'RADYO' : 'RADYO D DİNLE'}
-            </button>
           )}
-        </div>
-
-        <div className="flex items-center gap-3 relative ml-auto sm:ml-4">
+          
           {isPrivate && !isMobile && (
             <button onClick={() => toggleBlock(activeTab)} className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-colors rounded-sm ${blockedUsers.includes(activeTab) ? 'bg-red-600 border-red-400' : 'border-white/40 hover:bg-white/10'}`}>
               {blockedUsers.includes(activeTab) ? <UserCheck size={14}/> : <Ban size={14}/>}
@@ -221,19 +179,78 @@ const App: React.FC<ChatModuleProps> = () => {
       {/* TABS */}
       <nav className="bg-[#000080]/95 px-2 py-0.5 flex gap-0.5 overflow-x-auto no-scrollbar border-b border-white/20">
         {['#Sohbet', '#Yardim', '#Radyo'].map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())} className={`px-4 py-1.5 text-[10px] font-black uppercase transition-all whitespace-nowrap border-t-2 border-x-2 ${activeTab === tab.toLowerCase() ? 'bg-[#d4dce8] text-[#000080] border-white' : 'text-white/50 border-transparent hover:text-white'}`}>
-            {tab}
+          <button 
+            key={tab} 
+            onClick={() => setActiveTab(tab.toLowerCase())} 
+            className={`px-6 py-2 text-[11px] font-black uppercase transition-all whitespace-nowrap border-t-2 border-x-2 relative ${activeTab === tab.toLowerCase() ? 'bg-[#d4dce8] text-[#000080] border-white shadow-sm' : 'text-white/60 border-transparent hover:text-white'}`}
+          >
+            <div className="flex items-center gap-2">
+              {tab === '#Radyo' ? <Music size={14} className={activeTab === '#radyo' ? 'animate-bounce' : ''} /> : <Hash size={14} />}
+              {tab}
+            </div>
           </button>
         ))}
       </nav>
       
       {/* MAIN AREA */}
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
-        <main className="flex-1 relative min-w-0 bg-white shadow-inner flex flex-col">
-          <div className="flex-1 relative">
-            <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
-          </div>
+        <main className="flex-1 relative min-w-0 bg-[#f0f0f0] shadow-inner flex flex-col overflow-hidden">
+          {activeTab === '#radyo' ? (
+            /* SPECIAL RADIO ROOM VIEW */
+            <div className="absolute inset-0 bg-[#0b0f14] flex flex-col items-center justify-center p-4 overflow-y-auto no-scrollbar">
+               <div className="w-full max-w-lg space-y-6 flex flex-col items-center animate-in zoom-in-95 duration-500">
+                  
+                  {/* Radio Header Display */}
+                  <div className="w-full bg-[#000080] border-2 border-white p-4 shadow-[10px_10px_0px_rgba(0,0,0,0.5)] flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <Music className="text-[#00ff99] animate-bounce" size={32} />
+                      <h2 className="text-white text-2xl font-black italic tracking-tighter uppercase">RADYO D STÜDYOSU</h2>
+                    </div>
+                    <div className="h-1 w-full bg-white/20 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#00ff99] animate-infinite-progress"></div>
+                    </div>
+                  </div>
+
+                  {/* The Widget Container */}
+                  <div className="bg-[#d4dce8] p-3 border-2 border-white shadow-[10px_10px_0px_rgba(0,0,0,0.5)] mirc-window">
+                    <div className="bg-white p-1 border-2 border-gray-400 shadow-inner flex items-center justify-center">
+                      <iframe 
+                        width="345" 
+                        height="65" 
+                        src="https://www.radyod.com/iframe-small" 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen
+                        className="max-w-full"
+                      ></iframe>
+                    </div>
+                  </div>
+
+                  {/* Radio Status & Visualizer Fake */}
+                  <div className="grid grid-cols-10 gap-1 w-full max-w-sm h-12 items-end">
+                    {[...Array(10)].map((_, i) => (
+                      <div key={i} className="bg-[#00ff99] opacity-40 animate-pulse" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 100}ms` }}></div>
+                    ))}
+                  </div>
+
+                  <div className="text-center space-y-2">
+                    <p className="text-[#00ff99] text-[10px] font-black tracking-widest uppercase opacity-80 italic">*** Kesintisiz Müzik Keyfi Başladı ***</p>
+                    <div className="flex gap-4 justify-center">
+                       <span className="text-gray-500 text-[9px] font-bold uppercase">128kbps STEREO</span>
+                       <span className="text-gray-500 text-[9px] font-bold uppercase">CONNECTED: OK</span>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          ) : (
+            /* NORMAL MESSAGE LIST */
+            <div className="flex-1 relative bg-white">
+              <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
+            </div>
+          )}
         </main>
+        
+        {/* SIDEBAR ALWAYS VISIBLE IN CHAT MODES */}
         <aside className={`${isMobile ? 'w-[100px]' : 'w-56'} bg-[#d4dce8] border-l-2 border-white shrink-0 flex flex-col shadow-lg z-10`}>
           <UserList users={[userName, 'Admin', 'GeminiBot', 'Esra', 'Can', 'Merve', 'Selin']} currentUser={userName} onClose={() => {}} onUserClick={(e, nick) => initiatePrivateChat(nick)} />
         </aside>
@@ -242,15 +259,11 @@ const App: React.FC<ChatModuleProps> = () => {
       {/* FOOTER */}
       <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
         <div className="flex flex-col gap-1 w-full max-w-screen-2xl mx-auto">
-          
           {/* TOOLBAR */}
           <div className="flex items-center justify-between px-2 py-1.5 bg-white/40 border border-gray-400 rounded-t-sm shadow-sm">
             <div className="flex items-center gap-1 sm:gap-4">
                <div className="relative">
-                <button 
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)} 
-                  className={`p-1.5 hover:bg-white rounded transition-all ${showEmojiPicker ? 'bg-white shadow-inner' : ''}`}
-                >
+                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`p-1.5 hover:bg-white rounded transition-all ${showEmojiPicker ? 'bg-white shadow-inner' : ''}`}>
                   <Smile size={22} className="text-yellow-500" />
                 </button>
                 {showEmojiPicker && (
@@ -261,21 +274,13 @@ const App: React.FC<ChatModuleProps> = () => {
                     </div>
                     <div className="grid grid-cols-8 gap-1 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
                       {emojis.map(e => (
-                        <button 
-                          key={e} 
-                          onClick={() => addEmoji(e)} 
-                          className="text-xl hover:bg-gray-100 p-1.5 rounded transition-all flex items-center justify-center active:scale-125"
-                        >
-                          {e}
-                        </button>
+                        <button key={e} onClick={() => addEmoji(e)} className="text-xl hover:bg-gray-100 p-1.5 rounded transition-all flex items-center justify-center active:scale-125">{e}</button>
                       ))}
                     </div>
                   </div>
                 )}
                </div>
-
                <div className="h-6 w-px bg-gray-400/50"></div>
-
                <div className="flex gap-1">
                  <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded transition-colors ${isBold ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Bold"><Bold size={16}/></button>
                  <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded transition-colors ${isItalic ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Italic"><Italic size={16}/></button>
@@ -283,11 +288,10 @@ const App: React.FC<ChatModuleProps> = () => {
                </div>
             </div>
             <div className="hidden sm:block">
-              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.8</span>
+              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.9</span>
             </div>
           </div>
 
-          {/* MULTI-LINE INPUT & SEND BAR */}
           <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">
             <div className="flex-1 bg-white border-2 border-[#808080] shadow-inner px-4 flex items-start py-2 group focus-within:border-[#000080] transition-colors overflow-hidden">
               <div className="flex items-center gap-1 mr-3 shrink-0 mt-0.5">
@@ -306,17 +310,28 @@ const App: React.FC<ChatModuleProps> = () => {
                   fontStyle: isItalic ? 'italic' : 'normal',
                   textDecoration: isUnderline ? 'underline' : 'none'
                 }}
-                placeholder="Mesajınızı buraya yazın..." 
+                placeholder={activeTab === '#radyo' ? "Radyo odasında sadece dinleyebilirsin..." : "Mesajınızı buraya yazın..."}
+                disabled={activeTab === '#radyo'}
                 autoComplete="off"
               />
             </div>
-            <button type="submit" className="bg-[#000080] text-white px-8 font-black uppercase flex items-center justify-center gap-3 hover:bg-blue-800 transition-all shadow-[4px_4px_0px_gray] active:shadow-none active:translate-y-1 active:translate-x-px shrink-0">
+            <button type="submit" disabled={activeTab === '#radyo'} className="bg-[#000080] text-white px-8 font-black uppercase flex items-center justify-center gap-3 hover:bg-blue-800 transition-all shadow-[4px_4px_0px_gray] active:shadow-none active:translate-y-1 active:translate-x-px shrink-0 disabled:opacity-50 disabled:bg-gray-600">
               <Send size={20} />
               {!isMobile && 'GÖNDER'}
             </button>
           </form>
         </div>
       </footer>
+
+      <style>{`
+        @keyframes infinite-progress {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-infinite-progress {
+          animation: infinite-progress 2s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };
