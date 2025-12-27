@@ -87,6 +87,23 @@ export const storageService = {
     if (error) throw error;
   },
 
+  // --- PRIVACY: MESAJ SİLME ---
+  async deleteMessagesByChannel(channelName: string) {
+    // Sadece özel mesaj kanallarını silmeye izin ver (# ile başlamayanlar)
+    if (channelName.startsWith('#')) return;
+    const { error } = await supabase.from('messages').delete().eq('channel', channelName);
+    if (error) console.error("Privacy delete error:", error);
+  },
+
+  async deleteAllPrivateMessagesForUser(nick: string) {
+    // "private:nick:..." veya "private:...:nick" formatındaki tüm mesajları sil
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .or(`channel.ilike.private:%:${nick},channel.ilike.private:${nick}:%,channel.eq.${CHAT_MODULE_CONFIG.BOT_NAME}`);
+    if (error) console.error("Global privacy cleanup error:", error);
+  },
+
   // --- BİLDİRİM YÖNETİMİ ---
   async sendChatNotification(channel: string, text: string) {
     let targetChannels: string[] = [];
@@ -94,7 +111,6 @@ export const storageService = {
     if (channel === 'all') {
       const { data: channels } = await supabase.from('channels').select('name');
       targetChannels = (channels || []).map(c => c.name);
-      // Hiç kanal yoksa varsayılan #sohbet ekle
       if (targetChannels.length === 0) targetChannels = ['#sohbet'];
     } else {
       targetChannels = [channel];
@@ -110,7 +126,6 @@ export const storageService = {
     const { error: msgError } = await supabase.from('messages').insert(insertData);
     if (msgError) throw msgError;
 
-    // Günlüğe kaydet
     await supabase.from('notifications_log').insert({
       type: 'chat',
       target: channel,
@@ -120,8 +135,6 @@ export const storageService = {
   },
 
   async sendEmailNotification(emails: string[], subject: string, body: string) {
-    // Gerçek e-posta gönderimi için burada Edge Functions veya harici bir API (Resend, SendGrid vb.) çağrılır.
-    // Şimdilik sistem günlüğüne kaydediyoruz.
     const logs = emails.map(email => ({
       type: 'email',
       target: email,

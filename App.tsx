@@ -13,7 +13,9 @@ import {
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
   MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2, 
-  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck
+  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck,
+  // Fix: Added missing Loader2 import from lucide-react
+  Loader2
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -29,6 +31,7 @@ const App: React.FC<ChatModuleProps> = () => {
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -50,6 +53,21 @@ const App: React.FC<ChatModuleProps> = () => {
     handleViewport();
     return () => window.visualViewport?.removeEventListener('resize', handleViewport);
   }, []);
+
+  const handleLogout = async () => {
+    if (!confirm('Güvenli çıkış yapmak ve özel mesaj geçmişinizi silmek istiyor musunuz?')) return;
+    
+    setIsCleaningUp(true);
+    try {
+      // Çıkış yaparken tüm özel mesajları database'den temizle
+      await storageService.deleteAllPrivateMessagesForUser(userName);
+      localStorage.removeItem('mirc_nick');
+      window.location.reload();
+    } catch (e) {
+      console.error("Logout cleanup error:", e);
+      window.location.reload();
+    }
+  };
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -80,6 +98,15 @@ const App: React.FC<ChatModuleProps> = () => {
   };
 
   const emojis = ['😊', '😂', '🤣', '❤️', '😍', '🥰', '😘', '😋', '😎', '😉', '😜', '🤩', '🥳', '😭', '😡', '😱', '👍', '👎', '👏', '🙌', '🔥', '✨', '⚡', '🎉', '🎈', '🌹', '🌸', '💔', '☕', '🍺', '🍔', '🍕', '🚀', '🐱', '🐶', '🦄', '🌈', '⭐', '🌙', '☀️', '☁️', '❄️', '⚽', '🎮', '🎧', '📸', '📱', '💻', '👋', '🙏', '💯', '🤔', '🙄', '🤫', '🤡', '👽', '👻', '💀', '💩', '🤝', '👀', '💪', '🧠', '💼', '📍', '⏰', '🎁', '💎', '💡', '🔔', '✅', '❌', '⚠️', '🛡️', '🌍', '🏳️‍🌈', '🇹🇷', '🔥', '🌊', '💨'];
+
+  if (isCleaningUp) {
+    return (
+      <div className="fixed inset-0 bg-[#0b0f14] z-[5000] flex flex-col items-center justify-center font-mono">
+        <Loader2 size={48} className="text-[#00ff99] animate-spin mb-4" />
+        <p className="text-white font-black uppercase italic tracking-widest animate-pulse">Özel mesaj geçmişiniz temizleniyor...</p>
+      </div>
+    );
+  }
 
   if (view === 'landing') return (
     <LandingPage 
@@ -236,7 +263,7 @@ const App: React.FC<ChatModuleProps> = () => {
                 ÖZEL MESAJLARI {allowPrivateMessages ? 'KAPAT' : 'AÇ'}
               </button>
               <div className="h-px bg-gray-400 my-1 mx-2"></div>
-              <button onClick={() => window.location.reload()} className="w-full text-left p-3 hover:bg-red-600 hover:text-white text-[11px] font-black flex items-center gap-3">
+              <button onClick={handleLogout} className="w-full text-left p-3 hover:bg-red-600 hover:text-white text-[11px] font-black flex items-center gap-3">
                 <LogOut size={16} /> GÜVENLİ ÇIKIŞ
               </button>
             </div>
@@ -327,11 +354,12 @@ const App: React.FC<ChatModuleProps> = () => {
                <div className="h-6 w-px bg-gray-400/50"></div>
                <div className="flex gap-1">
                  <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded ${isBold ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Bold size={16}/></button>
+                 <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded ${isBold ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Bold size={16}/></button>
                  <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded ${isItalic ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Italic size={16}/></button>
                  <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded ${isUnderline ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Underline size={16}/></button>
                </div>
             </div>
-            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.4</div>
+            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.5</div>
           </div>
 
           <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">

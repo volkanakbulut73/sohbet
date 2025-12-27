@@ -4,10 +4,8 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-    
-    // Model selection based on task type: Basic Text Task
-    const model = 'gemini-3-flash-preview';
+    // Create new instance on every call to ensure the latest API Key
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const parts: any[] = [];
     if (imageBase64) {
@@ -22,7 +20,7 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     parts.push({ text: `Bağlam: ${context}\nKullanıcı: ${prompt}` });
 
     const response = await ai.models.generateContent({
-      model: model,
+      model: 'gemini-3-flash-preview',
       contents: [{ parts }],
       config: {
         systemInstruction: customInstruction || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION,
@@ -32,11 +30,18 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
-    // Direct access to .text property as per guidelines
+    // Direct access to .text property as mandated
     const text = response.text;
-    return text || "Şu an bağlantı kurulamıyor, lütfen tekrar deneyin.";
-  } catch (error) {
+    if (!text) {
+      throw new Error("Boş yanıt döndü.");
+    }
+    return text;
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
-    return "Bağlantı hatası: Workigom AI şu an meşgul veya yapılandırma bekliyor.";
+    // Handle specific API errors
+    if (error.message?.includes("Requested entity was not found")) {
+      return "Hata: Model bulunamadı veya API anahtarı geçersiz.";
+    }
+    return "Bağlantı hatası: Workigom AI şu an meşgul, lütfen birkaç saniye sonra tekrar deneyin.";
   }
 };

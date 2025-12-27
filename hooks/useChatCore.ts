@@ -71,8 +71,15 @@ export const useChatCore = (initialUserName: string) => {
     );
   };
 
-  const closeTab = (tabName: string) => {
+  const closeTab = async (tabName: string) => {
     if (openTabs.length <= 1) return;
+
+    // PRIVACY: Eğer kapatılan tab bir özel mesaj odasıysa, database'den temizle
+    if (!tabName.startsWith('#')) {
+      const channelId = tabName === CHAT_MODULE_CONFIG.BOT_NAME ? tabName : getPrivateChannelId(userName, tabName);
+      await storageService.deleteMessagesByChannel(channelId);
+    }
+
     setOpenTabs(prev => {
       const newTabs = prev.filter(t => t !== tabName);
       if (activeTab === tabName) setActiveTab(newTabs[0]);
@@ -112,7 +119,7 @@ export const useChatCore = (initialUserName: string) => {
       });
 
       if (activeTab === CHAT_MODULE_CONFIG.BOT_NAME) {
-        const res = await getGeminiResponse(text, `User: ${userName}, Channel: Private with AI`);
+        const res = await getGeminiResponse(text, `Platform: Workigom VIP Network, User: ${userName}`);
         await storageService.saveMessage({ 
           sender: CHAT_MODULE_CONFIG.BOT_NAME, 
           text: res, 
