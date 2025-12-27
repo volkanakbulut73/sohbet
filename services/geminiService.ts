@@ -3,16 +3,13 @@ import { GoogleGenAI } from "@google/genai";
 import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
-  if (!process.env.API_KEY) {
-    return "Sistem Hatası: API Anahtarı yapılandırılmamış.";
-  }
-
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const modelName = 'gemini-3-flash-preview';
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    
+    // Model selection based on task type: Basic Text Task
+    const model = 'gemini-3-flash-preview';
     
     const parts: any[] = [];
-    
     if (imageBase64) {
       parts.push({
         inlineData: {
@@ -22,10 +19,10 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       });
     }
     
-    parts.push({ text: `Kanal/Sohbet Bağlamı: ${context}\nKullanıcı Mesajı: ${prompt}` });
+    parts.push({ text: `Bağlam: ${context}\nKullanıcı: ${prompt}` });
 
     const response = await ai.models.generateContent({
-      model: modelName,
+      model: model,
       contents: [{ parts }],
       config: {
         systemInstruction: customInstruction || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION,
@@ -35,9 +32,11 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
-    return response.text || "Üzgünüm, şu an yanıt veremiyorum.";
+    // Direct access to .text property as per guidelines
+    const text = response.text;
+    return text || "Şu an bağlantı kurulamıyor, lütfen tekrar deneyin.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Bağlantı hatası: Yapay zeka sunucusu şu an meşgul.";
+    return "Bağlantı hatası: Workigom AI şu an meşgul veya yapılandırma bekliyor.";
   }
 };

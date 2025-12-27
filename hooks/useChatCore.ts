@@ -60,11 +60,8 @@ export const useChatCore = (initialUserName: string) => {
       case '/close':
         closeTab(activeTab);
         break;
-      case '/block':
-        if (args[0]) toggleBlock(args[0]);
-        break;
       default:
-        console.log("Bilinmeyen komut");
+        console.log("Komut işlenemedi");
     }
   };
 
@@ -115,8 +112,13 @@ export const useChatCore = (initialUserName: string) => {
       });
 
       if (activeTab === CHAT_MODULE_CONFIG.BOT_NAME) {
-        const res = await getGeminiResponse(text, "Workigom VIP Sohbet", undefined);
-        await storageService.saveMessage({ sender: CHAT_MODULE_CONFIG.BOT_NAME, text: res, type: MessageType.AI, channel: CHAT_MODULE_CONFIG.BOT_NAME });
+        const res = await getGeminiResponse(text, `User: ${userName}, Channel: Private with AI`);
+        await storageService.saveMessage({ 
+          sender: CHAT_MODULE_CONFIG.BOT_NAME, 
+          text: res, 
+          type: MessageType.AI, 
+          channel: CHAT_MODULE_CONFIG.BOT_NAME 
+        });
       }
     } catch (err: any) { console.error(err); }
   };
