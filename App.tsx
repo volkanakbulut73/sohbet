@@ -30,7 +30,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
-  const [hasAiKey, setHasAiKey] = useState(true);
+  const [hasAiKey, setHasAiKey] = useState(false);
   const [dbConnected, setDbConnected] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,27 +43,28 @@ const App: React.FC<ChatModuleProps> = () => {
     isOnline
   } = useChatCore('');
 
-  // Mobil Viewport Optimizasyonu (Klavye açıldığında inputun görünür kalması için)
+  // Mobil Klavye Uyumluluğu: Visual Viewport kullanarak dinamik yükseklik ayarı
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
+    const handleViewportChange = () => {
       if (containerRef.current && window.visualViewport) {
         containerRef.current.style.height = `${window.visualViewport.height}px`;
       }
+      setIsMobile(window.innerWidth < 1024);
     };
-    window.visualViewport?.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+
+    window.visualViewport?.addEventListener('resize', handleViewportChange);
+    window.visualViewport?.addEventListener('scroll', handleViewportChange);
+    handleViewportChange();
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+    };
   }, []);
 
-  // AI Durum ve Bağlantı Kontrolü
+  // AI Durum Kontrolü
   useEffect(() => {
-    const checkStatus = async () => {
-      if (!navigator.onLine) {
-        setDbConnected(false);
-        return;
-      }
-
+    const checkAiStatus = async () => {
       const aistudio = (window as any).aistudio;
       if (aistudio) {
         try {
@@ -79,8 +80,8 @@ const App: React.FC<ChatModuleProps> = () => {
       setDbConnected(storageService.isConfigured());
     };
     
-    checkStatus();
-    const interval = setInterval(checkStatus, 30000);
+    checkAiStatus();
+    const interval = setInterval(checkAiStatus, 15000);
     return () => clearInterval(interval);
   }, [isOnline]);
 
@@ -89,7 +90,7 @@ const App: React.FC<ChatModuleProps> = () => {
     if (aistudio) {
       try {
         await aistudio.openSelectKey();
-        setHasAiKey(true);
+        setHasAiKey(true); // Seçim yapıldığı kabul edilir
       } catch (e) {
         console.error("AI Key Selection Failed:", e);
       }
@@ -102,7 +103,7 @@ const App: React.FC<ChatModuleProps> = () => {
     try {
       await storageService.deleteAllPrivateMessagesForUser(userName);
       localStorage.removeItem('mirc_nick');
-      setTimeout(() => window.location.reload(), 1200);
+      setTimeout(() => window.location.reload(), 1000);
     } catch {
       window.location.reload();
     }
@@ -134,7 +135,7 @@ const App: React.FC<ChatModuleProps> = () => {
     return (
       <div className="fixed inset-0 bg-[#0b0f14] z-[5000] flex flex-col items-center justify-center font-mono">
         <Loader2 size={40} className="text-[#00ff99] animate-spin mb-4" />
-        <p className="text-[#00ff99] text-[9px] font-black uppercase tracking-[0.3em]">Oturum Kapatılıyor...</p>
+        <p className="text-[#00ff99] text-[10px] font-black uppercase tracking-widest">TEMİZLENİYOR...</p>
       </div>
     );
   }
@@ -146,14 +147,14 @@ const App: React.FC<ChatModuleProps> = () => {
       <div className="flex-1 flex items-center justify-center bg-[#0b0f14] fixed inset-0 z-[2000] p-4">
         <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-[8px_8px_0px_rgba(0,0,0,0.5)]">
           <div className="bg-[#000080] text-white px-3 py-1.5 text-[10px] font-black flex justify-between items-center">
-            <span className="flex items-center gap-2 uppercase tracking-widest"><Key size={12} /> Authentication</span>
+            <span className="flex items-center gap-2 uppercase tracking-tighter"><Key size={12} /> Workigom Login</span>
             <X size={16} className="cursor-pointer" onClick={() => setView('landing')} />
           </div>
           <div className="p-6 space-y-4">
             <form onSubmit={async (e) => { e.preventDefault(); setIsLoggingIn(true); try { const user = await storageService.loginUser(loginForm.email, loginForm.password); if (user && user.status === 'approved') { setUserName(user.nickname); setView('chat'); } else if (user?.status === 'pending') { setView('pending'); } else { alert('Hatalı giriş veya onay bekleyen hesap.'); } } catch(e:any) { alert(e.message); } finally { setIsLoggingIn(false); } }} className="space-y-3">
               <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-xs outline-none focus:border-[#000080]" placeholder="E-posta" />
               <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-xs outline-none focus:border-[#000080]" placeholder="Şifre" />
-              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-2.5 font-bold uppercase text-[10px] shadow-md">{isLoggingIn ? 'Veriler Doğrulanıyor...' : 'Sisteme Bağlan'}</button>
+              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-2.5 font-bold uppercase text-[10px] shadow-md">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş Yap'}</button>
             </form>
           </div>
         </div>
@@ -165,24 +166,24 @@ const App: React.FC<ChatModuleProps> = () => {
     <div ref={containerRef} className="flex flex-col bg-[#d4dce8] w-full border-2 border-white shadow-2xl overflow-hidden font-mono fixed inset-0 z-[1000] mirc-window">
       <header className="h-10 bg-[#000080] text-white flex items-center px-3 shrink-0">
         <div className="flex items-center gap-3 flex-1">
-          <div className="flex items-center gap-1.5">
-            <div className={`w-2.5 h-2.5 ${hasAiKey ? 'bg-[#00ff99]' : 'bg-red-500'} rounded-full animate-pulse shadow-[0_0_5px_#00ff99]`}></div>
+          <div className="flex items-center gap-1.5 cursor-pointer" onClick={handleAiConnect} title="AI Anahtarı Seç">
+            <div className={`w-2.5 h-2.5 ${hasAiKey ? 'bg-[#00ff99] shadow-[0_0_5px_#00ff99]' : 'bg-red-500'} rounded-full animate-pulse`}></div>
             <span className="text-[8px] font-black tracking-widest uppercase">AI</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 ${dbConnected ? 'bg-[#00ff99]' : 'bg-red-500'} rounded-full`}></div>
-            <span className="text-[8px] font-black tracking-widest uppercase">SUPABASE</span>
+            <span className="text-[8px] font-black tracking-widest uppercase">DB</span>
           </div>
           <div className="h-4 w-px bg-white/20 mx-1"></div>
           <div className="text-[12px] font-black italic truncate uppercase">{activeTab}</div>
         </div>
         <div className="flex items-center gap-2">
-          {!isOnline && <WifiOff size={16} className="text-red-400 animate-bounce" />}
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1 hover:bg-white/20 rounded"><Settings size={16} /></button>
+          {!isOnline && <WifiOff size={16} className="text-red-400 animate-pulse" />}
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1 hover:bg-white/20 rounded transition-colors"><Settings size={16} /></button>
           {isMenuOpen && (
             <div className="absolute top-8 right-2 w-48 bg-[#f0f2f5] border-2 border-[#000080] shadow-2xl z-[2000] text-black p-0.5 mirc-window">
-              <button onClick={() => { handleAiConnect(); setIsMenuOpen(false); }} className="w-full text-left p-2 hover:bg-[#000080] hover:text-white text-[9px] font-black flex items-center gap-2 border-b border-gray-300 uppercase"><Sparkles size={14} /> AI Ayarları</button>
-              <button onClick={handleLogout} className="w-full text-left p-2 hover:bg-red-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase"><LogOut size={14} /> Çıkış</button>
+              <button onClick={() => { handleAiConnect(); setIsMenuOpen(false); }} className="w-full text-left p-2 hover:bg-[#000080] hover:text-white text-[9px] font-black flex items-center gap-2 border-b border-gray-300 uppercase"><Sparkles size={14} /> AI Anahtar Ayarı</button>
+              <button onClick={handleLogout} className="w-full text-left p-2 hover:bg-red-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase"><LogOut size={14} /> Oturumu Kapat</button>
             </div>
           )}
         </div>
@@ -193,7 +194,7 @@ const App: React.FC<ChatModuleProps> = () => {
           <button 
             key={tab} 
             onClick={() => setActiveTab(tab)} 
-            className={`px-3 py-1.5 text-[9px] font-black uppercase whitespace-nowrap border-t-2 border-x-2 transition-colors ${activeTab === tab ? 'bg-[#d4dce8] text-[#000080] border-white' : 'text-white/40 border-transparent hover:text-white'}`}
+            className={`px-3 py-1.5 text-[9px] font-black uppercase whitespace-nowrap border-t-2 border-x-2 transition-all ${activeTab === tab ? 'bg-[#d4dce8] text-[#000080] border-white' : 'text-white/40 border-transparent hover:text-white'}`}
           >
             {tab}
           </button>
@@ -201,12 +202,14 @@ const App: React.FC<ChatModuleProps> = () => {
       </nav>
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
-        <main className="flex-1 relative flex flex-col overflow-hidden bg-[#f5f5f5]">
+        <main className="flex-1 relative flex flex-col overflow-hidden bg-[#f0f0f0]">
           <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </main>
-        <aside className={`${isMobile ? 'w-[90px]' : 'w-48'} bg-[#d4dce8] border-l-2 border-white shrink-0 overflow-hidden`}>
-          <UserList users={onlineUsers} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} />
-        </aside>
+        {!isMobile && (
+          <aside className="w-44 bg-[#d4dce8] border-l-2 border-white shrink-0 overflow-hidden">
+            <UserList users={onlineUsers} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} />
+          </aside>
+        )}
       </div>
 
       <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
@@ -218,20 +221,20 @@ const App: React.FC<ChatModuleProps> = () => {
             <button onClick={() => setIsItalic(!isItalic)} className={`px-1.5 py-0.5 rounded text-[10px] italic font-black border ${isItalic ? 'bg-[#000080] text-white border-[#000080]' : 'hover:bg-white text-gray-600 border-transparent'}`}>I</button>
           </div>
           <form onSubmit={handleSend} className="flex gap-1">
-            <div className="flex-1 bg-white border-2 border-gray-500 px-2 flex items-center py-0.5 focus-within:border-[#000080] shadow-inner">
+            <div className="flex-1 bg-white border-2 border-gray-500 px-2 flex items-center py-1 focus-within:border-[#000080] shadow-inner">
               <span className="text-[#000080] font-black text-[10px] mr-2 shrink-0 uppercase">{userName}:</span>
               <textarea 
                 ref={inputRef}
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 outline-none text-xs bg-transparent resize-none h-5 pt-0.5 font-medium no-scrollbar"
+                className="flex-1 outline-none text-xs bg-transparent resize-none h-5 pt-0.5 font-medium overflow-hidden"
                 style={{ fontWeight: isBold ? 'bold' : 'normal', fontStyle: isItalic ? 'italic' : 'normal', textDecoration: isUnderline ? 'underline' : 'none' }}
                 placeholder={`${activeTab} odaya yaz...`}
                 autoComplete="off"
               />
             </div>
-            <button type="submit" className="bg-[#000080] text-white px-5 font-black uppercase text-[10px] shadow-[3px_3px_0px_gray] active:shadow-none active:translate-y-0.5 transition-all">OK</button>
+            <button type="submit" className="bg-[#000080] text-white px-5 font-black uppercase text-[10px] shadow-[3px_3px_0px_gray] active:shadow-none active:translate-y-0.5 transition-all">GÖNDER</button>
           </form>
         </div>
       </footer>
