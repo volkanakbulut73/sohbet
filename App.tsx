@@ -42,9 +42,25 @@ const App: React.FC<ChatModuleProps> = () => {
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
+  // AI Response Monitoring for Key Failures
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.sender === CHAT_MODULE_CONFIG.BOT_NAME) {
+      if (lastMessage.text.includes("[INVALID_KEY]") || lastMessage.text.includes("[API_KEY_MISSING]")) {
+        setHasAiKey(false);
+        // If the error specifically says key is invalid, prompt again
+        const aistudio = (window as any).aistudio;
+        if (aistudio) {
+          console.warn("AI Key error detected, opening selector...");
+          // No delay, just trigger as per rules
+          aistudio.openSelectKey().then(() => setHasAiKey(true));
+        }
+      }
+    }
+  }, [messages]);
+
   useEffect(() => {
     const checkStatus = async () => {
-      // AI Status Check (Rule: Use window.aistudio if available)
       const aistudio = (window as any).aistudio;
       if (aistudio) {
         try {
@@ -54,11 +70,8 @@ const App: React.FC<ChatModuleProps> = () => {
           setHasAiKey(false);
         }
       } else {
-        // Fallback to process.env.API_KEY
         setHasAiKey(!!process.env.API_KEY && process.env.API_KEY !== "undefined");
       }
-
-      // DB Status
       setDbConnected(storageService.isConfigured());
     };
     
@@ -85,12 +98,11 @@ const App: React.FC<ChatModuleProps> = () => {
       try {
         await aistudio.openSelectKey();
         setHasAiKey(true);
-        // After trigger, we assume success as per instructions
       } catch (e) {
         console.error("Key selection failed", e);
       }
     } else {
-      alert("Bu platformda API anahtarı sistem tarafından yönetilmektedir. Lütfen bir süre sonra tekrar deneyin.");
+      alert("Bu platformda API anahtarı sistem tarafından yönetilmektedir.");
     }
   };
 
@@ -292,7 +304,6 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 relative ml-auto">
-          {/* AI Connection Trigger */}
           {isBotRoom && !hasAiKey && (window as any).aistudio && (
             <button 
               onClick={handleAiConnect}

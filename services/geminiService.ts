@@ -4,14 +4,15 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    /** 
-     * KURAL: API anahtarı EXCLUSIVELY process.env.API_KEY üzerinden alınmalıdır.
-     * Platform anahtarı enjekte ettiğinde bu değer güncellenecektir.
-     */
+    // KURAL: API anahtarını her zaman güncel process.env.API_KEY üzerinden al.
     const apiKey = process.env.API_KEY;
 
-    // GoogleGenAI instance'ı her çağrıda taze olarak oluşturulur (Kural gereği).
-    const ai = new GoogleGenAI({ apiKey: apiKey || "" });
+    if (!apiKey || apiKey === "undefined") {
+      return "HATA: [API_KEY_MISSING] Lütfen üst menüden 'AI Yapılandırması'nı seçerek geçerli bir anahtar bağlayın.";
+    }
+
+    // KURAL: Her çağrıda yeni bir instance oluştur.
+    const ai = new GoogleGenAI({ apiKey });
     
     const parts = [];
     if (imageBase64) {
@@ -38,22 +39,27 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
-    // .text property'sine doğrudan erişim.
     const text = response.text;
     
     if (!text) {
-      return "Sistem: Yanıt alınamadı. Lütfen tekrar deneyin.";
+      return "SİSTEM: Yanıt boş döndü. Lütfen tekrar deneyin.";
     }
     
     return text;
   } catch (error: any) {
-    console.error("Workigom AI Service Error:", error);
+    console.error("Gemini API Error Detail:", error);
     
-    // API hatası durumunda mIRC tarzı bilgilendirme
-    if (error.message?.includes("API_KEY_INVALID") || error.message?.includes("not found")) {
-      return "HATA: AI servis bağlantısı kurulamadı. Lütfen üst menüden 'AI Yapılandırması'nı kontrol edin.";
+    const errorMsg = error?.message || "";
+    
+    // KURAL: "Requested entity was not found" hatası anahtarın geçersiz olduğunu gösterir.
+    if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API key not valid")) {
+      return "HATA: [INVALID_KEY] Seçtiğiniz API anahtarı geçersiz veya yetkisiz. Lütfen ücretli bir GCP projesine ait anahtar seçin.";
+    }
+
+    if (errorMsg.includes("429") || errorMsg.includes("quota")) {
+      return "SİSTEM: API kullanım kotanız doldu. Lütfen bir süre bekleyin veya farklı bir anahtar kullanın.";
     }
     
-    return "SİSTEM: Şu an bir bağlantı sorunu yaşıyorum. Lütfen 30 saniye sonra tekrar deneyin.";
+    return "SİSTEM: Bağlantı hatası oluştu. Lütfen internet bağlantınızı ve API anahtarınızı kontrol edin.";
   }
 };
