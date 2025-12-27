@@ -60,7 +60,8 @@ const App: React.FC<ChatModuleProps> = () => {
       // Çıkış yaparken tüm özel mesajları database'den temizle
       await storageService.deleteAllPrivateMessagesForUser(userName);
       localStorage.removeItem('mirc_nick');
-      setTimeout(() => window.location.reload(), 1000);
+      // Küçük bir gecikme ile temizlik işleminin tamamlandığını hissettir
+      setTimeout(() => window.location.reload(), 1500);
     } catch (e) {
       console.error("Logout cleanup error:", e);
       window.location.reload();
@@ -100,8 +101,11 @@ const App: React.FC<ChatModuleProps> = () => {
   if (isCleaningUp) {
     return (
       <div className="fixed inset-0 bg-[#0b0f14] z-[5000] flex flex-col items-center justify-center font-mono">
-        <Loader2 size={48} className="text-[#00ff99] animate-spin mb-4" />
-        <p className="text-white font-black uppercase italic tracking-widest animate-pulse">Gizlilik Protokolü: Mesajlar siliniyor...</p>
+        <Loader2 size={64} className="text-[#00ff99] animate-spin mb-6" />
+        <div className="text-center space-y-2">
+          <p className="text-white font-black uppercase italic tracking-[0.3em] animate-pulse">Gizlilik Protokolü Çalıştırılıyor</p>
+          <p className="text-[#00ff99] text-[10px] font-bold uppercase tracking-widest">Özel mesaj geçmişiniz kalıcı olarak siliniyor...</p>
+        </div>
       </div>
     );
   }
@@ -356,7 +360,7 @@ const App: React.FC<ChatModuleProps> = () => {
                  <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded ${isUnderline ? 'bg-[#000080] text-white' : 'hover:bg-white'}`} title="Altı Çizili (Underline)"><Underline size={16}/></button>
                </div>
             </div>
-            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.6</div>
+            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.7</div>
           </div>
 
           <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">

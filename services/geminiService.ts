@@ -4,8 +4,10 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    // Initializing directly before call as mandated to ensure latest API key
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Directly initialize to capture the most current process.env.API_KEY state
+    const ai = new GoogleGenAI({ 
+      apiKey: process.env.API_KEY 
+    });
     
     const parts: any[] = [];
     if (imageBase64) {
@@ -17,36 +19,39 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       });
     }
     
-    parts.push({ text: `Kanal/Sohbet Bağlamı: ${context}\nKullanıcı Mesajı: ${prompt}` });
+    parts.push({ 
+      text: `Sistem/Kanal Bağlamı: ${context}\nKullanıcıdan Gelen Mesaj: ${prompt}` 
+    });
 
-    // FIX: Changed contents from [{ parts }] to { parts } to match single-turn Content object requirement
+    // Use array format for contents as it's standard for multiple parts/turns
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: { parts },
+      contents: [{ parts }],
       config: {
         systemInstruction: customInstruction || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION,
-        temperature: 0.8,
+        temperature: 0.75,
         topP: 0.95,
         topK: 64
       }
     });
     
-    // Safely extract text property
+    // Direct property access as mandated (not a method call)
     const text = response.text;
     
     if (!text) {
-      return "Sistem bir yanıt üretemedi. Lütfen tekrar deneyin.";
+      throw new Error("Empty response");
     }
     
     return text;
   } catch (error: any) {
-    console.error("Workigom AI Connection Error:", error);
+    console.error("Workigom AI Error:", error);
     
-    // Graceful error messages based on common failures
-    if (error.message?.includes("API key not valid")) {
-      return "Sistem Hatası: API Anahtarı doğrulanamadı. Lütfen yöneticiye başvurun.";
+    // Check for common error signatures
+    const errorMsg = error.message || "";
+    if (errorMsg.includes("API Key must be set") || errorMsg.includes("API key not valid")) {
+      return "Sistem Hatası: Yapay Zeka yapılandırması eksik (API Key Hatası). Lütfen yöneticiye başvurun.";
     }
     
-    return "Bağlantı Hatası: Workigom AI şu an yoğun veya bir ağ sorunu yaşıyor. Lütfen mesajınızı tekrar göndermeyi deneyin.";
+    return "Bağlantı Hatası: Workigom AI şu an yoğun veya yapılandırma bekliyor. Lütfen birkaç saniye sonra tekrar deneyin.";
   }
 };
