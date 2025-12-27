@@ -19,9 +19,8 @@
     body, html {
       height: 100%;
       width: 100%;
-      overflow: hidden !important; /* Dış scroll kapalı */
-      position: fixed; /* Mobil zıplamayı önler */
       background-color: transparent;
+      overflow: hidden !important;
     }
     
     #root {
@@ -29,6 +28,7 @@
       width: 100%;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     /* Mobil tarayıcılar için input zoom engelleme */

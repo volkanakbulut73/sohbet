@@ -14,7 +14,6 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
 
   useEffect(() => {
     if (scrollRef.current) {
-      // Yumuşak kaydırma
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior: 'smooth'
@@ -28,7 +27,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
 
     if (msg.type === MessageType.SYSTEM) {
       return (
-        <div className="flex gap-1 text-[13px] py-1 text-[#000080] font-bold">
+        <div className="flex gap-1 text-[12px] py-0.5 text-[#000080] font-bold">
           <span className="shrink-0">***</span>
           <span className="break-words">{text}</span>
         </div>
@@ -38,14 +37,14 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
     const isMe = msg.sender === currentUser;
 
     return (
-      <div className="flex gap-1 text-[13px] py-1 items-start">
+      <div className="flex gap-1 text-[12px] py-0.5 items-start">
         <span 
           className={`font-bold shrink-0 cursor-pointer hover:underline ${isMe ? 'text-[#000080]' : 'text-[#800000]'}`}
           onClick={(e) => onNickClick?.(e, msg.sender)}
         >
           {`<${msg.sender}>`}
         </span>
-        <span className="text-black break-words flex-1">{text}</span>
+        <span className="text-black break-words flex-1 leading-tight">{text}</span>
       </div>
     );
   };
@@ -53,18 +52,18 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="absolute inset-0 overflow-y-auto px-4 py-4 bg-white flex flex-col font-mono"
+      className="absolute inset-0 overflow-y-auto px-4 py-3 bg-white flex flex-col font-mono"
     >
       <div className="flex flex-col min-h-full">
         {messages.length === 0 ? (
-          <div className="text-gray-400 text-xs italic">Sunucuya bağlanıldı, mesaj bekleniyor...</div>
+          <div className="text-gray-400 text-[10px] italic">*** Workigom Sunucusu: Hoş geldiniz...</div>
         ) : (
           messages.map((msg, i) => (
             <div key={msg.id || i}>{renderMessageLine(msg)}</div>
           ))
         )}
-        {/* Klavye açıldığında son mesajın kapanmaması için ekstra boşluk */}
-        <div className="h-10 shrink-0"></div>
+        {/* Mesajların en altta input tarafından örtülmemesi için ekstra dolgu */}
+        <div className="h-12 shrink-0"></div>
       </div>
     </div>
   );
