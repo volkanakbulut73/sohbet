@@ -2,17 +2,20 @@
 import { GoogleGenAI } from "@google/genai";
 import { CHAT_MODULE_CONFIG } from "../config";
 
+/**
+ * Gemini AI Yanıt Servisi
+ * KURAL: API anahtarı her zaman taze 'process.env.API_KEY' üzerinden alınır.
+ */
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    // KURAL: API anahtarı her zaman taze process.env.API_KEY üzerinden alınmalıdır.
     const apiKey = process.env.API_KEY;
 
-    // KURAL: Anahtar yoksa veya geçersizse 'Requested entity was not found' hatası dönülmelidir.
-    if (!apiKey || apiKey === "undefined" || apiKey.length < 5) {
-      return "HATA: Requested entity was not found. [API_KEY_MISSING] Lütfen geçerli bir AI anahtarı seçin.";
+    // Anahtar kontrolü - Eğer yoksa platformun beklediği hata dizinini döndürür.
+    if (!apiKey || apiKey === "undefined") {
+      return "HATA: Requested entity was not found. [API_KEY_MISSING] AI servisi için anahtar seçimi gerekiyor.";
     }
 
-    // KURAL: Her istekte yeni bir GoogleGenAI instance'ı oluşturulmalıdır.
+    // KURAL: Her istekte yeni bir instance oluşturulmalıdır.
     const ai = new GoogleGenAI({ apiKey });
     
     const parts = [];
@@ -29,6 +32,7 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       text: `PLATFORM: ${CHAT_MODULE_CONFIG.DOMAIN}\nCONTEXT: ${context}\nUSER: ${prompt}` 
     });
 
+    // KURAL: generateContent doğrudan model ismiyle çağrılır.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: { parts },
@@ -40,28 +44,28 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
-    // .text özelliğine doğrudan erişim sağlanır.
+    // KURAL: .text özelliğine doğrudan erişim (metot değildir).
     const text = response.text;
     
     if (!text) {
-      return "SİSTEM: Yanıt üretilemedi, lütfen tekrar deneyin.";
+      return "SİSTEM: Yanıt üretilemedi. Lütfen tekrar deneyin.";
     }
     
     return text;
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
+    console.error("Gemini SDK Error:", error);
     
     const errorMsg = error?.message || "";
     
-    // KURAL: Eğer API 'Requested entity was not found' hatası dönerse UI seçim ekranını açacaktır.
-    if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API key not valid")) {
-      return "HATA: Requested entity was not found. [INVALID_KEY] Lütfen anahtarınızı güncelleyin.";
+    // KURAL: 'Requested entity was not found' hatası UI'ın seçim diyaloğunu tetiklemesi için kritiktir.
+    if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("404") || errorMsg.includes("API key not valid")) {
+      return "HATA: Requested entity was not found. [INVALID_KEY] Lütfen geçerli bir anahtar seçin.";
     }
 
     if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-      return "SİSTEM: AI kullanım limitiniz doldu. Lütfen bir süre sonra deneyin.";
+      return "SİSTEM: Kullanım limitine ulaşıldı. Lütfen bir süre sonra tekrar deneyin.";
     }
     
-    return "SİSTEM: Teknik bir sorun oluştu. Bağlantınızı veya anahtarınızı kontrol edin.";
+    return "SİSTEM: Bir hata oluştu. Bağlantınızı kontrol edin.";
   }
 };

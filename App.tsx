@@ -47,12 +47,11 @@ const App: React.FC<ChatModuleProps> = () => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.sender === CHAT_MODULE_CONFIG.BOT_NAME) {
       if (lastMessage.text.includes("Requested entity was not found")) {
-        
-        console.warn("AI Key error detected. Prompting user for key selection...");
+        console.warn("AI Key error detected. Prompting key selection dialog...");
         setHasAiKey(false);
         const aistudio = (window as any).aistudio;
         if (aistudio) {
-          // KURAL: Seçim tetiklendiği an başarılı varsayılır ve işleme devam edilir.
+          // KURAL: openSelectKey() çağrısı sonrası başarılı varsayılır.
           aistudio.openSelectKey().then(() => {
             setHasAiKey(true);
           });
@@ -61,7 +60,7 @@ const App: React.FC<ChatModuleProps> = () => {
     }
   }, [messages]);
 
-  // Anahtar durumu ve DB kontrolü
+  // Anahtar durumu kontrolü
   useEffect(() => {
     const checkStatus = async () => {
       const aistudio = (window as any).aistudio;
@@ -85,7 +84,7 @@ const App: React.FC<ChatModuleProps> = () => {
     };
     
     checkStatus();
-    const interval = setInterval(checkStatus, 10000);
+    const interval = setInterval(checkStatus, 15000);
     return () => clearInterval(interval);
   }, [view, activeTab]);
 
@@ -110,8 +109,6 @@ const App: React.FC<ChatModuleProps> = () => {
       } catch (e) {
         console.error("Key selection failed:", e);
       }
-    } else {
-      alert("Bu platformda API anahtarı sistem tarafından otomatik olarak atanmaktadır.");
     }
   };
 
