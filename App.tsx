@@ -30,7 +30,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { 
     userName, setUserName, activeTab, setActiveTab, 
@@ -50,12 +50,12 @@ const App: React.FC<ChatModuleProps> = () => {
     return () => window.visualViewport?.removeEventListener('resize', handleViewport);
   }, []);
 
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!inputText.trim()) return;
 
     // Mesajı format etiketleri ile sarmala
-    let formattedText = inputText;
+    let formattedText = inputText.replace(/\n/g, '<br/>'); // Satır başlarını koru
     if (isBold) formattedText = `<b>${formattedText}</b>`;
     if (isItalic) formattedText = `<i>${formattedText}</i>`;
     if (isUnderline) formattedText = `<u>${formattedText}</u>`;
@@ -63,7 +63,9 @@ const App: React.FC<ChatModuleProps> = () => {
     sendMessage(formattedText);
     setInputText('');
     setShowEmojiPicker(false);
-    inputRef.current?.focus();
+    
+    // Focus back to textarea
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const addEmoji = (emoji: string) => {
@@ -72,7 +74,13 @@ const App: React.FC<ChatModuleProps> = () => {
     inputRef.current?.focus();
   };
 
-  // Resimdeki gibi zengin emoji seti
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   const emojis = [
     '😊', '😂', '🤣', '❤️', '😍', '🥰', '😘', '😋', '😎', '😉', '😜', '🤩', '🥳', '😭', '😡', '😱',
     '👍', '👎', '👏', '🙌', '🔥', '✨', '⚡', '🎉', '🎈', '🌹', '🌸', '💔', '☕', '🍺', '🍔', '🍕',
@@ -185,7 +193,7 @@ const App: React.FC<ChatModuleProps> = () => {
         </aside>
       </div>
 
-      {/* FOOTER - REFACTORED INPUT BAR */}
+      {/* FOOTER - ENHANCED TEXTAREA INPUT BAR */}
       <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
         <div className="flex flex-col gap-1 w-full max-w-screen-2xl mx-auto">
           
@@ -250,23 +258,24 @@ const App: React.FC<ChatModuleProps> = () => {
                </div>
             </div>
             <div className="hidden sm:block">
-              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.3</span>
+              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.4</span>
             </div>
           </div>
 
-          {/* INPUT & SEND BAR */}
-          <form onSubmit={handleSend} className="flex gap-1 h-14">
-            <div className="flex-1 bg-white border-2 border-[#808080] shadow-inner px-4 flex items-center group focus-within:border-[#000080] transition-colors">
-              <div className="flex items-center gap-1 mr-3 shrink-0">
+          {/* MULTI-LINE INPUT & SEND BAR */}
+          <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">
+            <div className="flex-1 bg-white border-2 border-[#808080] shadow-inner px-4 flex items-start py-2 group focus-within:border-[#000080] transition-colors overflow-hidden">
+              <div className="flex items-center gap-1 mr-3 shrink-0 mt-0.5">
                 <span className="text-[#000080] font-black text-[12px] uppercase">{userName}</span>
                 <span className="text-gray-400 text-[12px]">:</span>
               </div>
-              <input 
+              <textarea 
                 ref={inputRef}
-                type="text" 
                 value={inputText} 
                 onChange={e => setInputText(e.target.value)} 
-                className="flex-1 outline-none text-sm bg-transparent placeholder:italic placeholder:font-normal" 
+                onKeyDown={handleKeyDown}
+                rows={1}
+                className="flex-1 outline-none text-sm bg-transparent placeholder:italic placeholder:font-normal resize-none py-0.5 leading-snug self-center max-h-32 overflow-y-auto" 
                 style={{ 
                   fontWeight: isBold ? 'bold' : 'normal',
                   fontStyle: isItalic ? 'italic' : 'normal',
@@ -276,7 +285,7 @@ const App: React.FC<ChatModuleProps> = () => {
                 autoComplete="off"
               />
             </div>
-            <button type="submit" className="bg-[#000080] text-white px-8 font-black uppercase flex items-center justify-center gap-3 hover:bg-blue-800 transition-all shadow-[4px_4px_0px_gray] active:shadow-none active:translate-y-1 active:translate-x-px">
+            <button type="submit" className="bg-[#000080] text-white px-8 font-black uppercase flex items-center justify-center gap-3 hover:bg-blue-800 transition-all shadow-[4px_4px_0px_gray] active:shadow-none active:translate-y-1 active:translate-x-px shrink-0">
               <Send size={20} />
               {!isMobile && 'GÖNDER'}
             </button>
