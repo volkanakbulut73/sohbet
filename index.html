@@ -9,12 +9,6 @@
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968804.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --mirc-navy: #000080;
-      --mirc-bg: #d4dce8;
-      --mirc-border: #808080;
-    }
-    
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -25,36 +19,27 @@
     body, html {
       height: 100%;
       width: 100%;
-      font-family: 'Courier New', Courier, monospace;
+      overflow: hidden !important; /* Dış scroll kapalı */
+      position: fixed; /* Mobil zıplamayı önler */
       background-color: transparent;
-      overflow: hidden !important;
     }
     
     #root {
       height: 100%;
       width: 100%;
-      position: relative;
+      display: flex;
+      flex-direction: column;
     }
-    
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .cursor-blink {
-      display: inline-block;
-      width: 8px;
-      height: 2px;
-      background-color: #000;
-      animation: blink 1s infinite;
-      vertical-align: bottom;
-      margin-left: 2px;
-    }
-    @keyframes blink { 50% { opacity: 0; } }
-
+    /* Mobil tarayıcılar için input zoom engelleme */
     @media screen and (max-width: 768px) {
-      input, textarea {
-        font-size: 16px !important; /* Input odaklandığında zoom'u engeller */
+      input, select, textarea {
+        font-size: 16px !important;
       }
     }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 <script type="importmap">
 {
