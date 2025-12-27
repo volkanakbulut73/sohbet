@@ -26,7 +26,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
       return (
         <div className="flex gap-1 text-[13px] py-1 text-[#000080] font-bold italic">
           <span className="shrink-0">***</span>
-          <span className="break-words">{msg.text}</span>
+          <span className="break-words" dangerouslySetInnerHTML={{ __html: msg.text }}></span>
         </div>
       );
     }
@@ -41,7 +41,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
         >
           {`<${msg.sender}>`}
         </span>
-        <span className="text-black break-words flex-1 leading-normal font-medium">{msg.text}</span>
+        <span 
+          className="text-black break-words flex-1 leading-normal font-medium"
+          dangerouslySetInnerHTML={{ __html: msg.text }}
+        ></span>
       </div>
     );
   };
