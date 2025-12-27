@@ -137,11 +137,11 @@ const App: React.FC<ChatModuleProps> = () => {
       ref={containerRef} 
       className="flex flex-col bg-[#d4dce8] w-full border-2 border-white shadow-2xl overflow-hidden font-mono fixed inset-0 z-[1000]"
     >
-      {/* HEADER - DYNAMIC HEIGHT FOR RADIO */}
-      <header className={`bg-[#000080] text-white flex flex-col sm:flex-row items-center px-4 shrink-0 border-b border-white/30 transition-all duration-300 ${isRadioOpen ? 'min-h-[100px] py-2' : 'h-14 py-0'}`}>
-        <div className="flex items-center gap-5 flex-1 w-full sm:w-auto">
+      {/* HEADER - INTEGRATED RADIO WIDGET */}
+      <header className={`bg-[#000080] text-white flex flex-col sm:flex-row items-center px-4 shrink-0 border-b border-white/30 transition-all duration-300 ${isRadioOpen ? 'min-h-[75px] py-1' : 'h-14 py-0'}`}>
+        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
           <div className="flex items-center gap-2.5">
-            <div className="relative">
+            <div className="relative shrink-0">
               <div className="w-3.5 h-3.5 bg-[#00ff99] rounded-full shadow-[0_0_12px_#00ff99] animate-pulse"></div>
             </div>
             {!isRadioOpen && (
@@ -151,50 +151,50 @@ const App: React.FC<ChatModuleProps> = () => {
             )}
           </div>
           {!isRadioOpen && <div className="h-7 w-px bg-white/20 hidden sm:block"></div>}
-          <div className="text-[14px] font-black italic text-white flex items-center gap-1">
+          <div className="text-[14px] font-black italic text-white flex items-center gap-1 truncate">
             <span className="text-[#00ff99]">@</span>{userName}
           </div>
         </div>
 
-        {/* RADIO PLAYER INTEGRATED IN HEADER */}
-        {isRadioOpen ? (
-          <div className="flex-none flex items-center gap-2 bg-white/10 p-1 rounded-sm border border-white/20 animate-in zoom-in-95 duration-300 mx-auto sm:mx-4 my-2 sm:my-0">
-             <div className="bg-white p-0.5 border border-[#808080] shadow-inner overflow-hidden rounded-sm">
-                <iframe 
-                  width="345" 
-                  height="65" 
-                  src="https://www.radyod.com/iframe-small" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                  className="max-w-[calc(100vw-80px)] sm:max-w-[345px]"
-                ></iframe>
-             </div>
-             <button 
-                onClick={() => setIsRadioOpen(false)}
-                className="p-2 bg-red-600 hover:bg-red-700 text-white border border-white/40 shadow-sm transition-colors"
-                title="Radyoyu Kapat"
-             >
-                <X size={18} strokeWidth={3} />
-             </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 ml-auto">
+        {/* RADIO BUTTON OR WIDGET AREA */}
+        <div className="flex items-center gap-2 my-1 sm:my-0">
+          {isRadioOpen ? (
+            <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-sm border border-white/10 animate-in fade-in zoom-in-95">
+               <div className="bg-white p-0.5 border border-[#808080] shadow-inner overflow-hidden rounded-sm flex items-center">
+                  <iframe 
+                    width="345" 
+                    height="65" 
+                    src="https://www.radyod.com/iframe-small" 
+                    frameBorder="0" 
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+                    allowFullScreen
+                    className="max-w-[calc(100vw-100px)] sm:max-w-[345px]"
+                  ></iframe>
+               </div>
+               <button 
+                  onClick={() => setIsRadioOpen(false)}
+                  className="h-[65px] px-2 bg-red-600 hover:bg-red-700 text-white border border-white/40 shadow-sm transition-colors flex items-center justify-center rounded-sm"
+                  title="Kapat"
+               >
+                  <X size={20} strokeWidth={3} />
+               </button>
+            </div>
+          ) : (
             <button 
               onClick={() => setIsRadioOpen(true)} 
-              className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border border-white/40 hover:bg-[#00ff99] hover:text-[#000080] hover:border-white transition-all rounded-sm group"
+              className="flex items-center gap-2 px-4 py-2 text-[10px] font-black border border-white/40 hover:bg-[#00ff99] hover:text-[#000080] hover:border-white transition-all rounded-sm group bg-white/5 shadow-sm"
             >
               <Music size={14} className="group-hover:animate-bounce" />
-              {isMobile ? '' : 'RADYO D DİNLE'}
+              {isMobile ? 'RADYO' : 'RADYO D DİNLE'}
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
-        <div className="flex items-center gap-3 relative ml-auto sm:ml-0">
-          {isPrivate && (
+        <div className="flex items-center gap-3 relative ml-auto sm:ml-4">
+          {isPrivate && !isMobile && (
             <button onClick={() => toggleBlock(activeTab)} className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-colors rounded-sm ${blockedUsers.includes(activeTab) ? 'bg-red-600 border-red-400' : 'border-white/40 hover:bg-white/10'}`}>
               {blockedUsers.includes(activeTab) ? <UserCheck size={14}/> : <Ban size={14}/>}
-              {isMobile ? '' : (blockedUsers.includes(activeTab) ? 'ENGELİ KALDIR' : 'ENGELLE')}
+              ENGELLE
             </button>
           )}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 hover:bg-white/20 border border-transparent hover:border-white/30 rounded transition-all">
@@ -239,7 +239,7 @@ const App: React.FC<ChatModuleProps> = () => {
         </aside>
       </div>
 
-      {/* FOOTER - ENHANCED TEXTAREA INPUT BAR */}
+      {/* FOOTER */}
       <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
         <div className="flex flex-col gap-1 w-full max-w-screen-2xl mx-auto">
           
@@ -277,34 +277,13 @@ const App: React.FC<ChatModuleProps> = () => {
                <div className="h-6 w-px bg-gray-400/50"></div>
 
                <div className="flex gap-1">
-                 <button 
-                  type="button"
-                  onClick={() => setIsBold(!isBold)} 
-                  className={`p-1.5 rounded transition-colors ${isBold ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} 
-                  title="Bold"
-                 >
-                   <Bold size={16}/>
-                 </button>
-                 <button 
-                  type="button"
-                  onClick={() => setIsItalic(!isItalic)} 
-                  className={`p-1.5 rounded transition-colors ${isItalic ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} 
-                  title="Italic"
-                 >
-                   <Italic size={16}/>
-                 </button>
-                 <button 
-                  type="button"
-                  onClick={() => setIsUnderline(!isUnderline)} 
-                  className={`p-1.5 rounded transition-colors ${isUnderline ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} 
-                  title="Underline"
-                 >
-                   <Underline size={16}/>
-                 </button>
+                 <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded transition-colors ${isBold ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Bold"><Bold size={16}/></button>
+                 <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded transition-colors ${isItalic ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Italic"><Italic size={16}/></button>
+                 <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded transition-colors ${isUnderline ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Underline"><Underline size={16}/></button>
                </div>
             </div>
             <div className="hidden sm:block">
-              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.7</span>
+              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.8</span>
             </div>
           </div>
 
