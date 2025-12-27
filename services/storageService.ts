@@ -10,6 +10,8 @@ export const isConfigured = () =>
 export const supabase = createClient(CHAT_MODULE_CONFIG.SUPABASE_URL, CHAT_MODULE_CONFIG.SUPABASE_KEY);
 
 export const storageService = {
+  isConfigured,
+
   // --- KAYIT VE KİMLİK DOĞRULAMA ---
   async registerUser(regData: UserRegistration) {
     const { error } = await supabase.from('registrations').insert({
@@ -22,7 +24,7 @@ export const storageService = {
       status: 'pending'
     });
     if (error) {
-      console.error("Supabase Register Error:", error);
+      console.error("Supabase Register Error:", error.message);
       if (error.code === '23505') throw new Error('Bu email veya nickname zaten kullanımda.');
       throw error;
     }
@@ -66,7 +68,11 @@ export const storageService = {
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      // Provide a more descriptive error for registrations fetch failure
+      console.warn("Registrations fetch error:", error.message);
+      throw new Error(`Kayıtlı kullanıcılar yüklenemedi: ${error.message}`);
+    }
     
     return (data || []).map(d => ({
       ...d,
@@ -89,19 +95,17 @@ export const storageService = {
 
   // --- PRIVACY: MESAJ SİLME ---
   async deleteMessagesByChannel(channelName: string) {
-    // Sadece özel mesaj kanallarını silmeye izin ver (# ile başlamayanlar)
     if (channelName.startsWith('#')) return;
     const { error } = await supabase.from('messages').delete().eq('channel', channelName);
-    if (error) console.error("Privacy delete error:", error);
+    if (error) console.error("Privacy delete error:", error.message);
   },
 
   async deleteAllPrivateMessagesForUser(nick: string) {
-    // "private:nick:..." veya "private:...:nick" formatındaki tüm mesajları sil
     const { error } = await supabase
       .from('messages')
       .delete()
       .or(`channel.ilike.private:%:${nick},channel.ilike.private:${nick}:%,channel.eq.${CHAT_MODULE_CONFIG.BOT_NAME}`);
-    if (error) console.error("Global privacy cleanup error:", error);
+    if (error) console.error("Global privacy cleanup error:", error.message);
   },
 
   // --- BİLDİRİM YÖNETİMİ ---

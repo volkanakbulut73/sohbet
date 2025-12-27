@@ -24,8 +24,10 @@ export const useChatCore = (initialUserName: string) => {
       
       const list = Array.from(new Set([...approvedNicks, 'Admin', CHAT_MODULE_CONFIG.BOT_NAME]));
       setOnlineUsers(list);
-    } catch (e) {
-      console.error("Kullanıcı listesi çekilemedi:", e);
+    } catch (e: any) {
+      // Improved error logging to prevent [object Object]
+      const errorMsg = e?.message || (typeof e === 'string' ? e : JSON.stringify(e));
+      console.error("Kullanıcı listesi çekilemedi:", errorMsg);
     }
   }, []);
 
@@ -74,7 +76,6 @@ export const useChatCore = (initialUserName: string) => {
   const closeTab = async (tabName: string) => {
     if (openTabs.length <= 1) return;
 
-    // PRIVACY: Eğer kapatılan tab bir özel mesaj odasıysa, database'den temizle
     if (!tabName.startsWith('#')) {
       const channelId = tabName === CHAT_MODULE_CONFIG.BOT_NAME ? tabName : getPrivateChannelId(userName, tabName);
       await storageService.deleteMessagesByChannel(channelId);
@@ -127,7 +128,9 @@ export const useChatCore = (initialUserName: string) => {
           channel: CHAT_MODULE_CONFIG.BOT_NAME 
         });
       }
-    } catch (err: any) { console.error(err); }
+    } catch (err: any) { 
+      console.error("Message send error:", err?.message || err);
+    }
   };
 
   useEffect(() => {
@@ -141,7 +144,9 @@ export const useChatCore = (initialUserName: string) => {
       ? activeTab
       : getPrivateChannelId(userName, activeTab);
     
-    storageService.getMessagesByChannel(currentChannel).then(setMessages);
+    storageService.getMessagesByChannel(currentChannel).then(setMessages).catch(e => {
+       console.error("Mesajlar çekilemedi:", e?.message || e);
+    });
     
     const sub = supabase
       .channel('realtime_core')
