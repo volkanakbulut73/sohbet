@@ -6,7 +6,9 @@ import { storageService } from '../services/storageService';
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
-  const [privateChats, setPrivateChats] = useState<string[]>(['GeminiBot']);
+  
+  // Açık olan tüm odaları (Kanallar + Özel Mesajlar) tutan state
+  const [openTabs, setOpenTabs] = useState<string[]>(['#sohbet', '#yardim', '#radyo', 'GeminiBot']);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('#sohbet');
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
@@ -28,14 +30,11 @@ export const useChatCore = (initialUserName: string) => {
         break;
       case '/query':
         if (args[0]) {
-          const target = args[0];
-          if (!allowPrivateMessages && target !== 'GeminiBot') {
-            alert("Özel mesajlarınız kapalı.");
-            return;
-          }
-          setPrivateChats(prev => prev.includes(target) ? prev : [...prev, target]);
-          setActiveTab(target);
+          initiatePrivateChat(args[0]);
         }
+        break;
+      case '/close':
+        closeTab(activeTab);
         break;
       case '/block':
         if (args[0]) toggleBlock(args[0]);
@@ -49,6 +48,27 @@ export const useChatCore = (initialUserName: string) => {
     setBlockedUsers(prev => 
       prev.includes(nick) ? prev.filter(u => u !== nick) : [...prev, nick]
     );
+  };
+
+  const closeTab = (tabName: string) => {
+    if (openTabs.length <= 1) return; // Son sekmeyi kapatma
+    
+    setOpenTabs(prev => {
+      const newTabs = prev.filter(t => t !== tabName);
+      if (activeTab === tabName) {
+        setActiveTab(newTabs[0]);
+      }
+      return newTabs;
+    });
+  };
+
+  const initiatePrivateChat = (u: string) => {
+    if (!allowPrivateMessages && u !== 'GeminiBot') {
+      alert("Özel mesajlarınız kapalı.");
+      return;
+    }
+    setOpenTabs(prev => prev.includes(u) ? prev : [...prev, u]);
+    setActiveTab(u);
   };
 
   const sendMessage = async (text: string) => {
@@ -92,15 +112,12 @@ export const useChatCore = (initialUserName: string) => {
 
   return {
     userName, setUserName,
-    privateChats, 
+    openTabs, setOpenTabs,
     activeTab, setActiveTab,
     messages, sendMessage,
     blockedUsers, toggleBlock,
+    closeTab,
     allowPrivateMessages, setAllowPrivateMessages,
-    initiatePrivateChat: (u: string) => { 
-      if (!allowPrivateMessages && u !== 'GeminiBot') return;
-      if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); 
-      setActiveTab(u); 
-    }
+    initiatePrivateChat
   };
 };

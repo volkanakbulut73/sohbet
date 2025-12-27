@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import LandingPage from './components/LandingPage';
 import RegistrationForm from './components/RegistrationForm';
@@ -11,7 +10,8 @@ import { ChatModuleProps } from './types';
 import { 
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
-  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2
+  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2, 
+  UserX, UserCheck2, Trash2
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -33,7 +33,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { 
-    userName, setUserName, activeTab, setActiveTab, 
+    userName, setUserName, activeTab, setActiveTab, openTabs, closeTab,
     messages, sendMessage, initiatePrivateChat,
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
@@ -137,24 +137,32 @@ const App: React.FC<ChatModuleProps> = () => {
             </div>
           </div>
           <div className="h-7 w-px bg-white/20 hidden sm:block"></div>
-          <div className="text-[14px] font-black italic text-white flex items-center gap-1 truncate">
-            <span className="text-[#00ff99]">@</span>{userName}
+          <div className="text-[14px] font-black italic text-white flex items-center gap-1 truncate uppercase">
+            {activeTab.startsWith('#') ? <Hash size={16} className="inline mr-1" /> : <div className="w-2.5 h-2.5 bg-green-500 rounded-full inline-block mr-2 ring-1 ring-white"></div>}
+            {activeTab === userName ? 'Profilim' : activeTab}
           </div>
         </div>
 
         <div className="flex items-center gap-3 relative ml-auto">
+          {/* ÖZEL MESAJ KONTROLLERİ - HEADERDA DAHA BELİRGİN */}
+          {isPrivate && activeTab !== 'GeminiBot' && activeTab !== userName && (
+            <div className="flex gap-2">
+              <button 
+                onClick={() => toggleBlock(activeTab)} 
+                className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-all rounded-sm shadow-sm ${blockedUsers.includes(activeTab) ? 'bg-green-600 border-green-400 text-white' : 'bg-red-600 border-red-400 text-white hover:bg-red-700'}`}
+              >
+                {blockedUsers.includes(activeTab) ? <UserCheck2 size={14}/> : <UserX size={14}/>}
+                {blockedUsers.includes(activeTab) ? 'ENGELİ KALDIR' : 'ENGELLE'}
+              </button>
+            </div>
+          )}
+
           {activeTab === '#radyo' && (
             <div className="flex items-center gap-2 bg-[#00ff99] text-[#000080] px-3 py-1 rounded-sm text-[10px] font-black animate-pulse border border-white">
               <Volume2 size={14} /> LIVE: RADYO D
             </div>
           )}
           
-          {isPrivate && !isMobile && (
-            <button onClick={() => toggleBlock(activeTab)} className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-colors rounded-sm ${blockedUsers.includes(activeTab) ? 'bg-red-600 border-red-400' : 'border-white/40 hover:bg-white/10'}`}>
-              {blockedUsers.includes(activeTab) ? <UserCheck size={14}/> : <Ban size={14}/>}
-              ENGELLE
-            </button>
-          )}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 hover:bg-white/20 border border-transparent hover:border-white/30 rounded transition-all">
             <Settings size={20} />
           </button>
@@ -176,19 +184,27 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
       </header>
 
-      {/* TABS */}
+      {/* TABS - DİNAMİK LİSTE VE X BUTONU */}
       <nav className="bg-[#000080]/95 px-2 py-0.5 flex gap-0.5 overflow-x-auto no-scrollbar border-b border-white/20">
-        {['#Sohbet', '#Yardim', '#Radyo'].map(tab => (
-          <button 
-            key={tab} 
-            onClick={() => setActiveTab(tab.toLowerCase())} 
-            className={`px-6 py-2 text-[11px] font-black uppercase transition-all whitespace-nowrap border-t-2 border-x-2 relative ${activeTab === tab.toLowerCase() ? 'bg-[#d4dce8] text-[#000080] border-white shadow-sm' : 'text-white/60 border-transparent hover:text-white'}`}
-          >
-            <div className="flex items-center gap-2">
-              {tab === '#Radyo' ? <Music size={14} className={activeTab === '#radyo' ? 'animate-bounce' : ''} /> : <Hash size={14} />}
-              {tab}
-            </div>
-          </button>
+        {openTabs.map(tab => (
+          <div key={tab} className="relative group flex items-center shrink-0">
+            <button 
+              onClick={() => setActiveTab(tab)} 
+              className={`pl-4 pr-10 py-2 text-[11px] font-black uppercase transition-all whitespace-nowrap border-t-2 border-x-2 relative ${activeTab === tab ? 'bg-[#d4dce8] text-[#000080] border-white shadow-sm' : 'text-white/60 border-transparent hover:text-white'}`}
+            >
+              <div className="flex items-center gap-2">
+                {tab === '#radyo' ? <Music size={14} className={activeTab === '#radyo' ? 'animate-bounce' : ''} /> : tab.startsWith('#') ? <Hash size={14} /> : <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>}
+                {tab}
+              </div>
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); closeTab(tab); }}
+              className={`absolute right-2 p-1 rounded-sm transition-all ${activeTab === tab ? 'text-[#000080] hover:bg-black/10' : 'text-white/40 hover:text-white hover:bg-white/10'}`}
+              title="Kapat"
+            >
+              <X size={12} strokeWidth={3} />
+            </button>
+          </div>
         ))}
       </nav>
       
@@ -196,7 +212,7 @@ const App: React.FC<ChatModuleProps> = () => {
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative min-w-0 bg-[#f0f0f0] shadow-inner flex flex-col overflow-hidden">
           
-          {/* PERSISTENT RADIO ROOM VIEW (Hidden when not active, but DOM is preserved) */}
+          {/* PERSISTENT RADIO ROOM VIEW */}
           <div className={`absolute inset-0 bg-[#0b0f14] flex flex-col items-center justify-center p-4 z-20 ${activeTab === '#radyo' ? 'flex' : 'hidden opacity-0 pointer-events-none'}`}>
              <div className="w-full max-w-lg space-y-6 flex flex-col items-center animate-in zoom-in-95 duration-500">
                 <div className="w-full bg-[#000080] border-2 border-white p-4 shadow-[10px_10px_0px_rgba(0,0,0,0.5)] flex flex-col items-center gap-2">
@@ -239,14 +255,15 @@ const App: React.FC<ChatModuleProps> = () => {
              </div>
           </div>
 
-          {/* CHAT VIEW (Only hidden when radio is active) */}
+          {/* CHAT VIEW */}
           <div className={`flex-1 relative bg-white ${activeTab === '#radyo' ? 'hidden' : 'block'}`}>
             <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
           </div>
         </main>
         
         <aside className={`${isMobile ? 'w-[100px]' : 'w-56'} bg-[#d4dce8] border-l-2 border-white shrink-0 flex flex-col shadow-lg z-10`}>
-          <UserList users={[userName, 'Admin', 'GeminiBot', 'Esra', 'Can', 'Merve', 'Selin']} currentUser={userName} onClose={() => {}} onUserClick={(e, nick) => initiatePrivateChat(nick)} />
+          {/* Fix: onUserClick corrected to match (nick: string) => void signature in UserListProps by removing the unused event parameter */}
+          <UserList users={[userName, 'Admin', 'GeminiBot', 'Esra', 'Can', 'Merve', 'Selin']} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} />
         </aside>
       </div>
 
@@ -276,12 +293,12 @@ const App: React.FC<ChatModuleProps> = () => {
                <div className="h-6 w-px bg-gray-400/50"></div>
                <div className="flex gap-1">
                  <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded transition-colors ${isBold ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Bold"><Bold size={16}/></button>
-                 <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded transition-colors ${isItalic ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Italic"><Italic size={16}/></button>
+                 <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded transition-colors ${isBold ? 'bg-white' : 'hover:bg-white text-black'} ${isItalic ? 'bg-[#000080] text-white shadow-inner' : ''}`} title="Italic"><Italic size={16}/></button>
                  <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded transition-colors ${isUnderline ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Underline"><Underline size={16}/></button>
                </div>
             </div>
             <div className="hidden sm:block">
-              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.0</span>
+              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.1</span>
             </div>
           </div>
 
@@ -303,7 +320,7 @@ const App: React.FC<ChatModuleProps> = () => {
                   fontStyle: isItalic ? 'italic' : 'normal',
                   textDecoration: isUnderline ? 'underline' : 'none'
                 }}
-                placeholder={activeTab === '#radyo' ? "Radyo odasında sadece dinleyebilirsin..." : "Mesajınızı buraya yazın..."}
+                placeholder={activeTab === '#radyo' ? "Radyo odasında sadece dinleyebilirsin..." : `[${activeTab}] odasına mesaj yaz...`}
                 disabled={activeTab === '#radyo'}
                 autoComplete="off"
               />
