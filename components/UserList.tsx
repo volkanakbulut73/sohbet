@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { CHAT_MODULE_CONFIG } from '../config';
 
 interface UserListProps {
   users: string[];
@@ -14,7 +15,7 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, curren
 
   const getRankInfo = (user: string) => {
     if (user === 'Admin') return { prefix: '&', color: 'text-red-700' };
-    if (user === 'GeminiBot') return { prefix: '@', color: 'text-green-700' };
+    if (user === CHAT_MODULE_CONFIG.BOT_NAME) return { prefix: '@', color: 'text-green-700' };
     return { prefix: '%', color: 'text-[#000080]' };
   };
 

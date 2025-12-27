@@ -8,6 +8,7 @@ import UserList from './components/UserList';
 import { useChatCore } from './hooks/useChatCore';
 import { storageService } from './services/storageService';
 import { ChatModuleProps } from './types';
+import { CHAT_MODULE_CONFIG } from './config';
 import { 
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
@@ -177,7 +178,7 @@ const App: React.FC<ChatModuleProps> = () => {
 
   const isPrivate = !activeTab.startsWith('#');
   
-  // ÖZEL ODADA SADECE TARAFLARI GÖSTER
+  // ÖZEL ODADA SADECE TARAFLARI GÖSTER (Admin ve Botu Gizle)
   const filteredOnlineUsers = activeTab.startsWith('#')
     ? onlineUsers
     : onlineUsers.filter(u => u === activeTab || u === userName);
@@ -204,7 +205,7 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 relative ml-auto">
-          {isPrivate && activeTab !== 'GeminiBot' && activeTab !== userName && (
+          {isPrivate && activeTab !== CHAT_MODULE_CONFIG.BOT_NAME && activeTab !== userName && (
             <div className="flex gap-2">
               <button 
                 onClick={() => toggleBlock(activeTab)} 
