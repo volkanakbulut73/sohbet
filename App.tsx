@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import LandingPage from './components/LandingPage';
 import RegistrationForm from './components/RegistrationForm';
@@ -11,7 +12,7 @@ import {
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
   MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2, 
-  UserX, UserCheck2, Trash2
+  UserX, UserCheck2, Trash2, BellRing
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -21,7 +22,6 @@ const App: React.FC<ChatModuleProps> = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [inputText, setInputText] = useState('');
   
-  // Formatlama Durumları
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
@@ -33,8 +33,8 @@ const App: React.FC<ChatModuleProps> = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { 
-    userName, setUserName, activeTab, setActiveTab, openTabs, closeTab,
-    messages, sendMessage, initiatePrivateChat,
+    userName, setUserName, activeTab, setActiveTab, openTabs, closeTab, unreadTabs,
+    messages, sendMessage, initiatePrivateChat, onlineUsers,
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
@@ -62,7 +62,6 @@ const App: React.FC<ChatModuleProps> = () => {
     sendMessage(formattedText);
     setInputText('');
     setShowEmojiPicker(false);
-    
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
@@ -79,13 +78,7 @@ const App: React.FC<ChatModuleProps> = () => {
     }
   };
 
-  const emojis = [
-    '😊', '😂', '🤣', '❤️', '😍', '🥰', '😘', '😋', '😎', '😉', '😜', '🤩', '🥳', '😭', '😡', '😱',
-    '👍', '👎', '👏', '🙌', '🔥', '✨', '⚡', '🎉', '🎈', '🌹', '🌸', '💔', '☕', '🍺', '🍔', '🍕',
-    '🚀', '🐱', '🐶', '🦄', '🌈', '⭐', '🌙', '☀️', '☁️', '❄️', '⚽', '🎮', '🎧', '📸', '📱', '💻',
-    '👋', '🙏', '💯', '🤔', '🙄', '🤫', '🤡', '👽', '👻', '💀', '💩', '🤝', '👀', '💪', '🧠', '💼',
-    '📍', '⏰', '🎁', '💎', '💡', '🔔', '✅', '❌', '⚠️', '🛡️', '🌍', '🏳️‍🌈', '🇹🇷', '🔥', '🌊', '💨'
-  ];
+  const emojis = ['😊', '😂', '🤣', '❤️', '😍', '🥰', '😘', '😋', '😎', '😉', '😜', '🤩', '🥳', '😭', '😡', '😱', '👍', '👎', '👏', '🙌', '🔥', '✨', '⚡', '🎉', '🎈', '🌹', '🌸', '💔', '☕', '🍺', '🍔', '🍕', '🚀', '🐱', '🐶', '🦄', '🌈', '⭐', '🌙', '☀️', '☁️', '❄️', '⚽', '🎮', '🎧', '📸', '📱', '💻', '👋', '🙏', '💯', '🤔', '🙄', '🤫', '🤡', '👽', '👻', '💀', '💩', '🤝', '👀', '💪', '🧠', '💼', '📍', '⏰', '🎁', '💎', '💡', '🔔', '✅', '❌', '⚠️', '🛡️', '🌍', '🏳️‍🌈', '🇹🇷', '🔥', '🌊', '💨'];
 
   if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onAdminClick={() => setView('login')} />;
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
@@ -144,7 +137,6 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 relative ml-auto">
-          {/* ÖZEL MESAJ KONTROLLERİ - HEADERDA DAHA BELİRGİN */}
           {isPrivate && activeTab !== 'GeminiBot' && activeTab !== userName && (
             <div className="flex gap-2">
               <button 
@@ -184,35 +176,37 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
       </header>
 
-      {/* TABS - DİNAMİK LİSTE VE X BUTONU */}
+      {/* TABS */}
       <nav className="bg-[#000080]/95 px-2 py-0.5 flex gap-0.5 overflow-x-auto no-scrollbar border-b border-white/20">
-        {openTabs.map(tab => (
-          <div key={tab} className="relative group flex items-center shrink-0">
-            <button 
-              onClick={() => setActiveTab(tab)} 
-              className={`pl-4 pr-10 py-2 text-[11px] font-black uppercase transition-all whitespace-nowrap border-t-2 border-x-2 relative ${activeTab === tab ? 'bg-[#d4dce8] text-[#000080] border-white shadow-sm' : 'text-white/60 border-transparent hover:text-white'}`}
-            >
-              <div className="flex items-center gap-2">
-                {tab === '#radyo' ? <Music size={14} className={activeTab === '#radyo' ? 'animate-bounce' : ''} /> : tab.startsWith('#') ? <Hash size={14} /> : <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>}
-                {tab}
-              </div>
-            </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); closeTab(tab); }}
-              className={`absolute right-2 p-1 rounded-sm transition-all ${activeTab === tab ? 'text-[#000080] hover:bg-black/10' : 'text-white/40 hover:text-white hover:bg-white/10'}`}
-              title="Kapat"
-            >
-              <X size={12} strokeWidth={3} />
-            </button>
-          </div>
-        ))}
+        {openTabs.map(tab => {
+          const isUnread = unreadTabs.includes(tab);
+          return (
+            <div key={tab} className="relative group flex items-center shrink-0">
+              <button 
+                onClick={() => setActiveTab(tab)} 
+                className={`pl-4 pr-10 py-2 text-[11px] font-black uppercase transition-all whitespace-nowrap border-t-2 border-x-2 relative ${activeTab === tab ? 'bg-[#d4dce8] text-[#000080] border-white shadow-sm' : isUnread ? 'bg-red-600 text-white animate-pulse border-white' : 'text-white/60 border-transparent hover:text-white'}`}
+              >
+                <div className="flex items-center gap-2">
+                  {isUnread && <BellRing size={12} className="animate-bounce" />}
+                  {tab === '#radyo' ? <Music size={14} className={activeTab === '#radyo' ? 'animate-bounce' : ''} /> : tab.startsWith('#') ? <Hash size={14} /> : <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>}
+                  {tab}
+                </div>
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); closeTab(tab); }}
+                className={`absolute right-2 p-1 rounded-sm transition-all ${activeTab === tab ? 'text-[#000080] hover:bg-black/10' : 'text-white/40 hover:text-white hover:bg-white/10'}`}
+              >
+                <X size={12} strokeWidth={3} />
+              </button>
+            </div>
+          );
+        })}
       </nav>
       
       {/* MAIN AREA */}
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative min-w-0 bg-[#f0f0f0] shadow-inner flex flex-col overflow-hidden">
-          
-          {/* PERSISTENT RADIO ROOM VIEW */}
+          {/* RADIO ROOM */}
           <div className={`absolute inset-0 bg-[#0b0f14] flex flex-col items-center justify-center p-4 z-20 ${activeTab === '#radyo' ? 'flex' : 'hidden opacity-0 pointer-events-none'}`}>
              <div className="w-full max-w-lg space-y-6 flex flex-col items-center animate-in zoom-in-95 duration-500">
                 <div className="w-full bg-[#000080] border-2 border-white p-4 shadow-[10px_10px_0px_rgba(0,0,0,0.5)] flex flex-col items-center gap-2">
@@ -224,37 +218,18 @@ const App: React.FC<ChatModuleProps> = () => {
                     <div className="h-full bg-[#00ff99] animate-infinite-progress"></div>
                   </div>
                 </div>
-
                 <div className="bg-[#d4dce8] p-3 border-2 border-white shadow-[10px_10px_0px_rgba(0,0,0,0.5)] mirc-window">
                   <div className="bg-white p-1 border-2 border-gray-400 shadow-inner flex items-center justify-center">
-                    <iframe 
-                      width="345" 
-                      height="65" 
-                      src="https://www.radyod.com/iframe-small" 
-                      frameBorder="0" 
-                      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-                      allowFullScreen
-                      className="max-w-full"
-                    ></iframe>
+                    <iframe width="345" height="65" src="https://www.radyod.com/iframe-small" frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="max-w-full"></iframe>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-10 gap-1 w-full max-w-sm h-12 items-end">
                   {[...Array(10)].map((_, i) => (
                     <div key={i} className="bg-[#00ff99] opacity-40 animate-pulse" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 100}ms` }}></div>
                   ))}
                 </div>
-
-                <div className="text-center space-y-2">
-                  <p className="text-[#00ff99] text-[10px] font-black tracking-widest uppercase opacity-80 italic">*** Kesintisiz Müzik Keyfi Başladı ***</p>
-                  <div className="flex gap-4 justify-center">
-                     <span className="text-gray-500 text-[9px] font-bold uppercase">128kbps STEREO</span>
-                     <span className="text-gray-500 text-[9px] font-bold uppercase">CONNECTED: OK</span>
-                  </div>
-                </div>
              </div>
           </div>
-
           {/* CHAT VIEW */}
           <div className={`flex-1 relative bg-white ${activeTab === '#radyo' ? 'hidden' : 'block'}`}>
             <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
@@ -262,8 +237,7 @@ const App: React.FC<ChatModuleProps> = () => {
         </main>
         
         <aside className={`${isMobile ? 'w-[100px]' : 'w-56'} bg-[#d4dce8] border-l-2 border-white shrink-0 flex flex-col shadow-lg z-10`}>
-          {/* Fix: onUserClick corrected to match (nick: string) => void signature in UserListProps by removing the unused event parameter */}
-          <UserList users={[userName, 'Admin', 'GeminiBot', 'Esra', 'Can', 'Merve', 'Selin']} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} />
+          <UserList users={onlineUsers} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} />
         </aside>
       </div>
 
@@ -272,60 +246,32 @@ const App: React.FC<ChatModuleProps> = () => {
         <div className="flex flex-col gap-1 w-full max-w-screen-2xl mx-auto">
           <div className="flex items-center justify-between px-2 py-1.5 bg-white/40 border border-gray-400 rounded-t-sm shadow-sm">
             <div className="flex items-center gap-1 sm:gap-4">
-               <div className="relative">
-                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`p-1.5 hover:bg-white rounded transition-all ${showEmojiPicker ? 'bg-white shadow-inner' : ''}`}>
-                  <Smile size={22} className="text-yellow-500" />
-                </button>
-                {showEmojiPicker && (
-                  <div className="absolute bottom-12 left-0 w-[320px] bg-white border-2 border-gray-400 shadow-[8px_8px_25px_rgba(0,0,0,0.4)] p-2 z-[3000] rounded-sm animate-in zoom-in-95">
-                    <div className="bg-[#000080] text-white text-[9px] font-black uppercase px-2 py-1 mb-2 flex justify-between items-center">
-                      <span>Emoji Seçici</span>
-                      <X size={12} className="cursor-pointer" onClick={() => setShowEmojiPicker(false)} />
-                    </div>
-                    <div className="grid grid-cols-8 gap-1 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
-                      {emojis.map(e => (
-                        <button key={e} onClick={() => addEmoji(e)} className="text-xl hover:bg-gray-100 p-1.5 rounded transition-all flex items-center justify-center active:scale-125">{e}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-               </div>
+               <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`p-1.5 hover:bg-white rounded transition-all ${showEmojiPicker ? 'bg-white shadow-inner' : ''}`}>
+                 <Smile size={22} className="text-yellow-500" />
+               </button>
+               {showEmojiPicker && (
+                 <div className="absolute bottom-16 left-4 w-[320px] bg-white border-2 border-gray-400 shadow-2xl p-2 z-[3000]">
+                   <div className="grid grid-cols-8 gap-1 max-h-[160px] overflow-y-auto no-scrollbar">
+                     {emojis.map(e => <button key={e} onClick={() => addEmoji(e)} className="text-xl hover:bg-gray-100 p-1.5 rounded">{e}</button>)}
+                   </div>
+                 </div>
+               )}
                <div className="h-6 w-px bg-gray-400/50"></div>
                <div className="flex gap-1">
-                 <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded transition-colors ${isBold ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Bold"><Bold size={16}/></button>
-                 <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded transition-colors ${isBold ? 'bg-white' : 'hover:bg-white text-black'} ${isItalic ? 'bg-[#000080] text-white shadow-inner' : ''}`} title="Italic"><Italic size={16}/></button>
-                 <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded transition-colors ${isUnderline ? 'bg-[#000080] text-white shadow-inner' : 'hover:bg-white text-black'}`} title="Underline"><Underline size={16}/></button>
+                 <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded ${isBold ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Bold size={16}/></button>
+                 <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded ${isItalic ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Italic size={16}/></button>
+                 <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded ${isUnderline ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Underline size={16}/></button>
                </div>
             </div>
-            <div className="hidden sm:block">
-              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.1</span>
-            </div>
+            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.2</div>
           </div>
 
           <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">
-            <div className="flex-1 bg-white border-2 border-[#808080] shadow-inner px-4 flex items-start py-2 group focus-within:border-[#000080] transition-colors overflow-hidden">
-              <div className="flex items-center gap-1 mr-3 shrink-0 mt-0.5">
-                <span className="text-[#000080] font-black text-[12px] uppercase">{userName}</span>
-                <span className="text-gray-400 text-[12px]">:</span>
-              </div>
-              <textarea 
-                ref={inputRef}
-                value={inputText} 
-                onChange={e => setInputText(e.target.value)} 
-                onKeyDown={handleKeyDown}
-                rows={1}
-                className="flex-1 outline-none text-sm bg-transparent placeholder:italic placeholder:font-normal resize-none py-0.5 leading-snug self-center max-h-32 overflow-y-auto" 
-                style={{ 
-                  fontWeight: isBold ? 'bold' : 'normal',
-                  fontStyle: isItalic ? 'italic' : 'normal',
-                  textDecoration: isUnderline ? 'underline' : 'none'
-                }}
-                placeholder={activeTab === '#radyo' ? "Radyo odasında sadece dinleyebilirsin..." : `[${activeTab}] odasına mesaj yaz...`}
-                disabled={activeTab === '#radyo'}
-                autoComplete="off"
-              />
+            <div className="flex-1 bg-white border-2 border-[#808080] shadow-inner px-4 flex items-start py-2 group focus-within:border-[#000080] overflow-hidden">
+              <span className="text-[#000080] font-black text-[12px] uppercase mt-0.5 mr-3 shrink-0">{userName}:</span>
+              <textarea ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={handleKeyDown} className="flex-1 outline-none text-sm bg-transparent resize-none py-0.5 self-center max-h-32" style={{ fontWeight: isBold ? 'bold' : 'normal', fontStyle: isItalic ? 'italic' : 'normal', textDecoration: isUnderline ? 'underline' : 'none' }} placeholder={activeTab === '#radyo' ? "Radyo odasında sadece dinleyebilirsin..." : `[${activeTab}] odasına mesaj yaz...`} disabled={activeTab === '#radyo'} autoComplete="off" />
             </div>
-            <button type="submit" disabled={activeTab === '#radyo'} className="bg-[#000080] text-white px-8 font-black uppercase flex items-center justify-center gap-3 hover:bg-blue-800 transition-all shadow-[4px_4px_0px_gray] active:shadow-none active:translate-y-1 active:translate-x-px shrink-0 disabled:opacity-50 disabled:bg-gray-600">
+            <button type="submit" disabled={activeTab === '#radyo'} className="bg-[#000080] text-white px-8 font-black uppercase flex items-center justify-center gap-3 hover:bg-blue-800 shadow-[4px_4px_0px_gray] active:shadow-none active:translate-y-1 disabled:opacity-50">
               <Send size={20} />
               {!isMobile && 'GÖNDER'}
             </button>
@@ -334,13 +280,10 @@ const App: React.FC<ChatModuleProps> = () => {
       </footer>
 
       <style>{`
-        @keyframes infinite-progress {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        .animate-infinite-progress {
-          animation: infinite-progress 2s linear infinite;
-        }
+        @keyframes infinite-progress { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .animate-infinite-progress { animation: infinite-progress 2s linear infinite; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
       `}</style>
     </div>
   );
