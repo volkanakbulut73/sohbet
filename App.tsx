@@ -35,6 +35,8 @@ const App: React.FC<ChatModuleProps> = () => {
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Döngü engellemek için taze bir ID kontrolü
   const lastProcessedErrorId = useRef<string | null>(null);
   
   const { 
@@ -43,20 +45,20 @@ const App: React.FC<ChatModuleProps> = () => {
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
-  // AI Hata Yakalama ve Otomatik Seçici (Döngü Engellemeli)
+  // AI Hata Yakalama ve Otomatik Seçici
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.sender === CHAT_MODULE_CONFIG.BOT_NAME) {
       if (lastMessage.text.includes("Requested entity was not found")) {
-        // Döngüyü engellemek için sadece yeni bir hata mesajı geldiğinde tetikle
+        // KURAL: Aynı mesaj için tekrar tekrar diyalog açma
         if (lastProcessedErrorId.current !== lastMessage.id) {
           lastProcessedErrorId.current = lastMessage.id;
           console.warn("AI Key error detected. Prompting key selection dialog...");
           const aistudio = (window as any).aistudio;
           if (aistudio) {
-            // KURAL: Seçim tetiklendiği an başarılı varsayılır ve işleme devam edilir.
             aistudio.openSelectKey().then(() => {
               setHasAiKey(true);
+              // Seçim sonrası App'i yenilemek için hafif bir tetikleyici gerekebilir
             });
           }
         }
