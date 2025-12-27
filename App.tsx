@@ -11,7 +11,7 @@ import { ChatModuleProps } from './types';
 import { 
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
-  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play
+  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -137,32 +137,60 @@ const App: React.FC<ChatModuleProps> = () => {
       ref={containerRef} 
       className="flex flex-col bg-[#d4dce8] w-full border-2 border-white shadow-2xl overflow-hidden font-mono fixed inset-0 z-[1000]"
     >
-      {/* HEADER */}
-      <header className="h-14 bg-[#000080] text-white flex items-center px-4 shrink-0 border-b border-white/30">
-        <div className="flex items-center gap-5 flex-1">
+      {/* HEADER - DYNAMIC HEIGHT FOR RADIO */}
+      <header className={`bg-[#000080] text-white flex flex-col sm:flex-row items-center px-4 shrink-0 border-b border-white/30 transition-all duration-300 ${isRadioOpen ? 'min-h-[100px] py-2' : 'h-14 py-0'}`}>
+        <div className="flex items-center gap-5 flex-1 w-full sm:w-auto">
           <div className="flex items-center gap-2.5">
             <div className="relative">
               <div className="w-3.5 h-3.5 bg-[#00ff99] rounded-full shadow-[0_0_12px_#00ff99] animate-pulse"></div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black tracking-widest text-[#00ff99] leading-none">STATUS: ONLINE</span>
-            </div>
+            {!isRadioOpen && (
+              <div className="flex flex-col hidden sm:flex">
+                <span className="text-[10px] font-black tracking-widest text-[#00ff99] leading-none uppercase">Online</span>
+              </div>
+            )}
           </div>
-          <div className="h-7 w-px bg-white/20"></div>
-          <div className="text-[14px] font-black italic text-white">
-            <span className="text-[#00ff99] pr-1">@</span>{userName}
+          {!isRadioOpen && <div className="h-7 w-px bg-white/20 hidden sm:block"></div>}
+          <div className="text-[14px] font-black italic text-white flex items-center gap-1">
+            <span className="text-[#00ff99]">@</span>{userName}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 relative">
-          <button 
-            onClick={() => setIsRadioOpen(!isRadioOpen)} 
-            className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-all rounded-sm ${isRadioOpen ? 'bg-[#00ff99] text-[#000080] border-white shadow-[0_0_10px_#00ff99]' : 'border-white/40 hover:bg-white/10 text-white'}`}
-          >
-            <Radio size={14} className={isRadioOpen ? 'animate-pulse' : ''} />
-            {isMobile ? '' : 'RADYO D'}
-          </button>
-          
+        {/* RADIO PLAYER INTEGRATED IN HEADER */}
+        {isRadioOpen ? (
+          <div className="flex-none flex items-center gap-2 bg-white/10 p-1 rounded-sm border border-white/20 animate-in zoom-in-95 duration-300 mx-auto sm:mx-4 my-2 sm:my-0">
+             <div className="bg-white p-0.5 border border-[#808080] shadow-inner overflow-hidden rounded-sm">
+                <iframe 
+                  width="345" 
+                  height="65" 
+                  src="https://www.radyod.com/iframe-small" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                  className="max-w-[calc(100vw-80px)] sm:max-w-[345px]"
+                ></iframe>
+             </div>
+             <button 
+                onClick={() => setIsRadioOpen(false)}
+                className="p-2 bg-red-600 hover:bg-red-700 text-white border border-white/40 shadow-sm transition-colors"
+                title="Radyoyu Kapat"
+             >
+                <X size={18} strokeWidth={3} />
+             </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 ml-auto">
+            <button 
+              onClick={() => setIsRadioOpen(true)} 
+              className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border border-white/40 hover:bg-[#00ff99] hover:text-[#000080] hover:border-white transition-all rounded-sm group"
+            >
+              <Music size={14} className="group-hover:animate-bounce" />
+              {isMobile ? '' : 'RADYO D DİNLE'}
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 relative ml-auto sm:ml-0">
           {isPrivate && (
             <button onClick={() => toggleBlock(activeTab)} className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-colors rounded-sm ${blockedUsers.includes(activeTab) ? 'bg-red-600 border-red-400' : 'border-white/40 hover:bg-white/10'}`}>
               {blockedUsers.includes(activeTab) ? <UserCheck size={14}/> : <Ban size={14}/>}
@@ -202,33 +230,6 @@ const App: React.FC<ChatModuleProps> = () => {
       {/* MAIN AREA */}
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative min-w-0 bg-white shadow-inner flex flex-col">
-          {/* RADYO WIDGET AREA (UPPER SECTION - SMALL VERSION) */}
-          {isRadioOpen && (
-            <div className="shrink-0 bg-[#d4dce8] border-b-2 border-[#000080] p-1.5 flex flex-col items-center animate-in slide-in-from-top relative">
-              <button 
-                onClick={() => setIsRadioOpen(false)}
-                className="absolute top-1 right-1 p-1 hover:bg-red-600 hover:text-white transition-colors border border-gray-400 bg-white shadow-sm z-10"
-              >
-                <X size={12} />
-              </button>
-              <div className="bg-white p-0.5 border border-[#808080] shadow-inner">
-                <iframe 
-                  width="345" 
-                  height="65" 
-                  src="https://www.radyod.com/iframe-small" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                  className="max-w-full"
-                ></iframe>
-              </div>
-              <div className="flex items-center gap-2 mt-1 px-3">
-                 <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></div>
-                 <span className="text-[8px] font-black text-[#000080] uppercase tracking-tighter">CANLI YAYIN: RADYO D</span>
-              </div>
-            </div>
-          )}
-          
           <div className="flex-1 relative">
             <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
           </div>
@@ -303,7 +304,7 @@ const App: React.FC<ChatModuleProps> = () => {
                </div>
             </div>
             <div className="hidden sm:block">
-              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.6</span>
+              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.7</span>
             </div>
           </div>
 
