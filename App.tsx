@@ -68,10 +68,18 @@ const App: React.FC<ChatModuleProps> = () => {
 
   const addEmoji = (emoji: string) => {
     setInputText(prev => prev + emoji);
+    setShowEmojiPicker(false);
     inputRef.current?.focus();
   };
 
-  const emojis = ['😊', '😂', '😍', '😎', '👍', '🔥', '✨', '👋', '🌹', '💔', '☕', '⚡', '🎉', '🤔', '🙌', '🚀'];
+  // Resimdeki gibi zengin emoji seti
+  const emojis = [
+    '😊', '😂', '🤣', '❤️', '😍', '🥰', '😘', '😋', '😎', '😉', '😜', '🤩', '🥳', '😭', '😡', '😱',
+    '👍', '👎', '👏', '🙌', '🔥', '✨', '⚡', '🎉', '🎈', '🌹', '🌸', '💔', '☕', '🍺', '🍔', '🍕',
+    '🚀', '🐱', '🐶', '🦄', '🌈', '⭐', '🌙', '☀️', '☁️', '❄️', '⚽', '🎮', '🎧', '📸', '📱', '💻',
+    '👋', '🙏', '💯', '🤔', '🙄', '🤫', '🤡', '👽', '👻', '💀', '💩', '🤝', '👀', '💪', '🧠', '💼',
+    '📍', '⏰', '🎁', '💎', '💡', '🔔', '✅', '❌', '⚠️', '🛡️', '🌍', '🏳️‍🌈', '🇹🇷', '🔥', '🌊', '💨'
+  ];
 
   if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onAdminClick={() => setView('login')} />;
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
@@ -185,15 +193,27 @@ const App: React.FC<ChatModuleProps> = () => {
           <div className="flex items-center justify-between px-2 py-1.5 bg-white/40 border border-gray-400 rounded-t-sm shadow-sm">
             <div className="flex items-center gap-1 sm:gap-4">
                <div className="relative">
-                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`p-1.5 hover:bg-white rounded transition-all ${showEmojiPicker ? 'bg-white shadow-inner' : ''}`}>
+                <button 
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)} 
+                  className={`p-1.5 hover:bg-white rounded transition-all ${showEmojiPicker ? 'bg-white shadow-inner' : ''}`}
+                >
                   <Smile size={22} className="text-yellow-500" />
                 </button>
                 {showEmojiPicker && (
-                  <div className="absolute bottom-12 left-0 min-w-[300px] bg-[#d4dce8] border-2 border-white shadow-[10px_10px_30px_rgba(0,0,0,0.3)] p-3 z-[3000] rounded-sm mirc-window">
-                    <div className="text-[9px] font-black text-[#000080] uppercase mb-2 border-b border-gray-400 pb-1">Hızlı Emojiler</div>
-                    <div className="grid grid-cols-8 gap-2">
+                  <div className="absolute bottom-12 left-0 w-[320px] bg-white border-2 border-gray-400 shadow-[8px_8px_25px_rgba(0,0,0,0.4)] p-2 z-[3000] rounded-sm animate-in zoom-in-95">
+                    <div className="bg-[#000080] text-white text-[9px] font-black uppercase px-2 py-1 mb-2 flex justify-between items-center">
+                      <span>Emoji Seçici</span>
+                      <X size={12} className="cursor-pointer" onClick={() => setShowEmojiPicker(false)} />
+                    </div>
+                    <div className="grid grid-cols-8 gap-1 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
                       {emojis.map(e => (
-                        <button key={e} onClick={() => addEmoji(e)} className="text-2xl hover:bg-white p-1 rounded transition-transform hover:scale-125">{e}</button>
+                        <button 
+                          key={e} 
+                          onClick={() => addEmoji(e)} 
+                          className="text-xl hover:bg-gray-100 p-1.5 rounded transition-all flex items-center justify-center active:scale-125"
+                        >
+                          {e}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -228,6 +248,9 @@ const App: React.FC<ChatModuleProps> = () => {
                    <Underline size={16}/>
                  </button>
                </div>
+            </div>
+            <div className="hidden sm:block">
+              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.3</span>
             </div>
           </div>
 
