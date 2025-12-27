@@ -7,12 +7,12 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     // KURAL: API anahtarı her zaman taze process.env.API_KEY üzerinden alınmalıdır.
     const apiKey = process.env.API_KEY;
 
-    // KURAL: "Requested entity was not found." hatası anahtar seçimi gerektiğini belirtir.
+    // KURAL: Anahtar yoksa veya geçersizse 'Requested entity was not found' hatası dönülmelidir.
     if (!apiKey || apiKey === "undefined" || apiKey.length < 5) {
       return "HATA: Requested entity was not found. [API_KEY_MISSING] Lütfen geçerli bir AI anahtarı seçin.";
     }
 
-    // KURAL: Her istekte yeni instance oluşturulmalıdır.
+    // KURAL: Her istekte yeni bir GoogleGenAI instance'ı oluşturulmalıdır.
     const ai = new GoogleGenAI({ apiKey });
     
     const parts = [];
@@ -40,6 +40,7 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
+    // .text özelliğine doğrudan erişim sağlanır.
     const text = response.text;
     
     if (!text) {
@@ -48,11 +49,11 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     
     return text;
   } catch (error: any) {
-    console.error("Gemini API Connection Error:", error);
+    console.error("Gemini API Error:", error);
     
     const errorMsg = error?.message || "";
     
-    // KURAL: Geçersiz veya bulunamayan anahtar hatasını yakala.
+    // KURAL: Eğer API 'Requested entity was not found' hatası dönerse UI seçim ekranını açacaktır.
     if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API key not valid")) {
       return "HATA: Requested entity was not found. [INVALID_KEY] Lütfen anahtarınızı güncelleyin.";
     }

@@ -42,28 +42,26 @@ const App: React.FC<ChatModuleProps> = () => {
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
-  // KURAL: Hata mesajlarını izle ve Requested entity hatası varsa seçiciyi zorla aç.
+  // KURAL: Hata mesajlarını izle ve 'Requested entity was not found' hatası varsa seçiciyi zorla aç.
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.sender === CHAT_MODULE_CONFIG.BOT_NAME) {
-      if (lastMessage.text.includes("Requested entity was not found") || 
-          lastMessage.text.includes("[API_KEY_MISSING]") || 
-          lastMessage.text.includes("[INVALID_KEY]")) {
+      if (lastMessage.text.includes("Requested entity was not found")) {
         
+        console.warn("AI Key error detected. Prompting user for key selection...");
         setHasAiKey(false);
         const aistudio = (window as any).aistudio;
         if (aistudio) {
-          console.warn("AI Key error detected. Opening selection dialog...");
+          // KURAL: Seçim tetiklendiği an başarılı varsayılır ve işleme devam edilir.
           aistudio.openSelectKey().then(() => {
             setHasAiKey(true);
-            // KURAL: Seçim sonrası hemen başarılı kabul et.
           });
         }
       }
     }
   }, [messages]);
 
-  // Anahtar durumu kontrolü
+  // Anahtar durumu ve DB kontrolü
   useEffect(() => {
     const checkStatus = async () => {
       const aistudio = (window as any).aistudio;
@@ -72,7 +70,7 @@ const App: React.FC<ChatModuleProps> = () => {
           const selected = await aistudio.hasSelectedApiKey();
           setHasAiKey(selected);
           
-          // Eğer chat görünümündeysek ve bot odasındaysak ve anahtar yoksa proaktif olarak aç
+          // Eğer chat görünümündeysek, bot odasındaysak ve anahtar yoksa proaktif olarak diyaloğu aç.
           if (view === 'chat' && activeTab === CHAT_MODULE_CONFIG.BOT_NAME && !selected) {
              aistudio.openSelectKey().then(() => setHasAiKey(true));
           }
@@ -87,7 +85,7 @@ const App: React.FC<ChatModuleProps> = () => {
     };
     
     checkStatus();
-    const interval = setInterval(checkStatus, 15000);
+    const interval = setInterval(checkStatus, 10000);
     return () => clearInterval(interval);
   }, [view, activeTab]);
 
@@ -110,10 +108,10 @@ const App: React.FC<ChatModuleProps> = () => {
         await aistudio.openSelectKey();
         setHasAiKey(true);
       } catch (e) {
-        console.error("Selection failed:", e);
+        console.error("Key selection failed:", e);
       }
     } else {
-      alert("Bu platformda API anahtarı otomatik olarak yönetilmektedir.");
+      alert("Bu platformda API anahtarı sistem tarafından otomatik olarak atanmaktadır.");
     }
   };
 
@@ -169,7 +167,7 @@ const App: React.FC<ChatModuleProps> = () => {
           <p className="text-white font-black uppercase italic tracking-[0.4em] animate-pulse">Gizlilik Protokolü v2.9</p>
           <div className="bg-white/5 p-4 border border-[#00ff99]/20 rounded mirc-inset">
              <p className="text-[#00ff99] text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-               Kayıtlar siliniyor... Bağlantı kesiliyor...
+               Gizlilik protokolleri gereği veriler siliniyor ve oturum sonlandırılıyor...
              </p>
           </div>
         </div>
@@ -190,7 +188,7 @@ const App: React.FC<ChatModuleProps> = () => {
            <div className="p-8 text-center space-y-6">
               <div className="flex justify-center"><div className="bg-white p-4 rounded-full border-2 border-[#000080] animate-pulse"><Clock size={48} className="text-[#000080]" /></div></div>
               <h2 className="text-xl font-black text-[#000080] uppercase italic">BAŞVURUNUZ ALINDI</h2>
-              <p className="text-xs text-gray-700 font-bold">Onay sürecimiz genellikle 24 saat sürmektedir.</p>
+              <p className="text-xs text-gray-700 font-bold">Güvenlik kontrolü sonrası onaylanacaktır.</p>
               <button onClick={() => setView('landing')} className="w-full bg-[#000080] text-white py-3 font-black text-xs uppercase shadow-md">ANA SAYFAYA DÖN</button>
            </div>
         </div>
@@ -247,7 +245,7 @@ const App: React.FC<ChatModuleProps> = () => {
               {(window as any).aistudio && (
                 <button onClick={() => { handleAiConnect(); setIsMenuOpen(false); }} className="w-full text-left p-3 bg-yellow-100 hover:bg-[#000080] hover:text-white text-[11px] font-black flex flex-col gap-1 border-b border-gray-300">
                   <span className="flex items-center gap-3"><Sparkles size={16} /> AI YAPILANDIRMASI</span>
-                  <span className="text-[8px] text-gray-500 ml-7">Anahtarı seçin veya güncelleyin</span>
+                  <span className="text-[8px] text-gray-500 ml-7">Anahtarınızı buradan seçin veya güncelleyin</span>
                 </button>
               )}
               <button onClick={() => { const n = prompt('Yeni Nickname:'); if(n) setUserName(n); setIsMenuOpen(false); }} className="w-full text-left p-3 hover:bg-[#000080] hover:text-white text-[11px] font-black flex items-center gap-3 border-b border-gray-300"><UserPlus size={16} /> NICKNAME DEĞİŞTİR</button>
@@ -274,13 +272,13 @@ const App: React.FC<ChatModuleProps> = () => {
                   <Cpu size={56} className="text-[#000080] mx-auto animate-pulse" />
                   <h3 className="text-[#000080] font-black text-xl uppercase italic">AI ANAHTARI GEREKLİ</h3>
                   <div className="text-[11px] font-bold text-gray-600 space-y-3 uppercase leading-relaxed">
-                    <p>Workigom AI ile iletişim kurmak için ücretli bir Google Cloud projesine ait API anahtarını bağlamanız gerekmektedir.</p>
+                    <p>Workigom AI ile iletişim kurmak için geçerli bir API anahtarını bağlamanız gerekmektedir.</p>
                     <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 underline hover:text-blue-800">
-                      <ExternalLink size={14} /> Faturalandırma Dokümantasyonu
+                      <ExternalLink size={14} /> Faturalandırma Bilgisi (Zorunludur)
                     </a>
                   </div>
                   <button onClick={handleAiConnect} className="w-full bg-[#00ff99] text-black py-4 font-black text-xs uppercase shadow-md hover:bg-white transition-all border-2 border-[#000080]">ANAHTARI ŞİMDİ SEÇ</button>
-                  <p className="text-[9px] text-gray-400 italic font-bold">HATA: REQUESTED ENTITY WAS NOT FOUND</p>
+                  <p className="text-[9px] text-gray-400 italic font-bold">Lütfen bir GCP projesine ait anahtar kullanın.</p>
               </div>
             </div>
           )}
