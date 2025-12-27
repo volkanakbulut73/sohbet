@@ -4,18 +4,18 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 /**
  * Gemini AI Response Service
- * Optimized for Gemini 1.5/2.0 Series and @google/genai v1.x
+ * Adheres to @google/genai v1.x standards
  */
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
     const apiKey = process.env.API_KEY;
 
-    // API anahtarı kontrolü
-    if (!apiKey || apiKey === "undefined" || apiKey === "" || apiKey.length < 10) {
-      return "HATA: API Anahtarı eksik. Lütfen Ayarlar -> AI Ayarları kısmından anahtarınızı bağlayın.";
+    // API Key Validation
+    if (!apiKey || apiKey === "undefined" || apiKey === "" || apiKey.length < 5) {
+      return "SİSTEM: API Anahtarı yapılandırılamadı. Lütfen sunucu ayarlarını kontrol edin veya AI Ayarları kısmından anahtar seçin.";
     }
 
-    // Google GenAI SDK v1.x standartlarına göre initialization
+    // Initialize GenAI with specific named parameter
     const ai = new GoogleGenAI({ apiKey });
     
     const parts: any[] = [];
@@ -29,51 +29,52 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     }
     
     parts.push({ 
-      text: `CONTEXT: ${context}\nUSER_PROMPT: ${prompt}` 
+      text: `PLATFORM_CONTEXT: ${context}\n\nUSER_MESSAGE: ${prompt}` 
     });
 
     /**
-     * MODEL SEÇİMİ:
-     * 'gemini-flash-latest' en güncel ve kararlı flash modeline (1.5 Flash) yönlendirir.
-     * 404 hatasını önlemek için en güvenli seçimdir.
+     * MODEL CHOICE:
+     * Using 'gemini-flash-latest' as it's the most widely available stable alias.
+     * Prevents 404 errors associated with preview or regional identifiers.
      */
     const response = await ai.models.generateContent({
       model: 'gemini-flash-latest',
       contents: { parts },
       config: {
         systemInstruction: customInstruction || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION,
-        temperature: 0.8,
+        temperature: 1.0,
         topP: 0.95,
+        topK: 64
       }
     });
     
-    // SDK STANDARTI: .text bir mülkiyettir (getter), fonksiyon değildir.
+    // SDK REQUIREMENT: .text is a GETTER property, NOT a method.
     const text = response.text;
     
     if (!text) {
-      return "SİSTEM: AI geçerli bir yanıt döndüremedi.";
+      return "SİSTEM: AI şu an yanıt veremiyor (Boş Yanıt).";
     }
     
     return text;
   } catch (error: any) {
-    console.error("Gemini Service Error:", error);
+    console.error("Gemini Critical Error:", error);
     const errorMsg = error?.message || "";
     
-    // 404 Hatası Yönetimi (Model ID Hatası)
+    // Regional or Model ID 404 error
     if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("404")) {
-      return "HATA: Seçilen model (gemini-flash-latest) sunucuda bulunamadı. Lütfen API anahtarınızın model erişim yetkisini kontrol edin veya modeli 'gemini-2.0-flash-exp' olarak güncelleyin.";
+      return "HATA: Seçilen AI modeli (gemini-flash-latest) bu bölgede veya bu anahtar için aktif değil. Alternatif modele geçiş yapılamadı.";
     }
 
-    // 403 Hatası (Yetki/Bölge)
-    if (errorMsg.includes("403") || errorMsg.includes("permission")) {
-      return "HATA: API Anahtarı yetkisiz veya bu bölgede kullanılamıyor.";
-    }
-
-    // 429 Hatası (Kota)
+    // Rate Limiting 429
     if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-      return "SİSTEM: AI kullanım sınırı doldu. Lütfen 1 dakika bekleyin.";
+      return "SİSTEM: Kullanım limiti aşıldı. Lütfen bir süre sonra tekrar deneyin.";
+    }
+
+    // Unauthorized 403/401
+    if (errorMsg.includes("401") || errorMsg.includes("403")) {
+      return "HATA: Geçersiz API Anahtarı veya yetki sorunu.";
     }
     
-    return `SİSTEM: Teknik bir sorun oluştu (${errorMsg.substring(0, 50)}...)`;
+    return `SİSTEM: AI Bağlantı Hatası (${errorMsg.substring(0, 40)}...)`;
   }
 };
