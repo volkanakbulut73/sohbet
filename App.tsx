@@ -114,9 +114,9 @@ const App: React.FC<ChatModuleProps> = () => {
                 Onaylandığında e-posta ile bilgilendirileceksiniz.
               </p>
               <div className="bg-white p-3 border border-gray-400 text-[10px] text-left text-green-700 font-bold">
-                > LOG: Application_ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}<br/>
-                > STATUS: Security_Check_In_Progress...<br/>
-                > SERVER: workigomchat.online
+                {">"} LOG: Application_ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}<br/>
+                {">"} STATUS: Security_Check_In_Progress...<br/>
+                {">"} SERVER: workigomchat.online
               </div>
               <button 
                 onClick={() => setView('landing')}

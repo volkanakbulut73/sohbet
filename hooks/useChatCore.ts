@@ -14,14 +14,20 @@ export const useChatCore = (initialUserName: string) => {
   const [allowPrivateMessages, setAllowPrivateMessages] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
-  // Kullanıcı listesini getir
+  // Veritabanındaki tüm onaylı kullanıcıları getir (Gerçek zamanlı görünüm için)
   const fetchUsers = useCallback(async () => {
     try {
       const regs = await storageService.getAllRegistrations();
-      const approvedNicks = regs.filter(r => r.status === 'approved').map(r => r.nickname);
-      setOnlineUsers(approvedNicks);
+      // Sadece onaylı olanları ve kendimizi listeye dahil ediyoruz
+      const approvedNicks = regs
+        .filter(r => r.status === 'approved')
+        .map(r => r.nickname);
+      
+      // Botları ve adminleri manuel ekle (opsiyonel)
+      const list = Array.from(new Set([...approvedNicks, 'Admin', 'GeminiBot']));
+      setOnlineUsers(list);
     } catch (e) {
-      console.error("User list fetch error", e);
+      console.error("Kullanıcı listesi çekilemedi:", e);
     }
   }, []);
 
@@ -61,7 +67,7 @@ export const useChatCore = (initialUserName: string) => {
         if (args[0]) toggleBlock(args[0]);
         break;
       default:
-        console.log("Unknown command");
+        console.log("Bilinmeyen komut");
     }
   };
 
@@ -118,7 +124,7 @@ export const useChatCore = (initialUserName: string) => {
     } catch (err: any) { console.error(err); }
   };
 
-  // Aktif sekme değiştiğinde unread'den çıkar
+  // Aktif sekme değiştiğinde unread'den (yanıp sönme listesinden) çıkar
   useEffect(() => {
     setUnreadTabs(prev => prev.filter(t => t !== activeTab));
   }, [activeTab]);
@@ -126,21 +132,20 @@ export const useChatCore = (initialUserName: string) => {
   useEffect(() => {
     if (!userName) return;
 
-    // Mevcut mesajları yükle
     const currentChannel = activeTab.startsWith('#') || activeTab === 'GeminiBot'
       ? activeTab
       : getPrivateChannelId(userName, activeTab);
     
     storageService.getMessagesByChannel(currentChannel).then(setMessages);
     
-    // Global dinleme (Özel mesajları yakalamak için)
+    // Global dinleyici - Özel mesajları ve diğer kanal bildirimlerini yakalar
     const sub = supabase
-      .channel('global_messages')
+      .channel('realtime_core')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = payload.new;
         const msgChannel = newMsg.channel as string;
 
-        // 1. Durum: Aktif kanala/sekreye mesaj geldi
+        // 1. Durum: Mesaj aktif olduğumuz kanala mı geldi?
         if (msgChannel === currentChannel) {
           if (!blockedUsers.includes(newMsg.sender)) {
             const m = { ...newMsg, id: newMsg.id.toString(), timestamp: new Date(newMsg.created_at) } as Message;
@@ -148,21 +153,27 @@ export const useChatCore = (initialUserName: string) => {
           }
         }
 
-        // 2. Durum: Bana özel mesaj geldi (Ama başka sekmedeyim veya sekme kapalı)
+        // 2. Durum: Birisi bize özel mesaj mı attı?
         if (msgChannel.startsWith('private:') && msgChannel.includes(userName)) {
+          // Karşı tarafın nickini bul
           const otherUser = newMsg.sender === userName 
             ? msgChannel.split(':').find(part => part !== 'private' && part !== userName)
             : newMsg.sender;
 
           if (otherUser && otherUser !== userName && !blockedUsers.includes(otherUser)) {
-            // Sekmeyi aç (eğer yoksa)
+            // Pencereyi otomatik aç (eğer açık değilse)
             setOpenTabs(prev => prev.includes(otherUser) ? prev : [...prev, otherUser]);
             
-            // Eğer aktif sekme o kişi değilse unread'e ekle (Blink için)
+            // Eğer aktif olarak o kişiyle konuşmuyorsak, sekmeyi yanıp söndür
             if (activeTab !== otherUser) {
               setUnreadTabs(prev => prev.includes(otherUser) ? prev : [...prev, otherUser]);
             }
           }
+        }
+
+        // 3. Durum: Diğer kanallardan (#sohbet vb.) gelenleri de unread yap (sekmeler arasındaysak)
+        if (msgChannel.startsWith('#') && msgChannel !== activeTab) {
+           setUnreadTabs(prev => prev.includes(msgChannel) ? prev : [...prev, msgChannel]);
         }
       })
       .subscribe();
