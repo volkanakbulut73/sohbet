@@ -10,10 +10,10 @@ import { storageService } from './services/storageService';
 import { ChatModuleProps } from './types';
 import { CHAT_MODULE_CONFIG } from './config';
 import { 
-  Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
-  Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
-  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2, 
-  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck, Loader2, Sparkles, Cpu, Database, ExternalLink
+  X, Hash, Send, LogOut, UserPlus, Key,
+  Smile, Bold, Italic, Underline, Settings, 
+  MessageCircleOff, MessageCircle, Music, Volume2, 
+  Loader2, Sparkles
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -35,6 +35,7 @@ const App: React.FC<ChatModuleProps> = () => {
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastProcessedErrorId = useRef<string | null>(null);
   
   const { 
     userName, setUserName, activeTab, setActiveTab, openTabs, closeTab, unreadTabs,
@@ -42,25 +43,26 @@ const App: React.FC<ChatModuleProps> = () => {
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
-  // KURAL: Hata mesajlarını izle ve 'Requested entity was not found' hatası varsa seçiciyi zorla aç.
+  // AI Hata Yakalama ve Otomatik Seçici (Döngü Engellemeli)
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.sender === CHAT_MODULE_CONFIG.BOT_NAME) {
       if (lastMessage.text.includes("Requested entity was not found")) {
-        console.warn("AI Key error detected. Prompting key selection dialog...");
-        setHasAiKey(false);
-        const aistudio = (window as any).aistudio;
-        if (aistudio) {
-          // KURAL: openSelectKey() çağrısı sonrası başarılı varsayılır.
-          aistudio.openSelectKey().then(() => {
-            setHasAiKey(true);
-          });
+        // Döngüyü engellemek için sadece yeni bir hata mesajı geldiğinde tetikle
+        if (lastProcessedErrorId.current !== lastMessage.id) {
+          lastProcessedErrorId.current = lastMessage.id;
+          console.warn("AI Key error detected. Prompting key selection dialog...");
+          const aistudio = (window as any).aistudio;
+          if (aistudio) {
+            aistudio.openSelectKey().then(() => {
+              setHasAiKey(true);
+            });
+          }
         }
       }
     }
   }, [messages]);
 
-  // Anahtar durumu kontrolü
   useEffect(() => {
     const checkStatus = async () => {
       const aistudio = (window as any).aistudio;
@@ -68,11 +70,6 @@ const App: React.FC<ChatModuleProps> = () => {
         try {
           const selected = await aistudio.hasSelectedApiKey();
           setHasAiKey(selected);
-          
-          // Eğer chat görünümündeysek, bot odasındaysak ve anahtar yoksa proaktif olarak diyaloğu aç.
-          if (view === 'chat' && activeTab === CHAT_MODULE_CONFIG.BOT_NAME && !selected) {
-             aistudio.openSelectKey().then(() => setHasAiKey(true));
-          }
         } catch (e) {
           setHasAiKey(false);
         }
@@ -86,7 +83,7 @@ const App: React.FC<ChatModuleProps> = () => {
     checkStatus();
     const interval = setInterval(checkStatus, 15000);
     return () => clearInterval(interval);
-  }, [view, activeTab]);
+  }, []);
 
   useEffect(() => {
     const handleViewport = () => {
@@ -183,7 +180,7 @@ const App: React.FC<ChatModuleProps> = () => {
              <X size={16} className="cursor-pointer" onClick={() => setView('landing')} />
            </div>
            <div className="p-8 text-center space-y-6">
-              <div className="flex justify-center"><div className="bg-white p-4 rounded-full border-2 border-[#000080] animate-pulse"><Clock size={48} className="text-[#000080]" /></div></div>
+              <div className="flex justify-center"><div className="bg-white p-4 rounded-full border-2 border-[#000080] animate-pulse"><Loader2 size={48} className="text-[#000080]" /></div></div>
               <h2 className="text-xl font-black text-[#000080] uppercase italic">BAŞVURUNUZ ALINDI</h2>
               <p className="text-xs text-gray-700 font-bold">Güvenlik kontrolü sonrası onaylanacaktır.</p>
               <button onClick={() => setView('landing')} className="w-full bg-[#000080] text-white py-3 font-black text-xs uppercase shadow-md">ANA SAYFAYA DÖN</button>
@@ -200,9 +197,9 @@ const App: React.FC<ChatModuleProps> = () => {
           <div className="bg-[#000080] text-white px-3 py-2 text-xs font-black flex justify-between items-center"><span><Key size={14} className="inline mr-2" /> Güvenli Giriş</span><X size={18} className="cursor-pointer" onClick={() => setView('landing')} /></div>
           <div className="p-8 space-y-4">
             <form onSubmit={async (e) => { e.preventDefault(); setIsLoggingIn(true); const user = await storageService.loginUser(loginForm.email, loginForm.password); if (user && user.status === 'approved') { setUserName(user.nickname); setView('chat'); } else if (user && user.status === 'pending') { setView('pending'); } else { alert('Hatalı giriş veya onaylanmamış hesap.'); } setIsLoggingIn(false); }} className="space-y-3">
-              <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none" placeholder="E-posta" />
-              <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none" placeholder="Şifre" />
-              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-3 font-bold uppercase text-xs shadow-md">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş'}</button>
+              <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="E-posta" />
+              <input type="password" required autoComplete="current-password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="Şifre" />
+              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-3 font-bold uppercase text-xs shadow-md active:translate-y-0.5">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş'}</button>
             </form>
             <div className="pt-4 border-t border-gray-400 text-center"><button onClick={() => setView('register')} className="text-[#000080] text-xs font-black uppercase hover:underline flex items-center justify-center gap-2 mx-auto"><UserPlus size={14} /> Kayıt Başvurusu</button></div>
           </div>
@@ -211,7 +208,6 @@ const App: React.FC<ChatModuleProps> = () => {
     );
   }
 
-  const isPrivate = !activeTab.startsWith('#');
   const isBotRoom = activeTab === CHAT_MODULE_CONFIG.BOT_NAME;
   const filteredOnlineUsers = activeTab.startsWith('#') ? onlineUsers : onlineUsers.filter(u => u === activeTab || u === userName);
 
@@ -246,6 +242,10 @@ const App: React.FC<ChatModuleProps> = () => {
                 </button>
               )}
               <button onClick={() => { const n = prompt('Yeni Nickname:'); if(n) setUserName(n); setIsMenuOpen(false); }} className="w-full text-left p-3 hover:bg-[#000080] hover:text-white text-[11px] font-black flex items-center gap-3 border-b border-gray-300"><UserPlus size={16} /> NICKNAME DEĞİŞTİR</button>
+              <button onClick={() => { setAllowPrivateMessages(!allowPrivateMessages); setIsMenuOpen(false); }} className="w-full text-left p-3 hover:bg-[#000080] hover:text-white text-[11px] font-black flex items-center gap-3 border-b border-gray-300">
+                {allowPrivateMessages ? <MessageCircleOff size={16}/> : <MessageCircle size={16}/>}
+                ÖZEL MESAJLARI {allowPrivateMessages ? 'KAPAT' : 'AÇ'}
+              </button>
               <button onClick={handleLogout} className="w-full text-left p-3 hover:bg-red-600 hover:text-white text-[11px] font-black flex items-center gap-3"><LogOut size={16} /> GÜVENLİ ÇIKIŞ</button>
             </div>
           )}
@@ -263,26 +263,20 @@ const App: React.FC<ChatModuleProps> = () => {
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative bg-[#f0f0f0] flex flex-col overflow-hidden">
-          {isBotRoom && !hasAiKey && (window as any).aistudio && (
-            <div className="absolute inset-0 bg-[#f0f2f5]/95 z-30 flex flex-col items-center justify-center p-8 text-center animate-in fade-in">
-              <div className="w-full max-w-sm bg-white border-2 border-[#000080] p-8 shadow-2xl space-y-6 mirc-window">
-                  <Cpu size={56} className="text-[#000080] mx-auto animate-pulse" />
-                  <h3 className="text-[#000080] font-black text-xl uppercase italic">AI ANAHTARI GEREKLİ</h3>
-                  <div className="text-[11px] font-bold text-gray-600 space-y-3 uppercase leading-relaxed">
-                    <p>Workigom AI ile iletişim kurmak için geçerli bir API anahtarını bağlamanız gerekmektedir.</p>
-                    <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 underline hover:text-blue-800">
-                      <ExternalLink size={14} /> Faturalandırma Bilgisi (Zorunludur)
-                    </a>
-                  </div>
-                  <button onClick={handleAiConnect} className="w-full bg-[#00ff99] text-black py-4 font-black text-xs uppercase shadow-md hover:bg-white transition-all border-2 border-[#000080]">ANAHTARI ŞİMDİ SEÇ</button>
-                  <p className="text-[9px] text-gray-400 italic font-bold">Lütfen bir GCP projesine ait anahtar kullanın.</p>
-              </div>
-            </div>
-          )}
           <div className="flex-1 relative bg-white"><MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} /></div>
         </main>
         <aside className={`${isMobile ? 'w-[100px]' : 'w-56'} bg-[#d4dce8] border-l-2 border-white shrink-0 shadow-lg z-10 overflow-hidden`}><UserList users={filteredOnlineUsers} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} /></aside>
       </div>
+
+      {activeTab === '#radyo' && (
+        <div className="h-20 bg-black border-t-2 border-white flex items-center justify-center px-4 gap-4 overflow-hidden shrink-0">
+          <Music className="text-[#00ff99] animate-bounce shrink-0" size={24} />
+          <div className="flex-1 max-w-lg bg-[#d4dce8] p-1 border border-gray-400 mirc-inset">
+            <iframe width="100%" height="40" src="https://www.radyod.com/iframe-small" frameBorder="0" scrolling="no" className="block"></iframe>
+          </div>
+          <Volume2 className="text-[#00ff99] shrink-0" size={20} />
+        </div>
+      )}
 
       <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
         <div className="flex flex-col gap-1 w-full max-w-screen-2xl mx-auto">
@@ -305,6 +299,13 @@ const App: React.FC<ChatModuleProps> = () => {
           </form>
         </div>
       </footer>
+      {showEmojiPicker && (
+        <div className="absolute bottom-20 left-4 w-72 bg-white border-2 border-gray-400 shadow-2xl p-2 z-[3000] mirc-window">
+          <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto no-scrollbar">
+            {emojis.map(e => <button key={e} onClick={() => addEmoji(e)} className="text-xl hover:bg-gray-100 p-1 rounded">{e}</button>)}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

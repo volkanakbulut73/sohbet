@@ -1,9 +1,5 @@
 {
   "name": "Workigom Chat Online",
   "description": "Professional enterprise chat module for www.workigomchat.online",
-  "requestFramePermissions": [
-    "microphone",
-    "camera",
-    "geolocation"
-  ]
+  "requestFramePermissions": []
 }
