@@ -54,7 +54,7 @@ const App: React.FC<ChatModuleProps> = () => {
           console.warn("AI Key error detected. Prompting key selection dialog...");
           const aistudio = (window as any).aistudio;
           if (aistudio) {
-            // KURAL: openSelectKey() tetiklendiğinde anahtar seçilmiş varsayılır.
+            // KURAL: Seçim tetiklendiği an başarılı varsayılır ve işleme devam edilir.
             aistudio.openSelectKey().then(() => {
               setHasAiKey(true);
             });
