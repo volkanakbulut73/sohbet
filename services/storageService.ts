@@ -9,10 +9,19 @@ export const isConfigured = () =>
   CHAT_MODULE_CONFIG.SUPABASE_KEY &&
   CHAT_MODULE_CONFIG.SUPABASE_KEY.length > 20;
 
-export const supabase = createClient(
-  CHAT_MODULE_CONFIG.SUPABASE_URL || 'https://placeholder.supabase.co', 
-  CHAT_MODULE_CONFIG.SUPABASE_KEY || 'placeholder'
-);
+// Initialize Supabase Client
+const supabaseUrl = CHAT_MODULE_CONFIG.SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = CHAT_MODULE_CONFIG.SUPABASE_KEY || 'placeholder';
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+  global: {
+    headers: { 'x-application-name': 'workigom-chat' },
+  },
+});
 
 export const storageService = {
   isConfigured,
@@ -36,20 +45,25 @@ export const storageService = {
   },
 
   async loginUser(email: string, pass: string): Promise<UserRegistration | null> {
-    const { data, error } = await supabase
-      .from('registrations')
-      .select('*')
-      .eq('email', email)
-      .eq('password', pass)
-      .maybeSingle();
-    
-    if (error) throw error;
-    if (!data) return null;
+    try {
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('email', email)
+        .eq('password', pass)
+        .maybeSingle();
+      
+      if (error) throw error;
+      if (!data) return null;
 
-    return {
-      ...data,
-      fullName: data.full_name
-    } as UserRegistration;
+      return {
+        ...data,
+        fullName: data.full_name
+      } as UserRegistration;
+    } catch (e: any) {
+      console.error("Login attempt failed:", e.message);
+      throw e;
+    }
   },
 
   // --- ADMIN İŞLEMLERİ ---
@@ -70,25 +84,33 @@ export const storageService = {
   async getAllRegistrations(): Promise<UserRegistration[]> {
     if (!isConfigured()) return [];
 
-    const { data, error } = await supabase
-      .from('registrations')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      // Catch common issues like missing tables
-      if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-         console.warn("Veritabanı tablosu bulunamadı. Lütfen 'registrations' tablosunu oluşturun.");
-         return [];
+    try {
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+           console.warn("Veritabanı tablosu bulunamadı. Lütfen 'registrations' tablosunu oluşturun.");
+           return [];
+        }
+        console.error("Registrations fetch error:", error.message);
+        throw new Error(`Kullanıcı listesi hatası: ${error.message}`);
       }
-      console.error("Registrations fetch error:", error.message);
-      throw new Error(`Kullanıcı listesi hatası: ${error.message}`);
+      
+      return (data || []).map(d => ({
+        ...d,
+        fullName: d.full_name
+      })) as UserRegistration[];
+    } catch (err: any) {
+      // Handle the "Failed to fetch" type error explicitly
+      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+        console.error("CRITICAL: Network error while reaching Supabase. Check if the project is active or blocked by a firewall/adblocker.");
+        throw new Error("Veritabanına ulaşılamıyor. Lütfen internet bağlantınızı ve güvenlik duvarınızı kontrol edin.");
+      }
+      throw err;
     }
-    
-    return (data || []).map(d => ({
-      ...d,
-      fullName: d.full_name
-    })) as UserRegistration[];
   },
 
   async updateRegistrationStatus(id: string, status: 'approved' | 'rejected') {
