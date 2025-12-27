@@ -13,9 +13,7 @@ import {
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
   MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2, 
-  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck,
-  // Fix: Added missing Loader2 import from lucide-react
-  Loader2
+  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck, Loader2
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -55,14 +53,14 @@ const App: React.FC<ChatModuleProps> = () => {
   }, []);
 
   const handleLogout = async () => {
-    if (!confirm('Güvenli çıkış yapmak ve özel mesaj geçmişinizi silmek istiyor musunuz?')) return;
+    if (!confirm('Güvenli çıkış yapmak ve tüm özel mesaj geçmişinizi kalıcı olarak silmek istiyor musunuz?')) return;
     
     setIsCleaningUp(true);
     try {
       // Çıkış yaparken tüm özel mesajları database'den temizle
       await storageService.deleteAllPrivateMessagesForUser(userName);
       localStorage.removeItem('mirc_nick');
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 1000);
     } catch (e) {
       console.error("Logout cleanup error:", e);
       window.location.reload();
@@ -103,7 +101,7 @@ const App: React.FC<ChatModuleProps> = () => {
     return (
       <div className="fixed inset-0 bg-[#0b0f14] z-[5000] flex flex-col items-center justify-center font-mono">
         <Loader2 size={48} className="text-[#00ff99] animate-spin mb-4" />
-        <p className="text-white font-black uppercase italic tracking-widest animate-pulse">Özel mesaj geçmişiniz temizleniyor...</p>
+        <p className="text-white font-black uppercase italic tracking-widest animate-pulse">Gizlilik Protokolü: Mesajlar siliniyor...</p>
       </div>
     );
   }
@@ -353,13 +351,12 @@ const App: React.FC<ChatModuleProps> = () => {
                )}
                <div className="h-6 w-px bg-gray-400/50"></div>
                <div className="flex gap-1">
-                 <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded ${isBold ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Bold size={16}/></button>
-                 <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded ${isBold ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Bold size={16}/></button>
-                 <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded ${isItalic ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Italic size={16}/></button>
-                 <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded ${isUnderline ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Underline size={16}/></button>
+                 <button type="button" onClick={() => setIsBold(!isBold)} className={`p-1.5 rounded ${isBold ? 'bg-[#000080] text-white' : 'hover:bg-white'}`} title="Kalın (Bold)"><Bold size={16}/></button>
+                 <button type="button" onClick={() => setIsItalic(!isItalic)} className={`p-1.5 rounded ${isItalic ? 'bg-[#000080] text-white' : 'hover:bg-white'}`} title="İtalik (Italic)"><Italic size={16}/></button>
+                 <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded ${isUnderline ? 'bg-[#000080] text-white' : 'hover:bg-white'}`} title="Altı Çizili (Underline)"><Underline size={16}/></button>
                </div>
             </div>
-            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.5</div>
+            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.6</div>
           </div>
 
           <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">

@@ -4,7 +4,7 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    // Create new instance on every call to ensure the latest API Key
+    // Initializing directly before call as mandated to ensure latest API key
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const parts: any[] = [];
@@ -17,31 +17,36 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       });
     }
     
-    parts.push({ text: `Bağlam: ${context}\nKullanıcı: ${prompt}` });
+    parts.push({ text: `Kanal/Sohbet Bağlamı: ${context}\nKullanıcı Mesajı: ${prompt}` });
 
+    // FIX: Changed contents from [{ parts }] to { parts } to match single-turn Content object requirement
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: [{ parts }],
+      contents: { parts },
       config: {
         systemInstruction: customInstruction || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION,
-        temperature: 0.7,
+        temperature: 0.8,
         topP: 0.95,
-        topK: 40
+        topK: 64
       }
     });
     
-    // Direct access to .text property as mandated
+    // Safely extract text property
     const text = response.text;
+    
     if (!text) {
-      throw new Error("Boş yanıt döndü.");
+      return "Sistem bir yanıt üretemedi. Lütfen tekrar deneyin.";
     }
+    
     return text;
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    // Handle specific API errors
-    if (error.message?.includes("Requested entity was not found")) {
-      return "Hata: Model bulunamadı veya API anahtarı geçersiz.";
+    console.error("Workigom AI Connection Error:", error);
+    
+    // Graceful error messages based on common failures
+    if (error.message?.includes("API key not valid")) {
+      return "Sistem Hatası: API Anahtarı doğrulanamadı. Lütfen yöneticiye başvurun.";
     }
-    return "Bağlantı hatası: Workigom AI şu an meşgul, lütfen birkaç saniye sonra tekrar deneyin.";
+    
+    return "Bağlantı Hatası: Workigom AI şu an yoğun veya bir ağ sorunu yaşıyor. Lütfen mesajınızı tekrar göndermeyi deneyin.";
   }
 };
