@@ -13,7 +13,7 @@ import {
   X, Hash, Send, LogOut, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, 
   MessageCircleOff, MessageCircle, Music, Volume2, 
-  Loader2, Sparkles, Cpu, ExternalLink
+  Loader2, Sparkles, Cpu, ExternalLink, WifiOff
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -42,7 +42,8 @@ const App: React.FC<ChatModuleProps> = () => {
   const { 
     userName, setUserName, activeTab, setActiveTab, openTabs, closeTab, unreadTabs,
     messages, sendMessage, initiatePrivateChat, onlineUsers,
-    blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
+    blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages,
+    isOnline
   } = useChatCore('');
 
   // AI Hata Yakalama ve Otomatik Seçici
@@ -58,7 +59,6 @@ const App: React.FC<ChatModuleProps> = () => {
           if (aistudio) {
             aistudio.openSelectKey().then(() => {
               setHasAiKey(true);
-              // Seçim sonrası App'i yenilemek için hafif bir tetikleyici gerekebilir
             });
           }
         }
@@ -68,6 +68,11 @@ const App: React.FC<ChatModuleProps> = () => {
 
   useEffect(() => {
     const checkStatus = async () => {
+      if (!navigator.onLine) {
+        setDbConnected(false);
+        return;
+      }
+
       const aistudio = (window as any).aistudio;
       if (aistudio) {
         try {
@@ -86,7 +91,7 @@ const App: React.FC<ChatModuleProps> = () => {
     checkStatus();
     const interval = setInterval(checkStatus, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isOnline]);
 
   useEffect(() => {
     const handleViewport = () => {
@@ -199,7 +204,7 @@ const App: React.FC<ChatModuleProps> = () => {
         <div className="w-full max-w-[360px] bg-[#d4dce8] border-2 border-white shadow-[10px_10px_0px_0px_rgba(0,0,0,0.5)]">
           <div className="bg-[#000080] text-white px-3 py-2 text-xs font-black flex justify-between items-center"><span><Key size={14} className="inline mr-2" /> Güvenli Giriş</span><X size={18} className="cursor-pointer" onClick={() => setView('landing')} /></div>
           <div className="p-8 space-y-4">
-            <form onSubmit={async (e) => { e.preventDefault(); setIsLoggingIn(true); const user = await storageService.loginUser(loginForm.email, loginForm.password); if (user && user.status === 'approved') { setUserName(user.nickname); setView('chat'); } else if (user && user.status === 'pending') { setView('pending'); } else { alert('Hatalı giriş veya onaylanmamış hesap.'); } setIsLoggingIn(false); }} className="space-y-3">
+            <form onSubmit={async (e) => { e.preventDefault(); setIsLoggingIn(true); try { const user = await storageService.loginUser(loginForm.email, loginForm.password); if (user && user.status === 'approved') { setUserName(user.nickname); setView('chat'); } else if (user && user.status === 'pending') { setView('pending'); } else { alert('Hatalı giriş veya onaylanmamış hesap.'); } } catch(e:any) { alert(e.message); } finally { setIsLoggingIn(false); } }} className="space-y-3">
               <input type="email" required autoComplete="username" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="E-posta" />
               <input type="password" required autoComplete="current-password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="Şifre" />
               <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-3 font-bold uppercase text-xs shadow-md active:translate-y-0.5">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş'}</button>
@@ -227,6 +232,12 @@ const App: React.FC<ChatModuleProps> = () => {
               <div className={`w-3.5 h-3.5 ${dbConnected ? 'bg-[#00ff99] shadow-[0_0_12px_#00ff99]' : 'bg-red-500 shadow-[0_0_12px_red]'} rounded-full animate-pulse`}></div>
               <span className="text-[9px] font-black tracking-widest text-[#00ff99] uppercase">DB</span>
             </div>
+            {!isOnline && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-red-600 rounded-sm animate-pulse">
+                <WifiOff size={14} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">ÇEVRİMDIŞI</span>
+              </div>
+            )}
           </div>
           <div className="h-7 w-px bg-white/20 mx-2"></div>
           <div className="text-[14px] font-black italic truncate uppercase">{activeTab}</div>

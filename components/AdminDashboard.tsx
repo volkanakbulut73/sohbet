@@ -17,7 +17,9 @@ import {
   Send,
   MessageSquare,
   History,
-  Terminal
+  Terminal,
+  AlertTriangle,
+  WifiOff
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { UserRegistration, Channel } from '../types';
@@ -33,6 +35,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>('registrations');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -46,6 +49,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [regs, chns, history] = await Promise.all([
         storageService.getAllRegistrations(),
@@ -57,6 +61,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       setLogs(history);
     } catch (err: any) {
       console.error("Admin Load Error:", err);
+      setError(err.message || "Veriler yüklenirken bir hata oluştu.");
     } finally {
       setLoading(false);
     }
@@ -150,12 +155,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Global Administration Panel</p>
           </div>
         </div>
-        <button 
-          onClick={onLogout}
-          className="flex items-center gap-2 text-xs font-bold text-red-500 hover:text-white transition-colors uppercase"
-        >
-          <LogOut size={16} /> Güvenli Çıkış
-        </button>
+        <div className="flex items-center gap-6">
+          {!navigator.onLine && (
+            <div className="flex items-center gap-2 text-orange-500 bg-orange-900/20 px-3 py-1.5 rounded-sm border border-orange-500/30">
+              <WifiOff size={14} className="animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-tighter">OFFLINE MODE</span>
+            </div>
+          )}
+          <button 
+            onClick={onLogout}
+            className="flex items-center gap-2 text-xs font-bold text-red-500 hover:text-white transition-colors uppercase"
+          >
+            <LogOut size={16} /> Güvenli Çıkış
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -193,7 +206,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col p-6 overflow-hidden">
-          {activeTab === 'registrations' ? (
+          {error ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-6 text-center animate-in zoom-in-95">
+              <div className="bg-red-900/20 p-6 rounded-full border border-red-500/30">
+                <AlertTriangle size={48} className="text-red-500" />
+              </div>
+              <div className="space-y-2 max-w-md">
+                <h3 className="text-white font-black text-xl uppercase italic">VERİ BAĞLANTISI KESİLDİ</h3>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                  {error}
+                </p>
+              </div>
+              <button 
+                onClick={loadData}
+                className="bg-[#00ff99] text-black px-12 py-4 text-xs font-black uppercase shadow-lg hover:bg-white transition-all flex items-center gap-3"
+              >
+                <RefreshCw size={16} /> TEKRAR DENE
+              </button>
+            </div>
+          ) : activeTab === 'registrations' ? (
             <>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
@@ -260,10 +291,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {reg.status !== 'approved' && (
-                              <button onClick={() => handleStatusUpdate(reg.id!, 'approved')} className="p-1.5 bg-green-600 text-white rounded-sm"><CheckCircle size={14} /></button>
+                              <button onClick={() => handleStatusUpdate(reg.id!, 'approved')} className="p-1.5 bg-green-600 text-white rounded-sm" disabled={processingId === reg.id}><CheckCircle size={14} /></button>
                             )}
                             {reg.status !== 'rejected' && (
-                              <button onClick={() => handleStatusUpdate(reg.id!, 'rejected')} className="p-1.5 bg-orange-600 text-white rounded-sm"><XCircle size={14} /></button>
+                              <button onClick={() => handleStatusUpdate(reg.id!, 'rejected')} className="p-1.5 bg-orange-600 text-white rounded-sm" disabled={processingId === reg.id}><XCircle size={14} /></button>
                             )}
                           </div>
                         </td>
@@ -312,8 +343,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     </div>
                     <button 
                       type="submit" 
-                      disabled={notifSending}
-                      className="w-full bg-[#00ff99] text-black py-4 text-xs font-black uppercase hover:bg-white transition-all flex items-center justify-center gap-2"
+                      disabled={notifSending || !navigator.onLine}
+                      className="w-full bg-[#00ff99] text-black py-4 text-xs font-black uppercase hover:bg-white transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {notifSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       ANONSU YAYINLA
@@ -357,8 +388,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     />
                     <button 
                       type="submit" 
-                      disabled={notifSending}
-                      className="w-full bg-blue-600 text-white py-4 text-xs font-black uppercase hover:bg-blue-500 transition-all flex items-center justify-center gap-2"
+                      disabled={notifSending || !navigator.onLine}
+                      className="w-full bg-blue-600 text-white py-4 text-xs font-black uppercase hover:bg-blue-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {notifSending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
                       E-POSTA GÖNDER

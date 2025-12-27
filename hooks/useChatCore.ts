@@ -29,29 +29,43 @@ export const useChatCore = (initialUserName: string) => {
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [allowPrivateMessages, setAllowPrivateMessages] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([CHAT_MODULE_CONFIG.BOT_NAME, 'Admin']);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const fetchUsers = useCallback(async () => {
-    if (!storageService.isConfigured()) return;
+    if (!storageService.isConfigured() || !navigator.onLine) return;
     
     try {
       const regs = await storageService.getAllRegistrations();
-      const approvedNicks = regs
-        .filter(r => r.status === 'approved')
-        .map(r => r.nickname);
-      
-      const list = Array.from(new Set([...approvedNicks, 'Admin', CHAT_MODULE_CONFIG.BOT_NAME]));
-      setOnlineUsers(list);
+      if (regs && regs.length > 0) {
+        const approvedNicks = regs
+          .filter(r => r.status === 'approved')
+          .map(r => r.nickname);
+        
+        const list = Array.from(new Set([...approvedNicks, 'Admin', CHAT_MODULE_CONFIG.BOT_NAME]));
+        setOnlineUsers(list);
+      }
     } catch (e: any) {
-      const errorMsg = toErrorString(e);
-      console.error("Kullanıcı listesi çekilemedi:", errorMsg);
-      // Fallback: keep existing list or at least show basic users
-      setOnlineUsers(prev => prev.length > 0 ? prev : ['Admin', CHAT_MODULE_CONFIG.BOT_NAME]);
+      // Sadece kritik hataları konsola bas, "Failed to fetch" hatalarını navigator.onLine durumunda yut
+      if (navigator.onLine) {
+        console.warn("Kullanıcı listesi güncellenirken geçici bir sorun oluştu.");
+      }
     }
   }, []);
 
   useEffect(() => {
     fetchUsers();
-    const interval = setInterval(fetchUsers, 15000);
+    const interval = setInterval(fetchUsers, 20000);
     return () => clearInterval(interval);
   }, [fetchUsers]);
 
@@ -125,6 +139,11 @@ export const useChatCore = (initialUserName: string) => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
+    if (!navigator.onLine) {
+      alert("Çevrimdışısınız. Mesaj gönderilemez.");
+      return;
+    }
+    
     if (text.startsWith('/')) {
       await handleCommand(text);
       return;
@@ -152,7 +171,12 @@ export const useChatCore = (initialUserName: string) => {
         });
       }
     } catch (err: any) { 
-      console.error("Mesaj gönderme hatası:", toErrorString(err));
+      const errorStr = toErrorString(err);
+      if (errorStr.includes("Failed to fetch")) {
+        alert("Bağlantı hatası: Sunucuya ulaşılamadı. İnternetinizi kontrol edin.");
+      } else {
+        console.error("Mesaj gönderme hatası:", errorStr);
+      }
     }
   };
 
@@ -170,7 +194,7 @@ export const useChatCore = (initialUserName: string) => {
     storageService.getMessagesByChannel(currentChannel)
       .then(setMessages)
       .catch(e => {
-         console.error("Mesajlar çekilemedi:", toErrorString(e));
+         if (navigator.onLine) console.error("Mesajlar çekilemedi:", toErrorString(e));
       });
     
     const channelName = `realtime_${activeTab.replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -180,7 +204,6 @@ export const useChatCore = (initialUserName: string) => {
         const newMsg = payload.new;
         const msgChannel = newMsg.channel as string;
 
-        // Active channel logic
         if (msgChannel === currentChannel) {
           if (!blockedUsers.includes(newMsg.sender)) {
             const m = { ...newMsg, id: newMsg.id.toString(), timestamp: new Date(newMsg.created_at) } as Message;
@@ -191,7 +214,6 @@ export const useChatCore = (initialUserName: string) => {
           }
         }
 
-        // Notification logic for private messages
         if (msgChannel.startsWith('private:') && msgChannel.includes(userName)) {
           const parts = msgChannel.split(':');
           const otherUser = parts.find(part => part !== 'private' && part !== userName);
@@ -204,7 +226,6 @@ export const useChatCore = (initialUserName: string) => {
           }
         }
 
-        // Notification logic for channels
         if (msgChannel.startsWith('#') && msgChannel !== activeTab) {
            setUnreadTabs(prev => prev.includes(msgChannel) ? prev : [...prev, msgChannel]);
         }
@@ -212,7 +233,7 @@ export const useChatCore = (initialUserName: string) => {
       .subscribe();
     
     return () => { sub?.unsubscribe(); };
-  }, [activeTab, userName, blockedUsers]);
+  }, [activeTab, userName, blockedUsers, isOnline]);
 
   return {
     userName, setUserName,
@@ -224,6 +245,7 @@ export const useChatCore = (initialUserName: string) => {
     closeTab,
     allowPrivateMessages, setAllowPrivateMessages,
     initiatePrivateChat,
-    onlineUsers
+    onlineUsers,
+    isOnline
   };
 };
