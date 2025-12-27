@@ -4,10 +4,15 @@ import { Message, Channel, MessageType, UserRegistration } from '../types';
 import { CHAT_MODULE_CONFIG } from '../config';
 
 export const isConfigured = () => 
+  CHAT_MODULE_CONFIG.SUPABASE_URL && 
   CHAT_MODULE_CONFIG.SUPABASE_URL.startsWith('https://') && 
+  CHAT_MODULE_CONFIG.SUPABASE_KEY &&
   CHAT_MODULE_CONFIG.SUPABASE_KEY.length > 20;
 
-export const supabase = createClient(CHAT_MODULE_CONFIG.SUPABASE_URL, CHAT_MODULE_CONFIG.SUPABASE_KEY);
+export const supabase = createClient(
+  CHAT_MODULE_CONFIG.SUPABASE_URL || 'https://placeholder.supabase.co', 
+  CHAT_MODULE_CONFIG.SUPABASE_KEY || 'placeholder'
+);
 
 export const storageService = {
   isConfigured,
@@ -63,15 +68,21 @@ export const storageService = {
   },
 
   async getAllRegistrations(): Promise<UserRegistration[]> {
+    if (!isConfigured()) return [];
+
     const { data, error } = await supabase
       .from('registrations')
       .select('*')
       .order('created_at', { ascending: false });
     
     if (error) {
-      // Provide a more descriptive error for registrations fetch failure
-      console.warn("Registrations fetch error:", error.message);
-      throw new Error(`Kayıtlı kullanıcılar yüklenemedi: ${error.message}`);
+      // Catch common issues like missing tables
+      if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+         console.warn("Veritabanı tablosu bulunamadı. Lütfen 'registrations' tablosunu oluşturun.");
+         return [];
+      }
+      console.error("Registrations fetch error:", error.message);
+      throw new Error(`Kullanıcı listesi hatası: ${error.message}`);
     }
     
     return (data || []).map(d => ({

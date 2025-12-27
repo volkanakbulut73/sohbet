@@ -5,6 +5,21 @@ import { getGeminiResponse } from '../services/geminiService';
 import { storageService, supabase } from '../services/storageService';
 import { CHAT_MODULE_CONFIG } from '../config';
 
+/**
+ * Helper to convert any error into a readable string
+ */
+const toErrorString = (e: any): string => {
+  if (!e) return "Bilinmeyen hata";
+  if (typeof e === 'string') return e;
+  if (e.message) return e.message;
+  try {
+    const str = JSON.stringify(e);
+    return str === '{}' ? e.toString() : str;
+  } catch {
+    return String(e);
+  }
+};
+
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
   const [openTabs, setOpenTabs] = useState<string[]>(['#sohbet', '#yardim', '#radyo', CHAT_MODULE_CONFIG.BOT_NAME]);
@@ -13,9 +28,11 @@ export const useChatCore = (initialUserName: string) => {
   const [activeTab, setActiveTab] = useState<string>('#sohbet');
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [allowPrivateMessages, setAllowPrivateMessages] = useState(true);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([CHAT_MODULE_CONFIG.BOT_NAME, 'Admin']);
 
   const fetchUsers = useCallback(async () => {
+    if (!storageService.isConfigured()) return;
+    
     try {
       const regs = await storageService.getAllRegistrations();
       const approvedNicks = regs
@@ -25,15 +42,16 @@ export const useChatCore = (initialUserName: string) => {
       const list = Array.from(new Set([...approvedNicks, 'Admin', CHAT_MODULE_CONFIG.BOT_NAME]));
       setOnlineUsers(list);
     } catch (e: any) {
-      // Improved error logging to prevent [object Object]
-      const errorMsg = e?.message || (typeof e === 'string' ? e : JSON.stringify(e));
+      const errorMsg = toErrorString(e);
       console.error("Kullanıcı listesi çekilemedi:", errorMsg);
+      // Fallback: keep existing list or at least show basic users
+      setOnlineUsers(prev => prev.length > 0 ? prev : ['Admin', CHAT_MODULE_CONFIG.BOT_NAME]);
     }
   }, []);
 
   useEffect(() => {
     fetchUsers();
-    const interval = setInterval(fetchUsers, 10000);
+    const interval = setInterval(fetchUsers, 15000);
     return () => clearInterval(interval);
   }, [fetchUsers]);
 
@@ -53,7 +71,12 @@ export const useChatCore = (initialUserName: string) => {
           const old = userName;
           setUserName(args[0]);
           localStorage.setItem('mirc_nick', args[0]);
-          await storageService.saveMessage({ sender: 'SYSTEM', text: `* ${old} ismini ${args[0]} olarak güncelledi.`, type: MessageType.SYSTEM, channel: activeTab });
+          await storageService.saveMessage({ 
+            sender: 'SYSTEM', 
+            text: `* ${old} ismini ${args[0]} olarak güncelledi.`, 
+            type: MessageType.SYSTEM, 
+            channel: activeTab 
+          });
         }
         break;
       case '/query':
@@ -63,7 +86,7 @@ export const useChatCore = (initialUserName: string) => {
         closeTab(activeTab);
         break;
       default:
-        console.log("Komut işlenemedi");
+        console.warn("Komut tanınmadı:", cmd);
     }
   };
 
@@ -129,7 +152,7 @@ export const useChatCore = (initialUserName: string) => {
         });
       }
     } catch (err: any) { 
-      console.error("Message send error:", err?.message || err);
+      console.error("Mesaj gönderme hatası:", toErrorString(err));
     }
   };
 
@@ -138,35 +161,42 @@ export const useChatCore = (initialUserName: string) => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (!userName) return;
+    if (!userName || !storageService.isConfigured()) return;
 
     const currentChannel = activeTab.startsWith('#') || activeTab === CHAT_MODULE_CONFIG.BOT_NAME
       ? activeTab
       : getPrivateChannelId(userName, activeTab);
     
-    storageService.getMessagesByChannel(currentChannel).then(setMessages).catch(e => {
-       console.error("Mesajlar çekilemedi:", e?.message || e);
-    });
+    storageService.getMessagesByChannel(currentChannel)
+      .then(setMessages)
+      .catch(e => {
+         console.error("Mesajlar çekilemedi:", toErrorString(e));
+      });
     
+    const channelName = `realtime_${activeTab.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const sub = supabase
-      .channel('realtime_core')
+      .channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = payload.new;
         const msgChannel = newMsg.channel as string;
 
+        // Active channel logic
         if (msgChannel === currentChannel) {
           if (!blockedUsers.includes(newMsg.sender)) {
             const m = { ...newMsg, id: newMsg.id.toString(), timestamp: new Date(newMsg.created_at) } as Message;
-            setMessages(prev => [...prev.filter(x => x.id !== m.id), m]);
+            setMessages(prev => {
+              const exists = prev.some(x => x.id === m.id);
+              return exists ? prev : [...prev, m];
+            });
           }
         }
 
+        // Notification logic for private messages
         if (msgChannel.startsWith('private:') && msgChannel.includes(userName)) {
-          const otherUser = newMsg.sender === userName 
-            ? msgChannel.split(':').find(part => part !== 'private' && part !== userName)
-            : newMsg.sender;
+          const parts = msgChannel.split(':');
+          const otherUser = parts.find(part => part !== 'private' && part !== userName);
 
-          if (otherUser && otherUser !== userName && !blockedUsers.includes(otherUser)) {
+          if (otherUser && !blockedUsers.includes(otherUser)) {
             setOpenTabs(prev => prev.includes(otherUser) ? prev : [...prev, otherUser]);
             if (activeTab !== otherUser) {
               setUnreadTabs(prev => prev.includes(otherUser) ? prev : [...prev, otherUser]);
@@ -174,6 +204,7 @@ export const useChatCore = (initialUserName: string) => {
           }
         }
 
+        // Notification logic for channels
         if (msgChannel.startsWith('#') && msgChannel !== activeTab) {
            setUnreadTabs(prev => prev.includes(msgChannel) ? prev : [...prev, msgChannel]);
         }
