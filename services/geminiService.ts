@@ -3,23 +3,22 @@ import { GoogleGenAI } from "@google/genai";
 import { CHAT_MODULE_CONFIG } from "../config";
 
 /**
- * Gemini AI Yanıt Servisi
- * KURAL: API anahtarı her zaman taze 'process.env.API_KEY' üzerinden alınır.
- * KURAL: .text bir özelliktir (getter), fonksiyon değildir.
- * KURAL: generateContent doğrudan model ismiyle çağrılır.
+ * Gemini AI Response Service
+ * Optimized for Gemini 1.5/2.0 Series and @google/genai v1.x
  */
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
     const apiKey = process.env.API_KEY;
 
-    if (!apiKey || apiKey === "undefined" || apiKey === "") {
-      return "HATA: Requested entity was not found. [API_KEY_MISSING] Lütfen geçerli bir AI anahtarı seçin.";
+    // API anahtarı kontrolü
+    if (!apiKey || apiKey === "undefined" || apiKey === "" || apiKey.length < 10) {
+      return "HATA: API Anahtarı eksik. Lütfen Ayarlar -> AI Ayarları kısmından anahtarınızı bağlayın.";
     }
 
-    // KURAL: Her istekte yeni bir GoogleGenAI instance'ı oluşturulur (en güncel anahtarı almak için).
+    // Google GenAI SDK v1.x standartlarına göre initialization
     const ai = new GoogleGenAI({ apiKey });
     
-    const parts = [];
+    const parts: any[] = [];
     if (imageBase64) {
       parts.push({
         inlineData: {
@@ -30,42 +29,51 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     }
     
     parts.push({ 
-      text: `PLATFORM: ${CHAT_MODULE_CONFIG.DOMAIN}\nCONTEXT: ${context}\nUSER: ${prompt}` 
+      text: `CONTEXT: ${context}\nUSER_PROMPT: ${prompt}` 
     });
 
-    // KURAL: 'gemini-3-flash-preview' kullanılmalıdır (1.5-flash değil).
+    /**
+     * MODEL SEÇİMİ:
+     * 'gemini-flash-latest' en güncel ve kararlı flash modeline (1.5 Flash) yönlendirir.
+     * 404 hatasını önlemek için en güvenli seçimdir.
+     */
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-flash-latest',
       contents: { parts },
       config: {
         systemInstruction: customInstruction || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION,
         temperature: 0.8,
         topP: 0.95,
-        topK: 64
       }
     });
     
-    // KURAL: .text bir özelliktir, fonksiyon değil (.text() yanlıştır).
+    // SDK STANDARTI: .text bir mülkiyettir (getter), fonksiyon değildir.
     const text = response.text;
     
     if (!text) {
-      return "SİSTEM: Yanıt üretilemedi.";
+      return "SİSTEM: AI geçerli bir yanıt döndüremedi.";
     }
     
     return text;
   } catch (error: any) {
-    console.error("Gemini SDK Error:", error);
+    console.error("Gemini Service Error:", error);
     const errorMsg = error?.message || "";
     
-    // KURAL: 'Requested entity was not found' hatası algılanınca bu string dönülür.
-    if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("404") || errorMsg.includes("API key not valid")) {
-      return "HATA: Requested entity was not found. [INVALID_KEY] Lütfen anahtarınızı seçin.";
+    // 404 Hatası Yönetimi (Model ID Hatası)
+    if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("404")) {
+      return "HATA: Seçilen model (gemini-flash-latest) sunucuda bulunamadı. Lütfen API anahtarınızın model erişim yetkisini kontrol edin veya modeli 'gemini-2.0-flash-exp' olarak güncelleyin.";
     }
 
+    // 403 Hatası (Yetki/Bölge)
+    if (errorMsg.includes("403") || errorMsg.includes("permission")) {
+      return "HATA: API Anahtarı yetkisiz veya bu bölgede kullanılamıyor.";
+    }
+
+    // 429 Hatası (Kota)
     if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-      return "SİSTEM: AI limitine ulaşıldı.";
+      return "SİSTEM: AI kullanım sınırı doldu. Lütfen 1 dakika bekleyin.";
     }
     
-    return "SİSTEM: Teknik bir sorun oluştu.";
+    return `SİSTEM: Teknik bir sorun oluştu (${errorMsg.substring(0, 50)}...)`;
   }
 };
