@@ -13,7 +13,7 @@ import {
   X, Hash, Send, LogOut, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, 
   MessageCircleOff, MessageCircle, Music, Volume2, 
-  Loader2, Sparkles
+  Loader2, Sparkles, Cpu, ExternalLink
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -54,6 +54,7 @@ const App: React.FC<ChatModuleProps> = () => {
           console.warn("AI Key error detected. Prompting key selection dialog...");
           const aistudio = (window as any).aistudio;
           if (aistudio) {
+            // KURAL: openSelectKey() tetiklendiğinde anahtar seçilmiş varsayılır.
             aistudio.openSelectKey().then(() => {
               setHasAiKey(true);
             });
@@ -197,7 +198,7 @@ const App: React.FC<ChatModuleProps> = () => {
           <div className="bg-[#000080] text-white px-3 py-2 text-xs font-black flex justify-between items-center"><span><Key size={14} className="inline mr-2" /> Güvenli Giriş</span><X size={18} className="cursor-pointer" onClick={() => setView('landing')} /></div>
           <div className="p-8 space-y-4">
             <form onSubmit={async (e) => { e.preventDefault(); setIsLoggingIn(true); const user = await storageService.loginUser(loginForm.email, loginForm.password); if (user && user.status === 'approved') { setUserName(user.nickname); setView('chat'); } else if (user && user.status === 'pending') { setView('pending'); } else { alert('Hatalı giriş veya onaylanmamış hesap.'); } setIsLoggingIn(false); }} className="space-y-3">
-              <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="E-posta" />
+              <input type="email" required autoComplete="username" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="E-posta" />
               <input type="password" required autoComplete="current-password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="Şifre" />
               <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-3 font-bold uppercase text-xs shadow-md active:translate-y-0.5">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş'}</button>
             </form>
@@ -263,6 +264,22 @@ const App: React.FC<ChatModuleProps> = () => {
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative bg-[#f0f0f0] flex flex-col overflow-hidden">
+          {isBotRoom && !hasAiKey && (window as any).aistudio && (
+            <div className="absolute inset-0 bg-[#f0f2f5]/95 z-30 flex flex-col items-center justify-center p-8 text-center animate-in fade-in">
+              <div className="w-full max-w-sm bg-white border-2 border-[#000080] p-8 shadow-2xl space-y-6 mirc-window">
+                  <Cpu size={56} className="text-[#000080] mx-auto animate-pulse" />
+                  <h3 className="text-[#000080] font-black text-xl uppercase italic">AI ANAHTARI GEREKLİ</h3>
+                  <div className="text-[11px] font-bold text-gray-600 space-y-3 uppercase leading-relaxed">
+                    <p>Workigom AI ile iletişim kurmak için geçerli bir API anahtarını bağlamanız gerekmektedir.</p>
+                    <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 underline hover:text-blue-800">
+                      <ExternalLink size={14} /> Faturalandırma Bilgisi (Zorunludur)
+                    </a>
+                  </div>
+                  <button onClick={handleAiConnect} className="w-full bg-[#00ff99] text-black py-4 font-black text-xs uppercase shadow-md hover:bg-white transition-all border-2 border-[#000080]">ANAHTARI ŞİMDİ SEÇ</button>
+                  <p className="text-[9px] text-gray-400 italic font-bold">Lütfen bir GCP projesine ait anahtar kullanın.</p>
+              </div>
+            </div>
+          )}
           <div className="flex-1 relative bg-white"><MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} /></div>
         </main>
         <aside className={`${isMobile ? 'w-[100px]' : 'w-56'} bg-[#d4dce8] border-l-2 border-white shrink-0 shadow-lg z-10 overflow-hidden`}><UserList users={filteredOnlineUsers} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} /></aside>
