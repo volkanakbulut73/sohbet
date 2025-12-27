@@ -12,15 +12,18 @@ import {
   CheckCircle2, 
   Info,
   Shield,
-  Settings
+  Settings,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 
 interface LandingPageProps {
   onEnter: () => void;
+  onRegisterClick: () => void;
   onAdminClick?: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onRegisterClick, onAdminClick }) => {
   return (
     <div className="min-h-screen bg-[#0b0f14] text-gray-300 font-mono flex flex-col selection:bg-[#00ff99] selection:text-black">
       
@@ -49,14 +52,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
               onClick={onEnter}
               className="group bg-[#00ff99] text-black px-12 py-5 text-sm font-black shadow-[6px_6px_0px_0px_rgba(255,255,255,0.1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all flex items-center justify-center gap-3"
             >
-              <Lock size={20} /> 🔐 SOHBETE KATIL
+              <LogIn size={20} /> GİRİŞ YAP
             </button>
-            <a 
-              href="#security"
-              className="border-2 border-gray-700 hover:border-[#00ff99] hover:text-[#00ff99] text-white px-12 py-5 text-sm font-bold transition-all flex items-center justify-center gap-3 bg-gray-900/50"
+            <button 
+              onClick={onRegisterClick}
+              className="border-2 border-[#00ff99] text-[#00ff99] hover:bg-[#00ff99] hover:text-black px-12 py-5 text-sm font-black transition-all flex items-center justify-center gap-3 bg-gray-900/50 shadow-[6px_6px_0px_0px_rgba(0,255,153,0.1)]"
             >
-              <Info size={20} /> GÜVENLİK ANALİZİ
-            </a>
+              <UserPlus size={20} /> BAŞVUR VE KATIL
+            </button>
           </div>
         </div>
       </section>
@@ -139,7 +142,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
             </div>
           </div>
 
-          {/* mIRC Style Visual */}
           <div className="bg-[#000080] border-4 border-white shadow-[20px_20px_0px_0px_rgba(0,255,153,0.05)] rounded-lg p-1 hidden lg:block overflow-hidden transition-transform hover:scale-[1.02]">
             <div className="bg-[#d4dce8] h-full rounded-sm">
               <div className="bg-gradient-to-r from-[#000080] to-blue-800 text-white px-3 py-1.5 text-[11px] font-black flex justify-between items-center shadow-md">
@@ -188,7 +190,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onAdminClick }) => {
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
             <button 
-              onClick={onEnter}
+              onClick={onRegisterClick}
               className="bg-[#00ff99] text-black px-16 py-6 text-sm font-black hover:bg-white hover:scale-105 transition-all uppercase shadow-xl"
             >
               🔐 Başvur ve Katıl

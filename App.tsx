@@ -12,7 +12,7 @@ import {
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
   MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2, 
-  UserX, UserCheck2, Trash2, BellRing
+  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -80,8 +80,56 @@ const App: React.FC<ChatModuleProps> = () => {
 
   const emojis = ['😊', '😂', '🤣', '❤️', '😍', '🥰', '😘', '😋', '😎', '😉', '😜', '🤩', '🥳', '😭', '😡', '😱', '👍', '👎', '👏', '🙌', '🔥', '✨', '⚡', '🎉', '🎈', '🌹', '🌸', '💔', '☕', '🍺', '🍔', '🍕', '🚀', '🐱', '🐶', '🦄', '🌈', '⭐', '🌙', '☀️', '☁️', '❄️', '⚽', '🎮', '🎧', '📸', '📱', '💻', '👋', '🙏', '💯', '🤔', '🙄', '🤫', '🤡', '👽', '👻', '💀', '💩', '🤝', '👀', '💪', '🧠', '💼', '📍', '⏰', '🎁', '💎', '💡', '🔔', '✅', '❌', '⚠️', '🛡️', '🌍', '🏳️‍🌈', '🇹🇷', '🔥', '🌊', '💨'];
 
-  if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onAdminClick={() => setView('login')} />;
+  if (view === 'landing') return (
+    <LandingPage 
+      onEnter={() => setView('login')} 
+      onRegisterClick={() => setView('register')}
+      onAdminClick={() => {
+        const pass = prompt('Admin Şifresi:');
+        if (pass === 'admin123') setView('admin');
+      }} 
+    />
+  );
+  
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
+  
+  if (view === 'pending') {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-[#0b0f14] fixed inset-0 z-[3000] p-4 font-mono">
+        <div className="w-full max-w-md bg-[#d4dce8] border-2 border-white shadow-[20px_20px_0px_rgba(0,0,0,0.5)]">
+           <div className="bg-[#000080] text-white px-3 py-1.5 text-xs font-black flex justify-between items-center">
+             <span>SYSTEM MESSAGE</span>
+             <X size={16} className="cursor-pointer" onClick={() => setView('landing')} />
+           </div>
+           <div className="p-8 text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="bg-white p-4 rounded-full border-2 border-[#000080] animate-pulse">
+                  <Clock size={48} className="text-[#000080]" />
+                </div>
+              </div>
+              <h2 className="text-xl font-black text-[#000080] uppercase italic">BAŞVURUNUZ ALINDI</h2>
+              <p className="text-xs text-gray-700 font-bold leading-relaxed">
+                Güvenlik ekibimiz belgelerinizi incelemeye başladı. <br/>
+                Onay sürecimiz genellikle 24 saat sürmektedir. <br/>
+                Onaylandığında e-posta ile bilgilendirileceksiniz.
+              </p>
+              <div className="bg-white p-3 border border-gray-400 text-[10px] text-left text-green-700 font-bold">
+                > LOG: Application_ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}<br/>
+                > STATUS: Security_Check_In_Progress...<br/>
+                > SERVER: workigomchat.online
+              </div>
+              <button 
+                onClick={() => setView('landing')}
+                className="w-full bg-[#000080] text-white py-3 font-black text-xs uppercase hover:bg-blue-800 transition-all"
+              >
+                ANA SAYFAYA DÖN
+              </button>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'admin') return <AdminDashboard onLogout={() => setView('landing')} />;
   
   if (view === 'login') {
@@ -100,13 +148,27 @@ const App: React.FC<ChatModuleProps> = () => {
               if (user && user.status === 'approved') {
                 setUserName(user.nickname);
                 setView('chat');
-              } else alert('Hatalı giriş veya onaylanmamış hesap.');
+              } else if (user && user.status === 'pending') {
+                setView('pending');
+              } else {
+                alert('Hatalı giriş veya onaylanmamış hesap.');
+              }
               setIsLoggingIn(false);
             }} className="space-y-3">
-              <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-sm" placeholder="E-posta" />
-              <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-sm" placeholder="Şifre" />
-              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-3 font-bold uppercase text-xs">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş'}</button>
+              <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="E-posta" />
+              <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-sm outline-none focus:border-[#000080]" placeholder="Şifre" />
+              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-3 font-bold uppercase text-xs hover:bg-blue-800 transition-all shadow-md">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş'}</button>
             </form>
+            
+            <div className="pt-4 border-t border-gray-400 text-center space-y-2">
+               <p className="text-[10px] font-bold text-gray-600 uppercase">Hesabınız yok mu?</p>
+               <button 
+                onClick={() => setView('register')}
+                className="text-[#000080] text-xs font-black uppercase hover:underline flex items-center justify-center gap-2 mx-auto"
+               >
+                 <UserPlus size={14} /> Kayıt Başvurusu Yap
+               </button>
+            </div>
           </div>
         </div>
       </div>
@@ -263,7 +325,7 @@ const App: React.FC<ChatModuleProps> = () => {
                  <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded ${isUnderline ? 'bg-[#000080] text-white' : 'hover:bg-white'}`}><Underline size={16}/></button>
                </div>
             </div>
-            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.2</div>
+            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.3</div>
           </div>
 
           <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">
