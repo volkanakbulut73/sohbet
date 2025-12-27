@@ -6,7 +6,7 @@ import UserList from './components/UserList';
 import { ChatModuleProps } from './types';
 import { storageService } from './services/storageService';
 import { 
-  Menu, X, Lock, Users as UsersIcon, Hash, Send, ChevronRight
+  Menu, X, Users as UsersIcon, Hash, Send, Terminal, LogOut, ChevronRight, MessageSquare
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = ({ externalUser, embedded = false }) => {
@@ -24,29 +24,22 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, embedded = false }) => {
     messages, sendMessage, initiatePrivateChat 
   } = useChatCore(externalUser || '');
 
-  // MOBİL KLAVYE VE VIEWPORT TAKİBİ
   useEffect(() => {
-    const updateLayout = () => {
+    const handleViewportChange = () => {
       setIsMobile(window.innerWidth < 1024);
       if (containerRef.current && window.visualViewport) {
-        // VisualViewport: Klavye açıldığında gerçek görünen alanı verir.
-        const vv = window.visualViewport;
-        containerRef.current.style.height = `${vv.height}px`;
-        // Sayfanın yukarı kaymasını engelle
-        window.scrollTo(0, 0);
+        // Klavye açıldığında container'ı tam görünen alana küçültür
+        containerRef.current.style.height = `${window.visualViewport.height}px`;
       }
     };
-
-    window.addEventListener('resize', updateLayout);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateLayout);
-      window.visualViewport.addEventListener('scroll', updateLayout);
-    }
-    updateLayout();
+    window.visualViewport?.addEventListener('resize', handleViewportChange);
+    window.visualViewport?.addEventListener('scroll', handleViewportChange);
+    window.addEventListener('resize', handleViewportChange);
+    handleViewportChange();
     return () => {
-      window.removeEventListener('resize', updateLayout);
-      window.visualViewport?.removeEventListener('resize', updateLayout);
-      window.visualViewport?.removeEventListener('scroll', updateLayout);
+      window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('resize', handleViewportChange);
     };
   }, []);
 
@@ -69,51 +62,53 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, embedded = false }) => {
           localStorage.setItem('mirc_nick', user.nickname);
           setView('chat');
         }
-      } else alert('Giriş başarısız.');
-    } catch (err) { alert('Hata oluştu.'); }
+      } else alert('Hata: Bilgiler uyuşmuyor.');
+    } catch (err) { alert('Sistem hatası.'); }
     finally { setIsLoggingIn(false); }
   };
 
   if (view === 'login') {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#d4dce8] p-4">
-        <div className="w-full max-w-[320px] border-2 border-white bg-[#d4dce8] shadow-2xl">
-          <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold">Workigom Chat Login</div>
-          <form onSubmit={handleLogin} className="p-6 space-y-4">
-            <input type="email" placeholder="E-posta" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none text-sm" />
-            <input type="password" placeholder="Şifre" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none text-sm" />
-            <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white py-2 font-black shadow-[2px_2px_0_gray] active:shadow-none uppercase text-xs">Bağlan</button>
+      <div className="flex-1 flex items-center justify-center bg-[#0b0f14] p-4">
+        <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-2xl overflow-hidden">
+          <div className="bg-[#000080] text-white px-2 py-1 text-xs font-bold flex items-center gap-2">
+            <Terminal size={14} /> Workigom v2.0 Login
+          </div>
+          <form onSubmit={handleLogin} className="p-8 space-y-4">
+            <input type="email" placeholder="Email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none focus:border-[#000080] text-sm font-mono" />
+            <input type="password" placeholder="Şifre" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none focus:border-[#000080] text-sm font-mono" />
+            <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white py-2 font-bold shadow-[2px_2px_0_gray] active:shadow-none active:translate-y-px uppercase text-xs">BAĞLAN</button>
           </form>
         </div>
       </div>
     );
   }
 
-  if (view === 'pending') return <div className="flex-1 flex items-center justify-center font-bold italic">ONAY BEKLENİYOR...</div>;
+  if (view === 'pending') return <div className="flex-1 flex items-center justify-center bg-[#0b0f14] text-[#00ff99] font-mono italic animate-pulse">*** ONAY SÜRECİ BEKLENİYOR...</div>;
 
-  // --- MOBİL GÖRÜNÜM (TELEGRAM / WHATSAPP TARZI) ---
+  // --- MOBİL GÖRÜNÜM (MODERN & GARANTİLİ) ---
   if (isMobile) {
     return (
-      <div ref={containerRef} className="flex flex-col bg-white overflow-hidden w-full h-full relative font-mono">
-        {/* Header */}
-        <header className="h-14 bg-[#000080] text-white flex items-center px-4 shrink-0 z-50">
-          <button onClick={() => setIsChannelsOpen(true)} className="p-1"><Menu size={24} /></button>
-          <div className="flex-1 text-center font-black text-sm uppercase tracking-tighter italic">{activeTab}</div>
-          <button onClick={() => setIsUserListOpen(true)} className="p-1"><UsersIcon size={24} /></button>
+      <div ref={containerRef} className="flex flex-col bg-[#d4dce8] w-full h-full relative overflow-hidden font-mono text-black">
+        {/* Mobile Header */}
+        <header className="h-12 bg-[#000080] text-white flex items-center px-4 shrink-0 shadow-md">
+          <button onClick={() => setIsChannelsOpen(true)} className="p-1"><Menu size={20} /></button>
+          <div className="flex-1 text-center font-bold text-[11px] uppercase tracking-wider italic">{activeTab}</div>
+          <button onClick={() => setIsUserListOpen(true)} className="p-1"><UsersIcon size={20} /></button>
         </header>
 
-        {/* Mesaj Alanı (Flex-1) */}
-        <main className="flex-1 relative overflow-hidden bg-white">
+        {/* Mesaj Listesi (Alan Doldurucu) */}
+        <main className="flex-1 min-h-0 relative bg-white border-x-2 border-gray-300">
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
           
-          {/* Mobil User List Drawer */}
+          {/* Mobil User List Overlay */}
           {isUserListOpen && (
             <div className="absolute inset-0 z-[100] flex justify-end">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setIsUserListOpen(false)} />
-              <div className="relative w-[80%] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
-                <div className="p-4 bg-gray-100 border-b flex justify-between items-center shrink-0">
-                  <span className="font-black text-xs uppercase">Online</span>
-                  <X onClick={() => setIsUserListOpen(false)} />
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsUserListOpen(false)} />
+              <div className="relative w-[75%] bg-[#d4dce8] h-full shadow-2xl flex flex-col border-l-2 border-white animate-in slide-in-from-right duration-200">
+                <div className="p-4 bg-[#000080] text-white flex justify-between items-center shrink-0">
+                  <span className="font-bold text-xs uppercase">ODADAKİLER</span>
+                  <X onClick={() => setIsUserListOpen(false)} size={18} />
                 </div>
                 <UserList users={[userName, 'Admin', 'GeminiBot', 'Esra', 'Can']} currentUser={userName} onClose={() => setIsUserListOpen(false)} />
               </div>
@@ -121,40 +116,39 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, embedded = false }) => {
           )}
         </main>
 
-        {/* MESAJ YAZMA KUTUSU (HER ZAMAN GÖRÜNÜR) */}
-        <footer className="shrink-0 bg-gray-50 border-t p-2 z-[60]">
-          <form onSubmit={handleSend} className="flex gap-2 items-end">
-            <div className="flex-1 bg-white border border-gray-300 rounded-2xl px-4 py-2 min-h-[44px] flex items-center">
-              <input 
+        {/* MESAJ YAZMA ALANI (ASLA KAYBOLMAZ - SHRINK-0) */}
+        <footer className="shrink-0 bg-[#d4dce8] border-t-2 border-white p-2 z-[60]">
+          <form onSubmit={handleSend} className="flex gap-1 h-11 items-center">
+            <div className="flex-1 bg-white border-2 border-gray-500 shadow-inner px-3 h-full flex items-center overflow-hidden">
+               <span className="text-[#000080] font-black mr-1 shrink-0 text-xs">{userName}:</span>
+               <input 
                 type="text" 
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
-                className="w-full bg-transparent outline-none text-[16px] py-1"
+                className="w-full bg-transparent outline-none text-sm py-1"
                 placeholder="Mesaj yaz..."
                 autoComplete="off"
               />
             </div>
-            <button type="submit" className="w-11 h-11 bg-[#000080] text-white rounded-full flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-transform">
-              <Send size={20} />
+            <button type="submit" className="w-11 h-11 bg-[#d4dce8] border-2 border-white shadow-[2px_2px_0_gray] flex items-center justify-center shrink-0 active:shadow-none">
+              <Send size={18} className="text-[#000080]" />
             </button>
           </form>
-          {/* Ana sitenin barı için opsiyonel boşluk (sadece ana sitedeyse) */}
-          <div className="h-2 w-full"></div>
         </footer>
 
-        {/* Mobil Sol Kanal Drawer */}
+        {/* Mobil Sol Kanal Overlay */}
         {isChannelsOpen && (
           <div className="absolute inset-0 z-[200] flex">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setIsChannelsOpen(false)} />
-            <div className="relative w-[80%] bg-[#d4dce8] h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-              <div className="p-4 bg-[#000080] text-white font-black flex justify-between items-center shrink-0">
-                <span className="text-xs uppercase">ODALAR</span>
-                <X onClick={() => setIsChannelsOpen(false)} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsChannelsOpen(false)} />
+            <div className="relative w-[75%] bg-[#d4dce8] h-full shadow-2xl flex flex-col border-r-2 border-white animate-in slide-in-from-left duration-200">
+              <div className="p-4 bg-[#000080] text-white font-bold flex justify-between items-center shrink-0">
+                <span className="text-xs uppercase">KANALLAR</span>
+                <X onClick={() => setIsChannelsOpen(false)} size={18} />
               </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => (
-                  <button key={c} onClick={() => { setActiveTab(c.toLowerCase()); setIsChannelsOpen(false); }} className={`w-full text-left p-4 rounded-lg font-bold flex items-center gap-3 ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white shadow-lg' : 'bg-white border'}`}>
-                    <Hash size={18} /> {c}
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {['#Sohbet', '#Yardim', '#Radyo'].map(c => (
+                  <button key={c} onClick={() => { setActiveTab(c.toLowerCase()); setIsChannelsOpen(false); }} className={`w-full text-left p-3 border-2 border-white flex items-center gap-2 font-bold text-xs uppercase ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white' : 'bg-gray-100'}`}>
+                    <Hash size={14} /> {c}
                   </button>
                 ))}
               </div>
@@ -165,33 +159,39 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, embedded = false }) => {
     );
   }
 
-  // --- MASAÜSTÜ GÖRÜNÜM (mIRC STİLİ) ---
+  // --- DESKTOP GÖRÜNÜM (RETRO-MODERN mIRC) ---
   return (
-    <div ref={containerRef} className="flex flex-col bg-[#d4dce8] w-full h-full border-2 border-white shadow-inner font-mono overflow-hidden">
-      <header className="h-8 bg-[#000080] text-white flex items-center px-2 text-[11px] font-bold shrink-0">
+    <div ref={containerRef} className="flex flex-col bg-[#d4dce8] w-full h-full border-2 border-white shadow-2xl font-mono overflow-hidden text-black">
+      <header className="h-9 bg-[#000080] text-white flex items-center px-2 text-[10px] font-bold shrink-0 shadow-lg">
         <div className="flex-1 flex gap-1 h-full items-center">
-          {['#Sohbet', '#Yardim'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())} className={`px-4 h-[85%] uppercase transition-colors ${activeTab === tab.toLowerCase() ? 'bg-[#d4dce8] text-black border-t-2 border-white' : 'hover:bg-blue-800'}`}>{tab}</button>
+          {['#Sohbet', '#Yardim', '#Radyo'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())} className={`px-5 h-[80%] uppercase transition-all flex items-center gap-2 ${activeTab === tab.toLowerCase() ? 'bg-[#d4dce8] text-black border-t-2 border-white' : 'hover:bg-blue-800'}`}>
+              <MessageSquare size={12} /> {tab}
+            </button>
           ))}
+        </div>
+        <div className="flex gap-4 items-center opacity-70">
+           <span className="flex items-center gap-1"><Terminal size={12} /> workigom.online</span>
+           <button onClick={() => window.location.reload()}><LogOut size={14} /></button>
         </div>
       </header>
       
-      <div className="flex-1 flex overflow-hidden bg-white">
-        <main className="flex-1 relative min-w-0 border-r border-gray-300">
+      <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1">
+        <main className="flex-1 relative min-w-0">
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </main>
-        <aside className="w-52 bg-[#d4dce8] shrink-0 flex flex-col">
-          <UserList users={[userName, 'Admin', 'GeminiBot', 'Selin', 'Eray']} currentUser={userName} onClose={() => {}} />
+        <aside className="w-56 bg-[#d4dce8] border-l-2 border-white shrink-0 flex flex-col">
+          <UserList users={[userName, 'Admin', 'GeminiBot', 'Selin', 'Can']} currentUser={userName} onClose={() => {}} />
         </aside>
       </div>
 
       <footer className="h-14 bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
         <form onSubmit={handleSend} className="flex gap-1 h-full">
-          <div className="flex-1 bg-white border border-gray-400 shadow-inner px-3 flex items-center">
-            <span className="text-[#000080] font-black mr-2 text-xs truncate max-w-[100px]">{userName}:</span>
+          <div className="flex-1 bg-white border-2 border-gray-600 shadow-inner px-3 flex items-center overflow-hidden">
+            <span className="text-[#000080] font-black mr-2 text-[11px] truncate">{userName}:</span>
             <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} className="flex-1 outline-none text-sm" placeholder="Buraya yazın..." />
           </div>
-          <button type="submit" className="px-6 bg-[#d4dce8] border-2 border-white shadow-[2px_2px_0_gray] text-xs font-black uppercase active:shadow-none active:translate-y-[1px]">GÖNDER</button>
+          <button type="submit" className="px-8 bg-[#d4dce8] border-2 border-white shadow-[2px_2px_0_gray] text-[10px] font-black uppercase active:shadow-none active:translate-y-px">GÖNDER</button>
         </form>
       </footer>
     </div>

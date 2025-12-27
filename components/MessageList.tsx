@@ -49,17 +49,19 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="absolute inset-0 overflow-y-auto px-4 py-2 bg-white flex flex-col font-mono"
+      className="absolute inset-0 overflow-y-auto px-4 py-2 bg-white flex flex-col font-mono no-scrollbar"
     >
       <div className="flex flex-col min-h-full">
         {messages.length === 0 ? (
-          <div className="text-gray-400 text-xs italic py-4">Sohbet sunucusuna bağlanıldı...</div>
+          <div className="text-gray-400 text-[10px] py-4 border-b border-gray-100 mb-2 italic">
+            *** Workigom IRC Network: Bağlantı kuruluyor...
+          </div>
         ) : (
           messages.map((msg, i) => (
             <div key={msg.id || i}>{renderMessageLine(msg)}</div>
           ))
         )}
-        {/* Mesajların en altta input tarafından örtülmemesi için son boşluk */}
+        {/* Mesajların en altta input tarafından örtülmemesi için minimal boşluk */}
         <div className="h-4 shrink-0"></div>
       </div>
     </div>

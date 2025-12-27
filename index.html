@@ -4,48 +4,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Workigom Chat | workigomchat.online</title>
+  <title>Workigom Chat | mIRC Modern</title>
   <meta name="theme-color" content="#000080">
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968804.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* KRİTİK MOBİL AYARLARI */
-    :root {
-      --app-height: 100%;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      margin: 0;
-      padding: 0;
-    }
-
+    :root { --app-height: 100%; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
     html, body {
-      /* Mobil barların kaymasını engellemek için fixle */
-      overflow: hidden;
+      overflow: hidden !important;
       width: 100%;
       height: 100%;
-      height: -webkit-fill-available;
-      position: fixed;
-      background-color: #d4dce8;
+      position: fixed; /* Sayfanın komple kaymasını engeller */
+      background-color: #0b0f14;
     }
     
     #root {
-      /* dvh: Dinamik Viewport Yüksekliği (Adres çubuğu değişse de sığar) */
-      height: 100%;
-      height: 100dvh; 
+      height: 100dvh; /* Dynamic viewport height */
       width: 100%;
       display: flex;
       flex-direction: column;
     }
 
-    /* Klavye açıldığında input zoom'u engelle */
+    .mirc-shadow { box-shadow: inset 1px 1px 0 #fff, 2px 2px 5px rgba(0,0,0,0.2); }
+    .mirc-border { border: 2px solid; border-color: #fff #808080 #808080 #fff; }
+    
+    /* Mobil tarayıcılarda input zoom engelleme */
     @media screen and (max-width: 768px) {
-      input, textarea { font-size: 16px !important; }
+      input, select, textarea { font-size: 16px !important; }
     }
-
-    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 <script type="importmap">
 {
@@ -56,8 +43,8 @@
     "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.89.0",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.0"
   }
 }
 </script>
