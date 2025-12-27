@@ -7,9 +7,9 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     // KURAL: API anahtarı her zaman taze process.env.API_KEY üzerinden alınmalıdır.
     const apiKey = process.env.API_KEY;
 
-    // Eğer anahtar yoksa UI'ın yakalayacağı spesifik bir hata kodu dönüyoruz.
-    if (!apiKey || apiKey === "undefined") {
-      return "HATA: [API_KEY_MISSING] Requested entity was not found. Lütfen AI anahtarınızı seçin.";
+    // KURAL: "Requested entity was not found." hatası anahtar seçimi gerektiğini belirtir.
+    if (!apiKey || apiKey === "undefined" || apiKey.length < 5) {
+      return "HATA: Requested entity was not found. [API_KEY_MISSING] Lütfen geçerli bir AI anahtarı seçin.";
     }
 
     // KURAL: Her istekte yeni instance oluşturulmalıdır.
@@ -40,7 +40,6 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
-    // .text özelliğine doğrudan erişim.
     const text = response.text;
     
     if (!text) {
@@ -53,15 +52,15 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     
     const errorMsg = error?.message || "";
     
-    // KURAL: 'Requested entity was not found' hatası gelirse UI seçim diyaloğunu tetiklemelidir.
+    // KURAL: Geçersiz veya bulunamayan anahtar hatasını yakala.
     if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API key not valid")) {
-      return "HATA: [INVALID_KEY] Requested entity was not found. Lütfen anahtarınızı güncelleyin.";
+      return "HATA: Requested entity was not found. [INVALID_KEY] Lütfen anahtarınızı güncelleyin.";
     }
 
     if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-      return "SİSTEM: Limitleriniz doldu. Lütfen bir süre bekleyin.";
+      return "SİSTEM: AI kullanım limitiniz doldu. Lütfen bir süre sonra deneyin.";
     }
     
-    return "SİSTEM: Teknik bir sorun oluştu. Lütfen bağlantınızı kontrol edin.";
+    return "SİSTEM: Teknik bir sorun oluştu. Bağlantınızı veya anahtarınızı kontrol edin.";
   }
 };
