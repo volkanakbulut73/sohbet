@@ -13,8 +13,20 @@ import {
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
   MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play, Music, Volume2, 
-  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck, Loader2
+  UserX, UserCheck2, Trash2, BellRing, Clock, ShieldCheck, Loader2, Sparkles, Cpu
 } from 'lucide-react';
+
+// Fix: Define AIStudio interface and use it in the global Window declaration to match identical modifiers and expected types.
+interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    aistudio: AIStudio;
+  }
+}
 
 const App: React.FC<ChatModuleProps> = () => {
   const [view, setView] = useState<'landing' | 'register' | 'login' | 'chat' | 'admin' | 'pending'>('landing');
@@ -30,6 +42,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [hasAiKey, setHasAiKey] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -39,6 +52,23 @@ const App: React.FC<ChatModuleProps> = () => {
     messages, sendMessage, initiatePrivateChat, onlineUsers,
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
+
+  // AI Key Check
+  useEffect(() => {
+    const checkAiKey = async () => {
+      try {
+        if (window.aistudio) {
+          const hasKey = await window.aistudio.hasSelectedApiKey();
+          setHasAiKey(hasKey);
+        }
+      } catch (e) {
+        console.error("AI Key check error:", e);
+      }
+    };
+    checkAiKey();
+    const interval = setInterval(checkAiKey, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleViewport = () => {
@@ -52,16 +82,24 @@ const App: React.FC<ChatModuleProps> = () => {
     return () => window.visualViewport?.removeEventListener('resize', handleViewport);
   }, []);
 
+  const handleAiConnect = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setHasAiKey(true);
+      alert("Yapay Zeka yapılandırması tamamlandı. Artık Workigom AI ile sohbet edebilirsiniz.");
+    } else {
+      alert("Bu özellik şu anki tarayıcı ortamında desteklenmiyor.");
+    }
+  };
+
   const handleLogout = async () => {
     if (!confirm('Güvenli çıkış yapmak ve tüm özel mesaj geçmişinizi kalıcı olarak silmek istiyor musunuz?')) return;
     
     setIsCleaningUp(true);
     try {
-      // Çıkış yaparken tüm özel mesajları database'den temizle
       await storageService.deleteAllPrivateMessagesForUser(userName);
       localStorage.removeItem('mirc_nick');
-      // Küçük bir gecikme ile temizlik işleminin tamamlandığını hissettir
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.location.reload(), 2000);
     } catch (e) {
       console.error("Logout cleanup error:", e);
       window.location.reload();
@@ -102,9 +140,15 @@ const App: React.FC<ChatModuleProps> = () => {
     return (
       <div className="fixed inset-0 bg-[#0b0f14] z-[5000] flex flex-col items-center justify-center font-mono">
         <Loader2 size={64} className="text-[#00ff99] animate-spin mb-6" />
-        <div className="text-center space-y-2">
-          <p className="text-white font-black uppercase italic tracking-[0.3em] animate-pulse">Gizlilik Protokolü Çalıştırılıyor</p>
-          <p className="text-[#00ff99] text-[10px] font-bold uppercase tracking-widest">Özel mesaj geçmişiniz kalıcı olarak siliniyor...</p>
+        <div className="text-center space-y-4">
+          <p className="text-white font-black uppercase italic tracking-[0.4em] animate-pulse">Gizlilik Protokolü v2.7</p>
+          <div className="bg-white/10 p-3 border border-[#00ff99]/30 rounded">
+             <p className="text-[#00ff99] text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+               Özel mesaj kayıtları Supabase üzerinden siliniyor...<br/>
+               Nickname veritabanı temizleniyor...<br/>
+               Güvenli çıkış yapılıyor...
+             </p>
+          </div>
         </div>
       </div>
     );
@@ -137,7 +181,7 @@ const App: React.FC<ChatModuleProps> = () => {
                   <Clock size={48} className="text-[#000080]" />
                 </div>
               </div>
-              <h2 className="text-xl font-black text-[#000080] uppercase italic">BAŞVURUNUZ ALINDI</h2>
+              <h2 className="text-xl font-black text-[#000080] uppercase italic text-shadow-sm">BAŞVURUNUZ ALINDI</h2>
               <p className="text-xs text-gray-700 font-bold leading-relaxed">
                 Güvenlik ekibimiz belgelerinizi incelemeye başladı. <br/>
                 Onay sürecimiz genellikle 24 saat sürmektedir. <br/>
@@ -150,7 +194,7 @@ const App: React.FC<ChatModuleProps> = () => {
               </div>
               <button 
                 onClick={() => setView('landing')}
-                className="w-full bg-[#000080] text-white py-3 font-black text-xs uppercase hover:bg-blue-800 transition-all"
+                className="w-full bg-[#000080] text-white py-3 font-black text-xs uppercase hover:bg-blue-800 transition-all shadow-md"
               >
                 ANA SAYFAYA DÖN
               </button>
@@ -206,8 +250,8 @@ const App: React.FC<ChatModuleProps> = () => {
   }
 
   const isPrivate = !activeTab.startsWith('#');
+  const isBotRoom = activeTab === CHAT_MODULE_CONFIG.BOT_NAME;
   
-  // ÖZEL ODADA SADECE TARAFLARI GÖSTER (Admin ve Botu Gizle)
   const filteredOnlineUsers = activeTab.startsWith('#')
     ? onlineUsers
     : onlineUsers.filter(u => u === activeTab || u === userName);
@@ -221,9 +265,11 @@ const App: React.FC<ChatModuleProps> = () => {
       <header className="h-14 bg-[#000080] text-white flex items-center px-4 shrink-0 border-b border-white/30">
         <div className="flex items-center gap-3 flex-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-3.5 h-3.5 bg-[#00ff99] rounded-full shadow-[0_0_12px_#00ff99] animate-pulse"></div>
+            <div className={`w-3.5 h-3.5 ${hasAiKey ? 'bg-[#00ff99] shadow-[0_0_12px_#00ff99]' : 'bg-red-500 shadow-[0_0_12px_red]'} rounded-full animate-pulse`}></div>
             <div className="hidden sm:flex flex-col">
-              <span className="text-[10px] font-black tracking-widest text-[#00ff99] leading-none uppercase">Online</span>
+              <span className={`text-[10px] font-black tracking-widest ${hasAiKey ? 'text-[#00ff99]' : 'text-red-400'} leading-none uppercase`}>
+                {hasAiKey ? 'AI ONLINE' : 'AI OFFLINE'}
+              </span>
             </div>
           </div>
           <div className="h-7 w-px bg-white/20 hidden sm:block"></div>
@@ -234,7 +280,16 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 relative ml-auto">
-          {isPrivate && activeTab !== CHAT_MODULE_CONFIG.BOT_NAME && activeTab !== userName && (
+          {!hasAiKey && isBotRoom && (
+            <button 
+              onClick={handleAiConnect}
+              className="hidden sm:flex items-center gap-2 bg-[#00ff99] text-black px-3 py-1.5 rounded-sm text-[10px] font-black shadow-lg animate-bounce"
+            >
+              <Cpu size={14} /> AI BAĞLAN
+            </button>
+          )}
+
+          {isPrivate && !isBotRoom && activeTab !== userName && (
             <div className="flex gap-2">
               <button 
                 onClick={() => toggleBlock(activeTab)} 
@@ -257,13 +312,21 @@ const App: React.FC<ChatModuleProps> = () => {
           </button>
           {isMenuOpen && (
             <div className="absolute top-12 right-0 w-56 bg-[#f0f2f5] border-2 border-[#000080] shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] z-[2000] p-1 text-black">
+              {!hasAiKey && (
+                <button onClick={() => { handleAiConnect(); setIsMenuOpen(false); }} className="w-full text-left p-3 bg-yellow-100 hover:bg-[#000080] hover:text-white text-[11px] font-black flex items-center gap-3 border-b border-gray-300 text-yellow-800">
+                  <Sparkles size={16} /> YAPAY ZEKA BAĞLA
+                </button>
+              )}
               <button onClick={() => { const n = prompt('Yeni Nickname:'); if(n) setUserName(n); setIsMenuOpen(false); }} className="w-full text-left p-3 hover:bg-[#000080] hover:text-white text-[11px] font-black flex items-center gap-3 border-b border-gray-300">
                 <UserPlus size={16} /> NICKNAME DEĞİŞTİR
               </button>
-              <button onClick={() => { setAllowPrivateMessages(!allowPrivateMessages); setIsMenuOpen(false); }} className="w-full text-left p-3 hover:bg-[#000080] hover:text-white text-[11px] font-black flex items-center gap-3">
+              <button onClick={() => { setAllowPrivateMessages(!allowPrivateMessages); setIsMenuOpen(false); }} className="w-full text-left p-3 hover:bg-[#000080] hover:text-white text-[11px] font-black flex items-center gap-3 border-b border-gray-300">
                 {allowPrivateMessages ? <MessageCircleOff size={16}/> : <MessageCircle size={16}/>}
                 ÖZEL MESAJLARI {allowPrivateMessages ? 'KAPAT' : 'AÇ'}
               </button>
+              <div className="p-3">
+                <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[9px] text-blue-600 hover:underline font-bold uppercase">AI Faturalandırma Bilgisi</a>
+              </div>
               <div className="h-px bg-gray-400 my-1 mx-2"></div>
               <button onClick={handleLogout} className="w-full text-left p-3 hover:bg-red-600 hover:text-white text-[11px] font-black flex items-center gap-3">
                 <LogOut size={16} /> GÜVENLİ ÇIKIŞ
@@ -303,6 +366,31 @@ const App: React.FC<ChatModuleProps> = () => {
       {/* MAIN AREA */}
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative min-w-0 bg-[#f0f0f0] shadow-inner flex flex-col overflow-hidden">
+          {/* BOT NO-KEY OVERLAY */}
+          {isBotRoom && !hasAiKey && (
+            <div className="absolute inset-0 bg-[#f0f2f5] z-30 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+               <div className="w-full max-w-sm bg-white border-2 border-[#000080] p-6 shadow-xl space-y-6">
+                  <div className="flex justify-center">
+                    <div className="p-4 bg-yellow-100 rounded-full border-2 border-yellow-500">
+                      <ShieldCheck size={48} className="text-yellow-700" />
+                    </div>
+                  </div>
+                  <h3 className="text-[#000080] font-black text-lg uppercase italic">AI BAĞLANTISI GEREKLİ</h3>
+                  <p className="text-[11px] font-bold text-gray-600 leading-relaxed uppercase">
+                    Workigom AI ile sohbet edebilmek için kendi Gemini API anahtarınızı tanımlamanız gerekmektedir. 
+                    Bu işlem sadece bir kez yapılır.
+                  </p>
+                  <button 
+                    onClick={handleAiConnect}
+                    className="w-full bg-[#00ff99] text-black py-4 font-black text-xs uppercase hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-1"
+                  >
+                    🔐 AI ANAHTARINI SEÇ
+                  </button>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase italic">* Ücretli bir GCP projesi seçmeniz önerilir.</p>
+               </div>
+            </div>
+          )}
+
           {/* RADIO ROOM */}
           <div className={`absolute inset-0 bg-[#0b0f14] flex flex-col items-center justify-center p-4 z-20 ${activeTab === '#radyo' ? 'flex' : 'hidden opacity-0 pointer-events-none'}`}>
              <div className="w-full max-w-lg space-y-6 flex flex-col items-center animate-in zoom-in-95 duration-500">
@@ -360,7 +448,7 @@ const App: React.FC<ChatModuleProps> = () => {
                  <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`p-1.5 rounded ${isUnderline ? 'bg-[#000080] text-white' : 'hover:bg-white'}`} title="Altı Çizili (Underline)"><Underline size={16}/></button>
                </div>
             </div>
-            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.7</div>
+            <div className="hidden sm:block text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v2.8</div>
           </div>
 
           <form onSubmit={handleSend} className="flex gap-1 min-h-[3.5rem] items-stretch">
