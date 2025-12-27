@@ -176,6 +176,11 @@ const App: React.FC<ChatModuleProps> = () => {
   }
 
   const isPrivate = !activeTab.startsWith('#');
+  
+  // ÖZEL ODADA SADECE TARAFLARI GÖSTER
+  const filteredOnlineUsers = activeTab.startsWith('#')
+    ? onlineUsers
+    : onlineUsers.filter(u => u === activeTab || u === userName);
 
   return (
     <div 
@@ -299,7 +304,7 @@ const App: React.FC<ChatModuleProps> = () => {
         </main>
         
         <aside className={`${isMobile ? 'w-[100px]' : 'w-56'} bg-[#d4dce8] border-l-2 border-white shrink-0 flex flex-col shadow-lg z-10`}>
-          <UserList users={onlineUsers} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} />
+          <UserList users={filteredOnlineUsers} currentUser={userName} onClose={() => {}} onUserClick={(nick) => initiatePrivateChat(nick)} />
         </aside>
       </div>
 
