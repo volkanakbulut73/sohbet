@@ -1,8 +1,7 @@
 
-// Fix: Import React to resolve 'Cannot find namespace React' error
 import React from 'react';
 import { Channel } from '../types';
-import { Hash, Search, Plus, MessageSquare, User, Circle, Sparkles } from 'lucide-react';
+import { Hash, Plus, MessageSquare, User, Circle } from 'lucide-react';
 
 interface SidebarProps {
   channels: Channel[];
@@ -22,8 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ channels, privateChats, activeTab, on
           <div>
             <h2 className="text-lg font-black tracking-tighter text-white leading-none">CONNECT</h2>
             <div className="flex items-center gap-1.5 mt-1">
-               <Sparkles size={10} className="text-sky-400" />
-               <span className="text-[9px] uppercase tracking-[0.15em] text-slate-500 font-black">Powered by Gemini</span>
+               <span className="text-[9px] uppercase tracking-[0.15em] text-slate-500 font-black">Secure Network</span>
             </div>
           </div>
         </div>

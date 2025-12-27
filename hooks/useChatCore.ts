@@ -1,9 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { Message, MessageType, Channel } from '../types';
-import { getGeminiResponse } from '../services/geminiService';
+import { Message, MessageType } from '../types';
 import { storageService, supabase } from '../services/storageService';
-import { CHAT_MODULE_CONFIG } from '../config';
 
 /**
  * Helper to convert any error into a readable string
@@ -22,13 +20,13 @@ const toErrorString = (e: any): string => {
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
-  const [openTabs, setOpenTabs] = useState<string[]>(['#sohbet', '#yardim', '#radyo', CHAT_MODULE_CONFIG.BOT_NAME]);
+  const [openTabs, setOpenTabs] = useState<string[]>(['#sohbet', '#yardim', '#radyo']);
   const [unreadTabs, setUnreadTabs] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('#sohbet');
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [allowPrivateMessages, setAllowPrivateMessages] = useState(true);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([CHAT_MODULE_CONFIG.BOT_NAME, 'Admin']);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>(['Admin']);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -52,11 +50,10 @@ export const useChatCore = (initialUserName: string) => {
           .filter(r => r.status === 'approved')
           .map(r => r.nickname);
         
-        const list = Array.from(new Set([...approvedNicks, 'Admin', CHAT_MODULE_CONFIG.BOT_NAME]));
+        const list = Array.from(new Set([...approvedNicks, 'Admin']));
         setOnlineUsers(list);
       }
     } catch (e: any) {
-      // Sadece kritik hataları konsola bas, "Failed to fetch" hatalarını navigator.onLine durumunda yut
       if (navigator.onLine) {
         console.warn("Kullanıcı listesi güncellenirken geçici bir sorun oluştu.");
       }
@@ -114,7 +111,7 @@ export const useChatCore = (initialUserName: string) => {
     if (openTabs.length <= 1) return;
 
     if (!tabName.startsWith('#')) {
-      const channelId = tabName === CHAT_MODULE_CONFIG.BOT_NAME ? tabName : getPrivateChannelId(userName, tabName);
+      const channelId = getPrivateChannelId(userName, tabName);
       await storageService.deleteMessagesByChannel(channelId);
     }
 
@@ -128,7 +125,7 @@ export const useChatCore = (initialUserName: string) => {
 
   const initiatePrivateChat = (u: string) => {
     if (u === userName) return;
-    if (!allowPrivateMessages && u !== CHAT_MODULE_CONFIG.BOT_NAME) {
+    if (!allowPrivateMessages) {
       alert("Özel mesajlarınız kapalı.");
       return;
     }
@@ -149,7 +146,7 @@ export const useChatCore = (initialUserName: string) => {
       return;
     }
 
-    const channel = activeTab.startsWith('#') || activeTab === CHAT_MODULE_CONFIG.BOT_NAME 
+    const channel = activeTab.startsWith('#')
       ? activeTab 
       : getPrivateChannelId(userName, activeTab);
 
@@ -160,16 +157,6 @@ export const useChatCore = (initialUserName: string) => {
         type: MessageType.USER,
         channel: channel
       });
-
-      if (activeTab === CHAT_MODULE_CONFIG.BOT_NAME) {
-        const res = await getGeminiResponse(text, `Platform: Workigom VIP Network, User: ${userName}`);
-        await storageService.saveMessage({ 
-          sender: CHAT_MODULE_CONFIG.BOT_NAME, 
-          text: res, 
-          type: MessageType.AI, 
-          channel: CHAT_MODULE_CONFIG.BOT_NAME 
-        });
-      }
     } catch (err: any) { 
       const errorStr = toErrorString(err);
       if (errorStr.includes("Failed to fetch")) {
@@ -187,7 +174,7 @@ export const useChatCore = (initialUserName: string) => {
   useEffect(() => {
     if (!userName || !storageService.isConfigured()) return;
 
-    const currentChannel = activeTab.startsWith('#') || activeTab === CHAT_MODULE_CONFIG.BOT_NAME
+    const currentChannel = activeTab.startsWith('#')
       ? activeTab
       : getPrivateChannelId(userName, activeTab);
     

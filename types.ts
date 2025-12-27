@@ -2,7 +2,6 @@
 export enum MessageType {
   SYSTEM = 'SYSTEM',
   USER = 'USER',
-  AI = 'AI',
   ACTION = 'ACTION',
   IMAGE = 'IMAGE'
 }

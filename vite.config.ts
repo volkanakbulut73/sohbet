@@ -27,7 +27,8 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    strictPort: true,
+    // strictPort false yapıldı: 5173 doluysa 5174'ten devam eder.
+    strictPort: false,
     cors: true
   }
 });

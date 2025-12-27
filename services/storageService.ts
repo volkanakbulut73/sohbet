@@ -169,7 +169,7 @@ export const storageService = {
       await supabase
         .from('messages')
         .delete()
-        .or(`channel.ilike.private:%:${nick},channel.ilike.private:${nick}:%,channel.eq.${CHAT_MODULE_CONFIG.BOT_NAME}`);
+        .or(`channel.ilike.private:%:${nick},channel.ilike.private:${nick}:%`);
     } catch (e) {
       console.error("Global privacy cleanup error ignored.");
     }

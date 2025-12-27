@@ -2,18 +2,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LandingPage from './components/LandingPage';
 import RegistrationForm from './components/RegistrationForm';
-import AdminDashboard from './components/AdminDashboard';
 import MessageList from './components/MessageList';
 import UserList from './components/UserList';
 import { useChatCore } from './hooks/useChatCore';
 import { storageService } from './services/storageService';
 import { ChatModuleProps } from './types';
-import { CHAT_MODULE_CONFIG } from './config';
 import { 
-  X, Send, LogOut, UserPlus, Key,
-  Smile, Bold, Italic, Underline, Settings, 
-  MessageCircleOff, MessageCircle, Music, Volume2, 
-  Loader2, Sparkles, WifiOff
+  X, LogOut, Key,
+  Smile, Settings, 
+  Loader2, WifiOff
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -30,20 +27,18 @@ const App: React.FC<ChatModuleProps> = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
-  const [hasAiKey, setHasAiKey] = useState(false);
   const [dbConnected, setDbConnected] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { 
-    userName, setUserName, activeTab, setActiveTab, openTabs, closeTab,
+    userName, setUserName, activeTab, setActiveTab, openTabs,
     messages, sendMessage, initiatePrivateChat, onlineUsers,
-    blockedUsers, allowPrivateMessages, setAllowPrivateMessages,
-    isOnline
+    blockedUsers, isOnline
   } = useChatCore('');
 
-  // Mobil Klavye Uyumluluğu: Visual Viewport kullanarak dinamik yükseklik ayarı
+  // Mobil Klavye Uyumluluğu
   useEffect(() => {
     const handleViewportChange = () => {
       if (containerRef.current && window.visualViewport) {
@@ -62,40 +57,9 @@ const App: React.FC<ChatModuleProps> = () => {
     };
   }, []);
 
-  // AI Durum Kontrolü
   useEffect(() => {
-    const checkAiStatus = async () => {
-      const aistudio = (window as any).aistudio;
-      if (aistudio) {
-        try {
-          const selected = await aistudio.hasSelectedApiKey();
-          setHasAiKey(selected);
-        } catch {
-          setHasAiKey(false);
-        }
-      } else {
-        const key = process.env.API_KEY;
-        setHasAiKey(!!key && key !== "undefined" && key.length > 5);
-      }
-      setDbConnected(storageService.isConfigured());
-    };
-    
-    checkAiStatus();
-    const interval = setInterval(checkAiStatus, 15000);
-    return () => clearInterval(interval);
+    setDbConnected(storageService.isConfigured());
   }, [isOnline]);
-
-  const handleAiConnect = async () => {
-    const aistudio = (window as any).aistudio;
-    if (aistudio) {
-      try {
-        await aistudio.openSelectKey();
-        setHasAiKey(true); // Seçim yapıldığı kabul edilir
-      } catch (e) {
-        console.error("AI Key Selection Failed:", e);
-      }
-    }
-  };
 
   const handleLogout = async () => {
     if (!confirm('Güvenli çıkış yapılsın mı?')) return;
@@ -166,10 +130,6 @@ const App: React.FC<ChatModuleProps> = () => {
     <div ref={containerRef} className="flex flex-col bg-[#d4dce8] w-full border-2 border-white shadow-2xl overflow-hidden font-mono fixed inset-0 z-[1000] mirc-window">
       <header className="h-10 bg-[#000080] text-white flex items-center px-3 shrink-0">
         <div className="flex items-center gap-3 flex-1">
-          <div className="flex items-center gap-1.5 cursor-pointer" onClick={handleAiConnect} title="AI Anahtarı Seç">
-            <div className={`w-2.5 h-2.5 ${hasAiKey ? 'bg-[#00ff99] shadow-[0_0_5px_#00ff99]' : 'bg-red-500'} rounded-full animate-pulse`}></div>
-            <span className="text-[8px] font-black tracking-widest uppercase">AI</span>
-          </div>
           <div className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 ${dbConnected ? 'bg-[#00ff99]' : 'bg-red-500'} rounded-full`}></div>
             <span className="text-[8px] font-black tracking-widest uppercase">DB</span>
@@ -182,7 +142,6 @@ const App: React.FC<ChatModuleProps> = () => {
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1 hover:bg-white/20 rounded transition-colors"><Settings size={16} /></button>
           {isMenuOpen && (
             <div className="absolute top-8 right-2 w-48 bg-[#f0f2f5] border-2 border-[#000080] shadow-2xl z-[2000] text-black p-0.5 mirc-window">
-              <button onClick={() => { handleAiConnect(); setIsMenuOpen(false); }} className="w-full text-left p-2 hover:bg-[#000080] hover:text-white text-[9px] font-black flex items-center gap-2 border-b border-gray-300 uppercase"><Sparkles size={14} /> AI Anahtar Ayarı</button>
               <button onClick={handleLogout} className="w-full text-left p-2 hover:bg-red-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase"><LogOut size={14} /> Oturumu Kapat</button>
             </div>
           )}
