@@ -11,7 +11,7 @@ import { ChatModuleProps } from './types';
 import { 
   Terminal, Menu, X, Hash, Send, LogOut, Shield, UserPlus, Key,
   Smile, Bold, Italic, Underline, Settings, Ban, UserCheck, 
-  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut
+  MessageCircleOff, MessageCircle, Search, ZoomIn, ZoomOut, Radio, Play
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -19,6 +19,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRadioOpen, setIsRadioOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   
   // Formatlama Durumları
@@ -49,6 +50,13 @@ const App: React.FC<ChatModuleProps> = () => {
     handleViewport();
     return () => window.visualViewport?.removeEventListener('resize', handleViewport);
   }, []);
+
+  // Radyo sekmesi tıklandığında radyoyu aç
+  useEffect(() => {
+    if (activeTab === '#radyo') {
+      setIsRadioOpen(true);
+    }
+  }, [activeTab]);
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -147,6 +155,14 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 relative">
+          <button 
+            onClick={() => setIsRadioOpen(!isRadioOpen)} 
+            className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-all rounded-sm ${isRadioOpen ? 'bg-[#00ff99] text-[#000080] border-white shadow-[0_0_10px_#00ff99]' : 'border-white/40 hover:bg-white/10 text-white'}`}
+          >
+            <Radio size={14} className={isRadioOpen ? 'animate-spin' : ''} />
+            {isMobile ? '' : 'RADYO D'}
+          </button>
+          
           {isPrivate && (
             <button onClick={() => toggleBlock(activeTab)} className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border transition-colors rounded-sm ${blockedUsers.includes(activeTab) ? 'bg-red-600 border-red-400' : 'border-white/40 hover:bg-white/10'}`}>
               {blockedUsers.includes(activeTab) ? <UserCheck size={14}/> : <Ban size={14}/>}
@@ -185,8 +201,36 @@ const App: React.FC<ChatModuleProps> = () => {
       
       {/* MAIN AREA */}
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
-        <main className="flex-1 relative min-w-0 bg-white shadow-inner">
-          <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
+        <main className="flex-1 relative min-w-0 bg-white shadow-inner flex flex-col">
+          {/* RADYO WIDGET AREA (UPPER SECTION) */}
+          {isRadioOpen && (
+            <div className="shrink-0 bg-[#d4dce8] border-b-2 border-[#000080]/30 p-2 flex flex-col items-center animate-in slide-in-from-top relative">
+              <button 
+                onClick={() => setIsRadioOpen(false)}
+                className="absolute top-1 right-1 p-1 hover:bg-red-500 hover:text-white transition-colors border border-gray-400"
+              >
+                <X size={14} />
+              </button>
+              <div className="bg-white p-1 border border-[#808080] shadow-sm mb-1">
+                <iframe 
+                  width="300" 
+                  height="120" 
+                  src="https://www.radyod.com/iframe-large" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                  className="max-w-full"
+                ></iframe>
+              </div>
+              <span className="text-[9px] font-black text-[#000080] italic flex items-center gap-1">
+                <Play size={8} className="fill-[#000080]" /> ŞU AN ÇALIYOR: RADYO D
+              </span>
+            </div>
+          )}
+          
+          <div className="flex-1 relative">
+            <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
+          </div>
         </main>
         <aside className={`${isMobile ? 'w-[100px]' : 'w-56'} bg-[#d4dce8] border-l-2 border-white shrink-0 flex flex-col shadow-lg z-10`}>
           <UserList users={[userName, 'Admin', 'GeminiBot', 'Esra', 'Can', 'Merve', 'Selin']} currentUser={userName} onClose={() => {}} onUserClick={(e, nick) => initiatePrivateChat(nick)} />
@@ -258,7 +302,7 @@ const App: React.FC<ChatModuleProps> = () => {
                </div>
             </div>
             <div className="hidden sm:block">
-              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.4</span>
+              <span className="text-[9px] font-black text-[#000080] uppercase tracking-widest opacity-60 italic">Geveze Edition v1.5</span>
             </div>
           </div>
 
