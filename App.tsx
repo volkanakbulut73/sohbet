@@ -22,6 +22,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { 
     userName, setUserName, activeTab, setActiveTab, 
     messages, sendMessage, initiatePrivateChat 
@@ -30,10 +31,11 @@ const App: React.FC<ChatModuleProps> = () => {
   // View değiştikçe body scroll kilidini yönet
   useEffect(() => {
     if (view === 'chat' || view === 'admin' || view === 'login' || view === 'register') {
-      // Login ve Register'da da fixed kalarak mobil klavye sorunlarını önlüyoruz
       if (window.innerWidth < 768) {
         document.body.style.overflow = 'hidden';
         document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
       }
     } else {
       document.body.style.overflow = 'auto';
@@ -44,15 +46,20 @@ const App: React.FC<ChatModuleProps> = () => {
   useEffect(() => {
     const handleViewport = () => {
       setIsMobile(window.innerWidth < 1024);
-      if (containerRef.current && window.visualViewport && (view === 'chat' || view === 'login' || view === 'register')) {
-        containerRef.current.style.height = `${window.visualViewport.height}px`;
+      if (containerRef.current && window.visualViewport) {
+        const height = window.visualViewport.height;
+        containerRef.current.style.height = `${height}px`;
+        // Klavye açıldığında en alta kaydır
+        window.scrollTo(0, 0);
       }
     };
     window.visualViewport?.addEventListener('resize', handleViewport);
+    window.visualViewport?.addEventListener('scroll', handleViewport);
     window.addEventListener('resize', handleViewport);
     handleViewport();
     return () => {
       window.visualViewport?.removeEventListener('resize', handleViewport);
+      window.visualViewport?.removeEventListener('scroll', handleViewport);
       window.removeEventListener('resize', handleViewport);
     };
   }, [view]);
@@ -60,8 +67,16 @@ const App: React.FC<ChatModuleProps> = () => {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
+    
     sendMessage(inputText);
     setInputText('');
+    
+    // MOBİL İÇİN KRİTİK: Klavye kapanmasın diye input'a tekrar odaklan
+    if (isMobile && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 10);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -105,17 +120,17 @@ const App: React.FC<ChatModuleProps> = () => {
 
   if (view === 'login') {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0b0f14]/95 backdrop-blur-sm fixed inset-0 z-[2000] p-4">
-        <div className="w-full max-w-[360px] bg-[#d4dce8] border-2 border-white shadow-[15px_15px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden mirc-window">
+      <div className="flex-1 flex items-center justify-center bg-[#0b0f14]/95 backdrop-blur-sm fixed inset-0 z-[2000] p-4 overflow-y-auto">
+        <div className="w-full max-w-[360px] bg-[#d4dce8] border-2 border-white shadow-[15px_15px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden mirc-window my-auto">
           <div className="bg-[#000080] text-white px-3 py-2 text-xs font-black flex justify-between items-center select-none">
             <span className="flex items-center gap-2"><Key size={14} /> Workigom Chat Access</span>
             <X size={18} className="cursor-pointer hover:bg-red-600 transition-colors" onClick={() => setView('landing')} />
           </div>
           
-          <div className="p-8 space-y-8">
+          <div className="p-8 space-y-6">
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 bg-white/50 rounded-full mx-auto flex items-center justify-center border-2 border-[#000080]/20 shadow-inner">
-                <Shield size={32} className="text-[#000080]" />
+              <div className="w-14 h-14 bg-white/50 rounded-full mx-auto flex items-center justify-center border-2 border-[#000080]/20 shadow-inner">
+                <Shield size={28} className="text-[#000080]" />
               </div>
               <h3 className="text-sm font-black text-[#000080] uppercase italic tracking-tighter">Sisteme Giriş Yap</h3>
             </div>
@@ -151,13 +166,12 @@ const App: React.FC<ChatModuleProps> = () => {
               </button>
             </form>
 
-            <div className="relative py-2">
+            <div className="relative py-1">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t-2 border-gray-300"></div></div>
               <div className="relative flex justify-center text-[10px] uppercase font-black"><span className="bg-[#d4dce8] px-3 text-gray-500 italic">Veya</span></div>
             </div>
 
-            <div className="space-y-4">
-              <p className="text-[10px] text-center font-bold text-gray-600 italic">Henüz bir hesabınız yok mu?</p>
+            <div className="space-y-3">
               <button 
                 onClick={() => setView('register')}
                 className="w-full bg-[#00ff99] text-black py-4 text-xs font-black shadow-[4px_4px_0_gray] active:shadow-none active:translate-y-px uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
@@ -179,7 +193,8 @@ const App: React.FC<ChatModuleProps> = () => {
   return (
     <div 
       ref={containerRef} 
-      className={`flex flex-col bg-[#d4dce8] w-full h-full border-2 border-white shadow-2xl overflow-hidden text-black font-mono fixed inset-0 z-[1000] ${isMobile ? '' : 'm-0'}`}
+      className={`flex flex-col bg-[#d4dce8] w-full border-2 border-white shadow-2xl overflow-hidden text-black font-mono fixed left-0 top-0 right-0 z-[1000]`}
+      style={{ height: window.visualViewport?.height || '100dvh' }}
     >
       <header className={`${isMobile ? 'h-12' : 'h-9'} bg-[#000080] text-white flex items-center px-2 font-bold shrink-0`}>
         <div className="flex-1 flex gap-1 h-full items-center">
@@ -251,7 +266,14 @@ const App: React.FC<ChatModuleProps> = () => {
         <form onSubmit={handleSend} className="flex gap-1 h-full">
           <div className="flex-1 bg-white border-2 border-gray-600 shadow-inner px-3 flex items-center overflow-hidden">
             <span className="text-[#000080] font-black mr-2 text-[11px] shrink-0">{userName}:</span>
-            <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} className="flex-1 outline-none text-sm bg-transparent" placeholder="Mesajınızı yazın..." />
+            <input 
+              ref={inputRef}
+              type="text" 
+              value={inputText} 
+              onChange={e => setInputText(e.target.value)} 
+              className="flex-1 outline-none text-sm bg-transparent" 
+              placeholder="Mesajınızı yazın..." 
+            />
           </div>
           <button type="submit" className={`bg-[#d4dce8] border-2 border-white shadow-[2px_2px_0_gray] font-black uppercase active:shadow-none active:translate-y-px flex items-center justify-center shrink-0 ${isMobile ? 'w-12 h-12' : 'px-8 text-[10px]'}`}>
             {isMobile ? <Send size={18} className="text-[#000080]" /> : 'GÖNDER'}

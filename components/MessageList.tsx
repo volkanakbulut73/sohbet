@@ -12,11 +12,25 @@ interface MessageListProps {
 const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blockedUsers, onNickClick }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+  };
+
+  useEffect(() => {
+    // Mesajlar geldiğinde en alta kaydır
+    scrollToBottom();
+    // Render gecikmeleri için kısa bir timeout ile garantiye al
+    const timer = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timer);
   }, [messages]);
+
+  // Viewport resize olduğunda (klavye açıldığında) da kaydır
+  useEffect(() => {
+    window.visualViewport?.addEventListener('resize', scrollToBottom);
+    return () => window.visualViewport?.removeEventListener('resize', scrollToBottom);
+  }, []);
 
   const renderMessageLine = (msg: Message) => {
     if (blockedUsers.includes(msg.sender)) return null;
@@ -49,7 +63,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="absolute inset-0 overflow-y-auto px-4 py-2 bg-white flex flex-col font-mono no-scrollbar"
+      className="absolute inset-0 overflow-y-auto px-4 py-2 bg-white flex flex-col font-mono no-scrollbar scroll-smooth"
     >
       <div className="flex flex-col min-h-full">
         {messages.length === 0 ? (
@@ -61,8 +75,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
             <div key={msg.id || i}>{renderMessageLine(msg)}</div>
           ))
         )}
-        {/* Mesajların en altta input tarafından örtülmemesi için minimal boşluk */}
-        <div className="h-4 shrink-0"></div>
+        {/* Mesajların en altta input tarafından örtülmemesi için boşluk */}
+        <div className="h-8 shrink-0"></div>
       </div>
     </div>
   );
