@@ -30,7 +30,7 @@ export interface ChatModuleProps {
   externalUser?: string;
   onSendMessage?: (msg: string) => void;
   className?: string;
-  embedded?: boolean; // SDK olarak başka sitede kullanılıp kullanılmadığı
+  embedded?: boolean;
 }
 
 export interface UserRegistration {
@@ -39,8 +39,9 @@ export interface UserRegistration {
   fullName: string;
   email: string;
   password?: string;
-  criminal_record_file?: string; // base64
-  insurance_file?: string; // base64
   status: 'pending' | 'approved' | 'rejected';
   created_at?: string;
+  // Fix: Added missing security document properties used in registration and admin views
+  criminal_record_file?: string;
+  insurance_file?: string;
 }

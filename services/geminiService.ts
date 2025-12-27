@@ -5,18 +5,13 @@ import { CHAT_MODULE_CONFIG } from "../config";
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
     // API Key must be obtained exclusively from process.env.API_KEY
-    const apiKey = process.env.API_KEY || "";
+    // Fix: Using the direct named parameter initialization as required by guidelines
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    if (!apiKey) {
-      console.warn("API Key bulunamadı.");
-      return "Sistem hatası: Yapay zeka yapılandırması eksik.";
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
     // Using the recommended model for basic text/chat tasks
     const model = "gemini-3-flash-preview";
     
-    let parts: any[] = [];
+    const parts: any[] = [];
     
     if (imageBase64) {
       parts.push({
@@ -29,9 +24,10 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     
     parts.push({ text: `Kanal/Sohbet Bağlamı: ${context}\nKullanıcı Mesajı: ${prompt}` });
 
+    // Fix: Using correct GenerateContentParameters structure with contents.parts
     const response = await ai.models.generateContent({
       model,
-      contents: [{ parts }],
+      contents: { parts },
       config: {
         systemInstruction: customInstruction || CHAT_MODULE_CONFIG.BOT_SYSTEM_INSTRUCTION,
         temperature: 0.7,
@@ -40,6 +36,7 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
+    // Fix: Using .text property directly (not a method) from GenerateContentResponse
     return response.text || "Üzgünüm, şu an yanıt veremiyorum.";
   } catch (error) {
     console.error("Gemini API Error:", error);

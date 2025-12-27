@@ -1,18 +1,16 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Message, MessageType, Channel } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
-import { storageService, isConfigured, supabase } from '../services/storageService';
-import { CHAT_MODULE_CONFIG } from '../config';
+import { storageService } from '../services/storageService';
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
-  const [channels, setChannels] = useState<Channel[]>([]);
   const [privateChats, setPrivateChats] = useState<string[]>(['GeminiBot']);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('#sohbet');
-  const [isAILoading, setIsAILoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [allowPrivateMessages, setAllowPrivateMessages] = useState(true);
 
   const handleCommand = async (text: string) => {
     const parts = text.split(' ');
@@ -25,36 +23,36 @@ export const useChatCore = (initialUserName: string) => {
           const old = userName;
           setUserName(args[0]);
           localStorage.setItem('mirc_nick', args[0]);
-          await storageService.saveMessage({ sender: 'SYSTEM', text: `* ${old} artık ${args[0]} olarak biliniyor.`, type: MessageType.SYSTEM, channel: activeTab });
-        }
-        break;
-      case '/join':
-        if (args[0]) {
-          const cname = args[0].startsWith('#') ? args[0] : `#${args[0]}`;
-          setActiveTab(cname);
+          await storageService.saveMessage({ sender: 'SYSTEM', text: `* ${old} ismini ${args[0]} olarak güncelledi.`, type: MessageType.SYSTEM, channel: activeTab });
         }
         break;
       case '/query':
         if (args[0]) {
           const target = args[0];
+          if (!allowPrivateMessages && target !== 'GeminiBot') {
+            alert("Özel mesajlarınız kapalı.");
+            return;
+          }
           setPrivateChats(prev => prev.includes(target) ? prev : [...prev, target]);
           setActiveTab(target);
         }
         break;
-      case '/clear':
-        setMessages([]);
-        break;
-      case '/yardim':
-        const helpMsg = "Komutlar: /nick <isim>, /join <kanal>, /query <kullanıcı>, /clear, /me <eylem>";
-        setMessages(prev => [...prev, { id: 'help', sender: 'SYSTEM', text: helpMsg, type: MessageType.SYSTEM, channel: activeTab, timestamp: new Date() }]);
+      case '/block':
+        if (args[0]) toggleBlock(args[0]);
         break;
       default:
-        setError(`Bilinmeyen komut: ${cmd}`);
+        console.log("Unknown command");
     }
   };
 
-  const sendMessage = async (text: string, imageBase64?: string) => {
-    if (!text.trim() && !imageBase64) return;
+  const toggleBlock = (nick: string) => {
+    setBlockedUsers(prev => 
+      prev.includes(nick) ? prev.filter(u => u !== nick) : [...prev, nick]
+    );
+  };
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim()) return;
     
     if (text.startsWith('/')) {
       await handleCommand(text);
@@ -64,18 +62,16 @@ export const useChatCore = (initialUserName: string) => {
     try {
       await storageService.saveMessage({
         sender: userName,
-        text: imageBase64 || text,
-        type: imageBase64 ? MessageType.IMAGE : MessageType.USER,
+        text: text,
+        type: MessageType.USER,
         channel: activeTab
       });
 
       if (activeTab === 'GeminiBot') {
-        setIsAILoading(true);
         const res = await getGeminiResponse(text, "Sohbet", undefined);
         await storageService.saveMessage({ sender: 'GeminiBot', text: res, type: MessageType.AI, channel: 'GeminiBot' });
-        setIsAILoading(false);
       }
-    } catch (err: any) { setError(err.message); }
+    } catch (err: any) { console.error(err); }
   };
 
   useEffect(() => {
@@ -84,21 +80,25 @@ export const useChatCore = (initialUserName: string) => {
     
     const sub = storageService.subscribeToMessages((payload) => {
       if (payload.new && payload.new.channel === activeTab) {
-        const newMessage = { ...payload.new, timestamp: new Date(payload.new.created_at) };
-        setMessages(prev => [...prev.filter(m => m.id !== newMessage.id), newMessage]);
+        if (!blockedUsers.includes(payload.new.sender)) {
+          const newMessage = { ...payload.new, timestamp: new Date(payload.new.created_at) };
+          setMessages(prev => [...prev.filter(m => m.id !== newMessage.id), newMessage]);
+        }
       }
     });
     
     return () => { sub?.unsubscribe(); };
-  }, [activeTab, userName]);
+  }, [activeTab, userName, blockedUsers]);
 
   return {
     userName, setUserName,
-    channels, privateChats, 
+    privateChats, 
     activeTab, setActiveTab,
     messages, sendMessage,
-    isAILoading, error,
+    blockedUsers, toggleBlock,
+    allowPrivateMessages, setAllowPrivateMessages,
     initiatePrivateChat: (u: string) => { 
+      if (!allowPrivateMessages && u !== 'GeminiBot') return;
       if(!privateChats.includes(u)) setPrivateChats(p => [...p, u]); 
       setActiveTab(u); 
     }
