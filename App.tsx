@@ -49,8 +49,10 @@ const App: React.FC<ChatModuleProps> = () => {
       if (containerRef.current && window.visualViewport) {
         const height = window.visualViewport.height;
         containerRef.current.style.height = `${height}px`;
-        // Klavye açıldığında en alta kaydır
-        window.scrollTo(0, 0);
+        // iOS'ta klavye açıldığında oluşabilen offset'i engelle
+        if (document.activeElement?.tagName === 'INPUT') {
+          window.scrollTo(0, 0);
+        }
       }
     };
     window.visualViewport?.addEventListener('resize', handleViewport);
@@ -66,16 +68,18 @@ const App: React.FC<ChatModuleProps> = () => {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    const text = inputText.trim();
+    if (!text) return;
     
-    sendMessage(inputText);
+    // Mesajı gönder
+    sendMessage(text);
     setInputText('');
     
-    // MOBİL İÇİN KRİTİK: Klavye kapanmasın diye input'a tekrar odaklan
-    if (isMobile && inputRef.current) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 10);
+    // MOBİL İÇİN KRİTİK: 
+    // Odağı senkronize bir şekilde hemen geri veriyoruz. 
+    // setTimeout kullanmak tarayıcının klavyeyi kapatma sürecini başlatmasına izin verir.
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   };
 
@@ -273,6 +277,9 @@ const App: React.FC<ChatModuleProps> = () => {
               onChange={e => setInputText(e.target.value)} 
               className="flex-1 outline-none text-sm bg-transparent" 
               placeholder="Mesajınızı yazın..." 
+              autoComplete="off"
+              autoCorrect="off"
+              enterKeyHint="send"
             />
           </div>
           <button type="submit" className={`bg-[#d4dce8] border-2 border-white shadow-[2px_2px_0_gray] font-black uppercase active:shadow-none active:translate-y-px flex items-center justify-center shrink-0 ${isMobile ? 'w-12 h-12' : 'px-8 text-[10px]'}`}>

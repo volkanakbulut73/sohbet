@@ -14,22 +14,29 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
+      // scrollIntoView bazen mobil viewport yüksekliği değişirken zıplamaya neden olabilir
+      // Bu yüzden doğrudan scrollTop kullanıyoruz.
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   };
 
   useEffect(() => {
-    // Mesajlar geldiğinde en alta kaydır
-    scrollToBottom();
-    // Render gecikmeleri için kısa bir timeout ile garantiye al
-    const timer = setTimeout(scrollToBottom, 50);
+    // Mesajlar geldiğinde en alta kaydır. 
+    // requestAnimationFrame, tarayıcının bir sonraki boyama (paint) işleminden hemen önce çalışmasını sağlar.
+    requestAnimationFrame(scrollToBottom);
+    
+    // Ağır render durumları için çok kısa bir emniyet payı
+    const timer = setTimeout(scrollToBottom, 30);
     return () => clearTimeout(timer);
   }, [messages]);
 
-  // Viewport resize olduğunda (klavye açıldığında) da kaydır
+  // Viewport resize olduğunda (klavye açıldığında/kapandığında)
   useEffect(() => {
-    window.visualViewport?.addEventListener('resize', scrollToBottom);
-    return () => window.visualViewport?.removeEventListener('resize', scrollToBottom);
+    const handleResize = () => {
+      requestAnimationFrame(scrollToBottom);
+    };
+    window.visualViewport?.addEventListener('resize', handleResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleResize);
   }, []);
 
   const renderMessageLine = (msg: Message) => {
@@ -63,7 +70,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
   return (
     <div 
       ref={scrollRef}
-      className="absolute inset-0 overflow-y-auto px-4 py-2 bg-white flex flex-col font-mono no-scrollbar scroll-smooth"
+      className="absolute inset-0 overflow-y-auto px-4 py-2 bg-white flex flex-col font-mono no-scrollbar"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       <div className="flex flex-col min-h-full">
         {messages.length === 0 ? (
@@ -75,8 +83,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUser, blocke
             <div key={msg.id || i}>{renderMessageLine(msg)}</div>
           ))
         )}
-        {/* Mesajların en altta input tarafından örtülmemesi için boşluk */}
-        <div className="h-8 shrink-0"></div>
+        {/* En altta input'un altına girmemesi için güvenli alan */}
+        <div className="h-4 shrink-0"></div>
       </div>
     </div>
   );
