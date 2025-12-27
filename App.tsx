@@ -3,25 +3,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useChatCore } from './hooks/useChatCore';
 import MessageList from './components/MessageList';
 import UserList from './components/UserList';
-import LandingPage from './components/LandingPage';
-import RegistrationForm from './components/RegistrationForm';
 import { ChatModuleProps } from './types';
 import { storageService } from './services/storageService';
 import { 
-  Menu, X, Lock, Clock, 
-  Users as UsersIcon, Hash, Send
+  Menu, X, Lock, Users as UsersIcon, Hash, Send, ChevronRight
 } from 'lucide-react';
 
-type AppView = 'landing' | 'login' | 'register' | 'pending' | 'chat';
-
-const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded = false }) => {
-  const [view, setView] = useState<AppView>(externalUser ? 'chat' : 'landing');
+const App: React.FC<ChatModuleProps> = ({ externalUser, embedded = false }) => {
+  const [view, setView] = useState<'login' | 'chat' | 'pending'>(externalUser ? 'chat' : 'login');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  const [showUserList, setShowUserList] = useState(false);
-  const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
+  const [isUserListOpen, setIsUserListOpen] = useState(false);
+  const [isChannelsOpen, setIsChannelsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const { 
@@ -29,23 +24,31 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     messages, sendMessage, initiatePrivateChat 
   } = useChatCore(externalUser || '');
 
-  // Ekran boyutu ve yerleşim kontrolü
+  // MOBİL KLAVYE VE VIEWPORT TAKİBİ
   useEffect(() => {
     const updateLayout = () => {
       setIsMobile(window.innerWidth < 1024);
-      if (containerRef.current) {
-        // Embedded modda yüksekliği 100% tut, standalone modda viewport height kullan
-        if (embedded) {
-          containerRef.current.style.height = '100%';
-        } else {
-          containerRef.current.style.height = `${window.innerHeight}px`;
-        }
+      if (containerRef.current && window.visualViewport) {
+        // VisualViewport: Klavye açıldığında gerçek görünen alanı verir.
+        const vv = window.visualViewport;
+        containerRef.current.style.height = `${vv.height}px`;
+        // Sayfanın yukarı kaymasını engelle
+        window.scrollTo(0, 0);
       }
     };
+
     window.addEventListener('resize', updateLayout);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateLayout);
+      window.visualViewport.addEventListener('scroll', updateLayout);
+    }
     updateLayout();
-    return () => window.removeEventListener('resize', updateLayout);
-  }, [embedded]);
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      window.visualViewport?.removeEventListener('resize', updateLayout);
+      window.visualViewport?.removeEventListener('scroll', updateLayout);
+    };
+  }, []);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,91 +69,92 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
           localStorage.setItem('mirc_nick', user.nickname);
           setView('chat');
         }
-      } else alert('Hata: Geçersiz giriş.');
-    } catch (err) { alert('Sistem hatası.'); }
+      } else alert('Giriş başarısız.');
+    } catch (err) { alert('Hata oluştu.'); }
     finally { setIsLoggingIn(false); }
   };
 
-  if (view === 'landing' && !embedded) return <LandingPage onEnter={() => setView('login')} />;
-  
-  if (view === 'login' || (view === 'landing' && embedded)) {
+  if (view === 'login') {
     return (
-      <div className="h-full w-full bg-[#d4dce8] flex items-center justify-center p-4 font-mono overflow-hidden">
-        <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-xl">
-          <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold flex justify-between">
-            <span>Workigom Login</span>
-            {!embedded && <X size={14} onClick={() => setView('landing')} />}
-          </div>
+      <div className="flex-1 flex items-center justify-center bg-[#d4dce8] p-4">
+        <div className="w-full max-w-[320px] border-2 border-white bg-[#d4dce8] shadow-2xl">
+          <div className="bg-[#000080] text-white px-2 py-1 text-[11px] font-bold">Workigom Chat Login</div>
           <form onSubmit={handleLogin} className="p-6 space-y-4">
-            <input type="email" placeholder="E-mail" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none" />
-            <input type="password" placeholder="Şifre" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none" />
-            <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white py-2 font-bold shadow-md">BAŞLAT</button>
-            <button type="button" onClick={() => setView('register')} className="w-full text-[#000080] text-[10px] font-bold underline uppercase">KAYIT OL</button>
+            <input type="email" placeholder="E-posta" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none text-sm" />
+            <input type="password" placeholder="Şifre" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border-2 border-gray-400 outline-none text-sm" />
+            <button disabled={isLoggingIn} className="w-full bg-[#d4dce8] border-2 border-white py-2 font-black shadow-[2px_2px_0_gray] active:shadow-none uppercase text-xs">Bağlan</button>
           </form>
         </div>
       </div>
     );
   }
 
-  if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
-  if (view === 'pending') return <div className="h-full w-full bg-[#d4dce8] flex items-center justify-center font-mono uppercase font-bold italic">Onay Bekleniyor...</div>;
+  if (view === 'pending') return <div className="flex-1 flex items-center justify-center font-bold italic">ONAY BEKLENİYOR...</div>;
 
-  // --- MOBİL GÖRÜNÜM ---
+  // --- MOBİL GÖRÜNÜM (TELEGRAM / WHATSAPP TARZI) ---
   if (isMobile) {
     return (
-      <div ref={containerRef} className="flex flex-col bg-white overflow-hidden font-mono w-full h-full relative">
+      <div ref={containerRef} className="flex flex-col bg-white overflow-hidden w-full h-full relative font-mono">
         {/* Header */}
-        <div className="h-12 bg-[#000080] text-white flex items-center px-3 shrink-0 z-50">
-          <button onClick={() => setIsLeftDrawerOpen(true)} className="p-2"><Menu size={20} /></button>
-          <div className="flex-1 font-bold text-xs truncate ml-2 uppercase italic">{activeTab}</div>
-          <button onClick={() => setShowUserList(true)} className="p-2"><UsersIcon size={20} /></button>
-        </div>
+        <header className="h-14 bg-[#000080] text-white flex items-center px-4 shrink-0 z-50">
+          <button onClick={() => setIsChannelsOpen(true)} className="p-1"><Menu size={24} /></button>
+          <div className="flex-1 text-center font-black text-sm uppercase tracking-tighter italic">{activeTab}</div>
+          <button onClick={() => setIsUserListOpen(true)} className="p-1"><UsersIcon size={24} /></button>
+        </header>
 
-        {/* Mesaj Listesi (Alan Doldurucu) */}
-        <div className="flex-1 min-h-0 relative bg-white">
+        {/* Mesaj Alanı (Flex-1) */}
+        <main className="flex-1 relative overflow-hidden bg-white">
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
           
-          {/* Sağ User Drawer */}
-          {showUserList && (
-            <div className="absolute inset-0 z-[100] animate-in slide-in-from-right duration-200">
-              <div className="absolute inset-0 bg-black/40" onClick={() => setShowUserList(false)} />
-              <div className="absolute right-0 top-0 bottom-0 w-[75%] bg-white shadow-2xl flex flex-col">
-                <div className="p-4 bg-gray-100 border-b flex justify-between items-center"><span className="font-bold text-xs uppercase">Online</span><X onClick={() => setShowUserList(false)} /></div>
-                <UserList users={[userName, 'Admin', 'GeminiBot']} currentUser={userName} onClose={() => setShowUserList(false)} />
+          {/* Mobil User List Drawer */}
+          {isUserListOpen && (
+            <div className="absolute inset-0 z-[100] flex justify-end">
+              <div className="absolute inset-0 bg-black/50" onClick={() => setIsUserListOpen(false)} />
+              <div className="relative w-[80%] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+                <div className="p-4 bg-gray-100 border-b flex justify-between items-center shrink-0">
+                  <span className="font-black text-xs uppercase">Online</span>
+                  <X onClick={() => setIsUserListOpen(false)} />
+                </div>
+                <UserList users={[userName, 'Admin', 'GeminiBot', 'Esra', 'Can']} currentUser={userName} onClose={() => setIsUserListOpen(false)} />
               </div>
             </div>
           )}
-        </div>
+        </main>
 
-        {/* MESAJ YAZMA ALANI (ANA SİTENİN MENÜSÜNÜN ÜSTÜNE ÇIKARILDI) */}
-        <div className="shrink-0 bg-[#d4dce8] border-t-2 border-gray-400 p-2 z-[60] shadow-[0_-5px_15px_rgba(0,0,0,0.1)]">
-          <form onSubmit={handleSend} className="flex gap-1 h-11">
-            <input 
-              type="text" 
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-white border-2 border-gray-500 rounded-sm px-3 text-[16px] outline-none"
-              placeholder="Mesajınızı yazın..."
-              autoComplete="off"
-            />
-            <button type="submit" className="w-11 h-11 bg-[#000080] text-white rounded-sm flex items-center justify-center shrink-0">
-              <Send size={18} />
+        {/* MESAJ YAZMA KUTUSU (HER ZAMAN GÖRÜNÜR) */}
+        <footer className="shrink-0 bg-gray-50 border-t p-2 z-[60]">
+          <form onSubmit={handleSend} className="flex gap-2 items-end">
+            <div className="flex-1 bg-white border border-gray-300 rounded-2xl px-4 py-2 min-h-[44px] flex items-center">
+              <input 
+                type="text" 
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                className="w-full bg-transparent outline-none text-[16px] py-1"
+                placeholder="Mesaj yaz..."
+                autoComplete="off"
+              />
+            </div>
+            <button type="submit" className="w-11 h-11 bg-[#000080] text-white rounded-full flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-transform">
+              <Send size={20} />
             </button>
           </form>
-          {/* DİKKAT: Ana sitenin alt menü barı burayı kapatmasın diye boşluk bırakıldı */}
-          <div className="h-[75px] md:h-2 w-full"></div>
-        </div>
+          {/* Ana sitenin barı için opsiyonel boşluk (sadece ana sitedeyse) */}
+          <div className="h-2 w-full"></div>
+        </footer>
 
-        {/* Sol Kanal Drawer */}
-        {isLeftDrawerOpen && (
-          <div className="absolute inset-0 z-[200] animate-in slide-in-from-left duration-200">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setIsLeftDrawerOpen(false)} />
-            <div className="absolute left-0 top-0 bottom-0 w-[75%] bg-[#d4dce8] shadow-2xl flex flex-col">
-              <div className="p-4 bg-[#000080] text-white font-bold flex justify-between items-center"><span>KANALLAR</span><X onClick={() => setIsLeftDrawerOpen(false)} /></div>
-              <div className="p-2 space-y-1">
-                {['#Sohbet', '#Yardim'].map(c => (
-                  <button key={c} onClick={() => { setActiveTab(c.toLowerCase()); setIsLeftDrawerOpen(false); }} className={`w-full text-left p-4 rounded text-xs font-bold uppercase ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white' : 'bg-white border'}`}>
-                    <Hash size={14} className="inline mr-2" /> {c}
+        {/* Mobil Sol Kanal Drawer */}
+        {isChannelsOpen && (
+          <div className="absolute inset-0 z-[200] flex">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setIsChannelsOpen(false)} />
+            <div className="relative w-[80%] bg-[#d4dce8] h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+              <div className="p-4 bg-[#000080] text-white font-black flex justify-between items-center shrink-0">
+                <span className="text-xs uppercase">ODALAR</span>
+                <X onClick={() => setIsChannelsOpen(false)} />
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {['#Sohbet', '#Yardim', '#Radyo', '#Oyun'].map(c => (
+                  <button key={c} onClick={() => { setActiveTab(c.toLowerCase()); setIsChannelsOpen(false); }} className={`w-full text-left p-4 rounded-lg font-bold flex items-center gap-3 ${activeTab === c.toLowerCase() ? 'bg-[#000080] text-white shadow-lg' : 'bg-white border'}`}>
+                    <Hash size={18} /> {c}
                   </button>
                 ))}
               </div>
@@ -161,37 +165,35 @@ const App: React.FC<ChatModuleProps> = ({ externalUser, className = "", embedded
     );
   }
 
-  // --- DESKTOP GÖRÜNÜM ---
+  // --- MASAÜSTÜ GÖRÜNÜM (mIRC STİLİ) ---
   return (
-    <div ref={containerRef} className="flex flex-col bg-[#d4dce8] overflow-hidden font-mono w-full h-full border-2 border-white shadow-inner relative">
-      <div className="h-8 bg-[#000080] text-white flex items-center px-2 text-[10px] font-bold shrink-0">
+    <div ref={containerRef} className="flex flex-col bg-[#d4dce8] w-full h-full border-2 border-white shadow-inner font-mono overflow-hidden">
+      <header className="h-8 bg-[#000080] text-white flex items-center px-2 text-[11px] font-bold shrink-0">
         <div className="flex-1 flex gap-1 h-full items-center">
           {['#Sohbet', '#Yardim'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())} className={`px-4 h-[80%] uppercase transition-all ${activeTab === tab.toLowerCase() ? 'bg-[#d4dce8] text-black border-t border-white' : 'hover:bg-blue-800'}`}>{tab}</button>
+            <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())} className={`px-4 h-[85%] uppercase transition-colors ${activeTab === tab.toLowerCase() ? 'bg-[#d4dce8] text-black border-t-2 border-white' : 'hover:bg-blue-800'}`}>{tab}</button>
           ))}
         </div>
-      </div>
+      </header>
       
-      <div className="flex-1 min-h-0 flex overflow-hidden bg-white">
-        <div className="flex-1 relative">
+      <div className="flex-1 flex overflow-hidden bg-white">
+        <main className="flex-1 relative min-w-0 border-r border-gray-300">
           <MessageList messages={messages} currentUser={userName} blockedUsers={[]} onNickClick={(e, n) => initiatePrivateChat(n)} />
-        </div>
-        <div className="w-48 bg-[#d4dce8] border-l border-gray-300 shrink-0">
-          <UserList users={[userName, 'Admin', 'GeminiBot']} currentUser={userName} onClose={() => {}} />
-        </div>
+        </main>
+        <aside className="w-52 bg-[#d4dce8] shrink-0 flex flex-col">
+          <UserList users={[userName, 'Admin', 'GeminiBot', 'Selin', 'Eray']} currentUser={userName} onClose={() => {}} />
+        </aside>
       </div>
 
-      <div className="shrink-0 bg-[#d4dce8] border-t-2 border-white p-2">
-        <form onSubmit={handleSend} className="flex gap-1 h-10">
-          <div className="flex-1 bg-white border border-gray-400 shadow-inner px-2 flex items-center">
-            <span className="text-[#000080] font-bold mr-1 text-xs truncate max-w-[80px]">{userName}:</span>
-            <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} className="flex-1 outline-none text-xs" placeholder="Mesajınızı buraya girin..." />
+      <footer className="h-14 bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
+        <form onSubmit={handleSend} className="flex gap-1 h-full">
+          <div className="flex-1 bg-white border border-gray-400 shadow-inner px-3 flex items-center">
+            <span className="text-[#000080] font-black mr-2 text-xs truncate max-w-[100px]">{userName}:</span>
+            <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} className="flex-1 outline-none text-sm" placeholder="Buraya yazın..." />
           </div>
-          <button type="submit" className="px-6 bg-[#d4dce8] border-2 border-white shadow-[1px_1px_0_gray] text-[10px] font-bold active:shadow-none active:translate-y-[1px]">GÖNDER</button>
+          <button type="submit" className="px-6 bg-[#d4dce8] border-2 border-white shadow-[2px_2px_0_gray] text-xs font-black uppercase active:shadow-none active:translate-y-[1px]">GÖNDER</button>
         </form>
-        {/* Masaüstünde ana site menüsü yoksa bu boşluk minimal kalır */}
-        <div className="h-2 w-full"></div>
-      </div>
+      </footer>
     </div>
   );
 };
