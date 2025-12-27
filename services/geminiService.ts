@@ -4,14 +4,15 @@ import { CHAT_MODULE_CONFIG } from "../config";
 
 export const getGeminiResponse = async (prompt: string, context: string, imageBase64?: string, customInstruction?: string) => {
   try {
-    // KURAL: API anahtarını her zaman güncel process.env.API_KEY üzerinden al.
+    // KURAL: API anahtarı her zaman taze process.env.API_KEY üzerinden alınmalıdır.
     const apiKey = process.env.API_KEY;
 
+    // Eğer anahtar yoksa UI'ın yakalayacağı spesifik bir hata kodu dönüyoruz.
     if (!apiKey || apiKey === "undefined") {
-      return "HATA: [API_KEY_MISSING] Lütfen üst menüden 'AI Yapılandırması'nı seçerek geçerli bir anahtar bağlayın.";
+      return "HATA: [API_KEY_MISSING] Requested entity was not found. Lütfen AI anahtarınızı seçin.";
     }
 
-    // KURAL: Her çağrıda yeni bir instance oluştur.
+    // KURAL: Her istekte yeni instance oluşturulmalıdır.
     const ai = new GoogleGenAI({ apiKey });
     
     const parts = [];
@@ -25,7 +26,7 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
     }
     
     parts.push({ 
-      text: `PLATFORM: ${CHAT_MODULE_CONFIG.DOMAIN}\nKANAL BAĞLAMI: ${context}\nKULLANICI MESAJI: ${prompt}` 
+      text: `PLATFORM: ${CHAT_MODULE_CONFIG.DOMAIN}\nCONTEXT: ${context}\nUSER: ${prompt}` 
     });
 
     const response = await ai.models.generateContent({
@@ -39,27 +40,28 @@ export const getGeminiResponse = async (prompt: string, context: string, imageBa
       }
     });
     
+    // .text özelliğine doğrudan erişim.
     const text = response.text;
     
     if (!text) {
-      return "SİSTEM: Yanıt boş döndü. Lütfen tekrar deneyin.";
+      return "SİSTEM: Yanıt üretilemedi, lütfen tekrar deneyin.";
     }
     
     return text;
   } catch (error: any) {
-    console.error("Gemini API Error Detail:", error);
+    console.error("Gemini API Connection Error:", error);
     
     const errorMsg = error?.message || "";
     
-    // KURAL: "Requested entity was not found" hatası anahtarın geçersiz olduğunu gösterir.
+    // KURAL: 'Requested entity was not found' hatası gelirse UI seçim diyaloğunu tetiklemelidir.
     if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API key not valid")) {
-      return "HATA: [INVALID_KEY] Seçtiğiniz API anahtarı geçersiz veya yetkisiz. Lütfen ücretli bir GCP projesine ait anahtar seçin.";
+      return "HATA: [INVALID_KEY] Requested entity was not found. Lütfen anahtarınızı güncelleyin.";
     }
 
     if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-      return "SİSTEM: API kullanım kotanız doldu. Lütfen bir süre bekleyin veya farklı bir anahtar kullanın.";
+      return "SİSTEM: Limitleriniz doldu. Lütfen bir süre bekleyin.";
     }
     
-    return "SİSTEM: Bağlantı hatası oluştu. Lütfen internet bağlantınızı ve API anahtarınızı kontrol edin.";
+    return "SİSTEM: Teknik bir sorun oluştu. Lütfen bağlantınızı kontrol edin.";
   }
 };

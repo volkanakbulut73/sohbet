@@ -42,17 +42,19 @@ const App: React.FC<ChatModuleProps> = () => {
     blockedUsers, toggleBlock, allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
-  // AI Response Monitoring for Key Failures
+  // KURAL: Eğer mesajlarda 'Requested entity was not found' veya key hatası varsa diyaloğu aç.
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.sender === CHAT_MODULE_CONFIG.BOT_NAME) {
-      if (lastMessage.text.includes("[INVALID_KEY]") || lastMessage.text.includes("[API_KEY_MISSING]")) {
+      if (lastMessage.text.includes("Requested entity was not found") || 
+          lastMessage.text.includes("[API_KEY_MISSING]") || 
+          lastMessage.text.includes("[INVALID_KEY]")) {
+        
+        console.warn("AI Key error detected in chat. Prompting user...");
         setHasAiKey(false);
-        // If the error specifically says key is invalid, prompt again
         const aistudio = (window as any).aistudio;
         if (aistudio) {
-          console.warn("AI Key error detected, opening selector...");
-          // No delay, just trigger as per rules
+          // KURAL: Seçim tetiklendikten sonra başarılı sayıp devam et (Race Condition çözümü).
           aistudio.openSelectKey().then(() => setHasAiKey(true));
         }
       }
@@ -97,12 +99,12 @@ const App: React.FC<ChatModuleProps> = () => {
     if (aistudio) {
       try {
         await aistudio.openSelectKey();
-        setHasAiKey(true);
+        setHasAiKey(true); // KURAL: Seçim sonrası hemen true kabul et.
       } catch (e) {
-        console.error("Key selection failed", e);
+        console.error("Anahtar seçimi başarısız:", e);
       }
     } else {
-      alert("Bu platformda API anahtarı sistem tarafından yönetilmektedir.");
+      alert("Bu sistemde API anahtarı platform tarafından otomatik atanmaktadır.");
     }
   };
 
@@ -304,12 +306,13 @@ const App: React.FC<ChatModuleProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 relative ml-auto">
+          {/* AI Selection Button (Quick Access) */}
           {isBotRoom && !hasAiKey && (window as any).aistudio && (
             <button 
               onClick={handleAiConnect}
               className="hidden sm:flex items-center gap-2 bg-[#00ff99] text-black px-3 py-1.5 rounded-sm text-[10px] font-black shadow-lg animate-bounce border-2 border-white"
             >
-              <Cpu size={14} /> AI ANAHTAR SEÇ
+              <Cpu size={14} /> AI ANAHTARINI SEÇ
             </button>
           )}
 
@@ -387,24 +390,24 @@ const App: React.FC<ChatModuleProps> = () => {
       {/* MAIN AREA */}
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative min-w-0 bg-[#f0f0f0] shadow-inner flex flex-col overflow-hidden">
-          {/* AI Selection Message Overlay */}
+          {/* AI Configuration Overlay */}
           {isBotRoom && !hasAiKey && (window as any).aistudio && (
             <div className="absolute inset-0 bg-[#f0f2f5]/90 z-30 flex flex-col items-center justify-center p-8 text-center animate-in fade-in">
               <div className="w-full max-w-sm bg-white border-2 border-[#000080] p-6 shadow-xl space-y-4 mirc-window">
                   <Cpu size={48} className="text-[#000080] mx-auto animate-pulse" />
-                  <h3 className="text-[#000080] font-black text-lg uppercase italic">AI YAPILANDIRMASI GEREKLİ</h3>
+                  <h3 className="text-[#000080] font-black text-lg uppercase italic">AI ANAHTARI GEREKLİ</h3>
                   <p className="text-[11px] font-bold text-gray-600 leading-relaxed uppercase">
-                    Workigom AI ile sohbet etmek için bir API anahtarı seçmeniz gerekmektedir. 
-                    Lütfen aşağıdaki butona tıklayarak anahtarınızı bağlayın.
+                    Workigom AI ile güvenli iletişim kurmak için bir API anahtarı seçmelisiniz. 
+                    <br/>(Hata: Requested entity was not found)
                   </p>
                   <button 
                     onClick={handleAiConnect}
-                    className="w-full bg-[#00ff99] text-black py-3 font-black text-xs uppercase shadow-md hover:bg-white transition-all border-2 border-[#000080]"
+                    className="w-full bg-[#00ff99] text-black py-4 font-black text-xs uppercase shadow-md hover:bg-white transition-all border-2 border-[#000080]"
                   >
-                    ANAHTAR SEÇ VE BAĞLAN
+                    ANAHTARI ŞİMDİ SEÇ
                   </button>
                   <p className="text-[9px] text-gray-400 italic">
-                    Not: Ücretli bir GCP projesine ait API anahtarı gereklidir.
+                    Lütfen bir faturalandırma hesabı olan GCP projesinden anahtar seçin.
                   </p>
               </div>
             </div>
