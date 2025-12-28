@@ -19,12 +19,12 @@
       margin: 0;
       padding: 0;
       background-color: #0b0f14;
-      overflow: hidden; /* Klavye zıplamasını önlemek için body scroll kilitlendi */
+      /* overflow: hidden kaldırıldı; ana sayfa kaydırılabilir olmalı */
     }
     
     #root {
       width: 100%;
-      height: 100dvh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
     }

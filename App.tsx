@@ -67,7 +67,6 @@ const App: React.FC<ChatModuleProps> = () => {
     }
   }, [activeTab]);
 
-  // Mobil Klavye Uyumluluğu - Sadece Resize üzerinden kontrol, height ataması kaldırıldı (zıplamayı önler)
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -125,6 +124,7 @@ const App: React.FC<ChatModuleProps> = () => {
     );
   }
 
+  // Ana sayfa artık scroll yapılabilir, çünkü body overflow: hidden değil.
   if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onRegisterClick={() => setView('register')} />;
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
   if (view === 'login') {
