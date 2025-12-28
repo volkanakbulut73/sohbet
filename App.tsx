@@ -50,6 +50,7 @@ const App: React.FC<ChatModuleProps> = () => {
   
   // AI Key Durumu
   const [hasAiKey, setHasAiKey] = useState(false);
+  const [showAiOverlay, setShowAiOverlay] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -67,8 +68,11 @@ const App: React.FC<ChatModuleProps> = () => {
     if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
       const selected = await aistudio.hasSelectedApiKey();
       setHasAiKey(selected);
+      if (selected) setShowAiOverlay(false);
     } else {
-      setHasAiKey(!!process.env.API_KEY);
+      const envKey = !!process.env.API_KEY;
+      setHasAiKey(envKey);
+      if (envKey) setShowAiOverlay(false);
     }
   };
 
@@ -82,7 +86,7 @@ const App: React.FC<ChatModuleProps> = () => {
     const aistudio = (window as any).aistudio;
     if (aistudio && typeof aistudio.openSelectKey === 'function') {
       await aistudio.openSelectKey();
-      setHasAiKey(true);
+      checkKey();
     } else {
       alert("API Anahtarı seçiciye şu an ulaşılamıyor.");
     }
@@ -137,13 +141,6 @@ const App: React.FC<ChatModuleProps> = () => {
       setIsLoggingIn(false);
     }
   };
-
-  useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg && lastMsg.sender.includes('Bot') && lastMsg.text.includes("KEY SEÇ")) {
-      // Bot bir uyarı verdiyse ve kullanıcı tıkladıysa tetiklenebilir
-    }
-  }, [messages]);
 
   useEffect(() => {
     const handleUnload = () => {
@@ -265,7 +262,6 @@ const App: React.FC<ChatModuleProps> = () => {
           </div>
           <div className="h-4 w-px bg-white/20 mx-1"></div>
           <div className="text-[12px] font-black italic truncate uppercase">{activeTab}</div>
-          
           {radioActive && activeTab !== '#radyo' && (
             <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-600 rounded-sm text-[8px] font-black uppercase animate-pulse ml-2 shadow-sm border border-red-400">
               <Radio size={10} className="shrink-0" />
@@ -274,16 +270,14 @@ const App: React.FC<ChatModuleProps> = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* AI Durum Göstergesi - Header'a entegre edildi */}
           <button 
-            onClick={handleOpenKey}
+            onClick={() => { if (!hasAiKey) setShowAiOverlay(true); else handleOpenKey(); }}
             className={`flex items-center gap-1.5 px-2 py-1 rounded-sm text-[8px] font-black uppercase transition-all border ${hasAiKey ? 'bg-green-600/30 border-green-500 text-green-400' : 'bg-gray-700/50 border-gray-500 text-gray-400 opacity-50 hover:opacity-100'}`}
             title={hasAiKey ? "AI Aktif" : "AI Pasif (Tıkla ve Anahtar Seç)"}
           >
             {hasAiKey ? <Zap size={12} className="fill-current" /> : <ZapOff size={12} />}
             AI {hasAiKey ? 'ON' : 'OFF'}
           </button>
-          
           {!isOnline && <WifiOff size={16} className="text-red-400 animate-pulse" />}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1 hover:bg-white/20 rounded transition-colors" title="Ayarlar"><Settings size={18} /></button>
           {isMenuOpen && (
@@ -296,7 +290,7 @@ const App: React.FC<ChatModuleProps> = () => {
                 <div className={`w-2.5 h-2.5 rounded-full ${allowPrivateMessages ? 'bg-green-500' : 'bg-red-500'}`}></div>
               </button>
               <div className="h-px bg-gray-300 my-1"></div>
-              <button onClick={handleOpenKey} className="w-full text-left p-2 hover:bg-purple-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase"><Cpu size={14} /> AI Ayarları</button>
+              <button onClick={() => { setShowAiOverlay(true); setIsMenuOpen(false); }} className="w-full text-left p-2 hover:bg-purple-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase"><Cpu size={14} /> AI Ayarları</button>
               <div className="h-px bg-gray-300 my-1"></div>
               <button onClick={handleLogout} className="w-full text-left p-2 hover:bg-red-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase"><LogOut size={14} /> Çıkış</button>
             </div>
@@ -322,6 +316,44 @@ const App: React.FC<ChatModuleProps> = () => {
       </nav>
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
+        {/* AI Key Missing Overlay - Kapatılabilir hale getirildi */}
+        {!hasAiKey && showAiOverlay && (
+          <div className="absolute inset-0 z-[500] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+            <div className="w-full max-w-[340px] bg-[#d4dce8] border-2 border-white shadow-2xl mirc-window animate-in zoom-in-95">
+              <div className="bg-[#000080] text-white px-3 py-1.5 text-[10px] font-black flex justify-between items-center">
+                <span className="flex items-center gap-2 uppercase tracking-tighter"><Cpu size={12} /> AI Aktivasyonu Gerekli</span>
+                <X size={16} className="cursor-pointer hover:bg-red-600" onClick={() => setShowAiOverlay(false)} />
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-3 text-purple-700 mb-2">
+                  <Cpu size={32} className="animate-pulse" />
+                  <h3 className="font-black text-xs uppercase italic tracking-tighter">GEMINI AI ASİSTANLARI</h3>
+                </div>
+                <p className="text-[10px] text-gray-700 font-bold leading-relaxed">
+                  Lara ve Gemini operatör botlarının çalışabilmesi için bir API projesi seçmelisiniz. Google AI Studio ile tamamen ücretsizdir.
+                </p>
+                <div className="space-y-2">
+                  <button 
+                    onClick={handleOpenKey}
+                    className="w-full bg-purple-600 text-white py-3 text-[10px] font-black uppercase shadow-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Key size={14} /> BİR PROJE SEÇ
+                  </button>
+                  <button 
+                    onClick={() => setShowAiOverlay(false)}
+                    className="w-full border-2 border-gray-400 text-gray-600 py-2 text-[10px] font-black uppercase hover:bg-white"
+                  >
+                    AI OLMADAN DEVAM ET
+                  </button>
+                  <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-1 text-[9px] font-black text-[#000080] hover:underline uppercase py-1">
+                    Billing Bilgisi <ExternalLink size={10} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <main className="flex-1 relative flex flex-col overflow-hidden bg-[#f0f0f0]">
           {!activeTab.startsWith('#') && (
             <div className="bg-[#f8f9fa] border-b border-gray-200 px-4 py-1.5 flex justify-between items-center shrink-0">
@@ -331,11 +363,9 @@ const App: React.FC<ChatModuleProps> = () => {
               </button>
             </div>
           )}
-
           <div className={`flex-1 flex flex-col relative ${activeTab === '#radyo' ? 'hidden' : ''}`}>
             <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
           </div>
-
           {radioActive && activeTab === '#radyo' && (
             <div className="flex flex-col items-center justify-center flex-1 bg-white p-6 animate-in fade-in">
               <iframe width="345" height="65" src="https://www.radyod.com/iframe-small" frameBorder="0" allow="autoplay; encrypted-media" className="shadow-lg border border-[#000080]"></iframe>
