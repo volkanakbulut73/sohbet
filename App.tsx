@@ -10,7 +10,8 @@ import { ChatModuleProps } from './types';
 import { 
   X, LogOut, Key,
   Smile, Settings, 
-  Loader2, WifiOff
+  Loader2, WifiOff,
+  Radio
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -29,6 +30,9 @@ const App: React.FC<ChatModuleProps> = () => {
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [dbConnected, setDbConnected] = useState(true);
   
+  // Radyo oynatıcı durumu
+  const [radioActive, setRadioActive] = useState(false);
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
@@ -37,6 +41,13 @@ const App: React.FC<ChatModuleProps> = () => {
     messages, sendMessage, initiatePrivateChat, onlineUsers,
     blockedUsers, isOnline
   } = useChatCore('');
+
+  // Radyo kanalına girildiğinde oynatıcıyı aktive et (kesintisiz çalma için DOM'da tutar)
+  useEffect(() => {
+    if (activeTab === '#radyo') {
+      setRadioActive(true);
+    }
+  }, [activeTab]);
 
   // Mobil Klavye Uyumluluğu
   useEffect(() => {
@@ -136,6 +147,13 @@ const App: React.FC<ChatModuleProps> = () => {
           </div>
           <div className="h-4 w-px bg-white/20 mx-1"></div>
           <div className="text-[12px] font-black italic truncate uppercase">{activeTab}</div>
+          
+          {radioActive && activeTab !== '#radyo' && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-600 rounded-sm text-[8px] font-black uppercase animate-pulse ml-2 shadow-sm border border-red-400">
+              <Radio size={10} className="shrink-0" />
+              <span>RADYO AKTİF</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {!isOnline && <WifiOff size={16} className="text-red-400 animate-pulse" />}
@@ -162,7 +180,44 @@ const App: React.FC<ChatModuleProps> = () => {
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative flex flex-col overflow-hidden bg-[#f0f0f0]">
-          <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
+          {/* Standart Mesaj Alanı - Radyo kanalı hariç tüm kanallarda gösterilir */}
+          <div className={`flex-1 flex flex-col relative ${activeTab === '#radyo' ? 'hidden' : ''}`}>
+            <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
+          </div>
+
+          {/* Radyo Oynatıcı Alanı - Kesintisiz çalma için bir kez mount edildikten sonra DOM'da saklanır */}
+          {radioActive && (
+            <div className={`
+              ${activeTab === '#radyo' 
+                ? 'flex flex-col items-center justify-center flex-1 bg-white p-6 animate-in fade-in z-20' 
+                : 'absolute top-[-9999px] left-[-9999px] opacity-0 pointer-events-none'
+              }`}
+            >
+              {activeTab === '#radyo' && (
+                <div className="mb-4 text-[#000080] font-black uppercase text-[10px] flex items-center gap-2 border-b-2 border-red-500 pb-1">
+                  <div className="w-2.5 h-2.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_5px_red]"></div>
+                  WORKIGOM CANLI RADYO YAYINI (RADYO D)
+                </div>
+              )}
+              
+              <iframe 
+                width="345" 
+                height="65" 
+                src="https://www.radyod.com/iframe-small" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+                className="shadow-[8px_8px_0px_rgba(0,0,0,0.1)] border-2 border-[#000080] bg-white"
+              ></iframe>
+
+              {activeTab === '#radyo' && (
+                <div className="mt-8 p-4 bg-blue-50 border-2 border-blue-200 text-[10px] text-blue-900 font-bold italic leading-relaxed text-center max-w-sm shadow-inner">
+                  [ Bilgi ]: Radyo oynatıcısı bir kez başlatıldıktan sonra odalar arası geçiş yapsanız dahi 
+                  kesintisiz olarak arka planda çalmaya devam eder. Diğer odalara dönmek için yukarıdaki sekmeleri kullanın.
+                </div>
+              )}
+            </div>
+          )}
         </main>
         {!isMobile && (
           <aside className="w-44 bg-[#d4dce8] border-l-2 border-white shrink-0 overflow-hidden">
