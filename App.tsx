@@ -50,7 +50,6 @@ const App: React.FC<ChatModuleProps> = () => {
     allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
-  // Siteden çıkarken temizlik yap
   useEffect(() => {
     const handleUnload = () => {
       if (userName) {
@@ -70,6 +69,8 @@ const App: React.FC<ChatModuleProps> = () => {
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
+      // Keyboard zıplamasını engellemek için viewport yüksekliğini manuel sabitlemiyoruz, 
+      // tailwind "fixed inset-0" ve css "100dvh" kullanıyoruz.
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -124,7 +125,6 @@ const App: React.FC<ChatModuleProps> = () => {
     );
   }
 
-  // Ana sayfa artık scroll yapılabilir, çünkü body overflow: hidden değil.
   if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onRegisterClick={() => setView('register')} />;
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
   if (view === 'login') {
@@ -190,6 +190,8 @@ const App: React.FC<ChatModuleProps> = () => {
       <nav className="bg-[#000080]/90 px-1 py-0.5 flex gap-0.5 overflow-x-auto no-scrollbar border-b border-white/20">
         {openTabs.map(tab => {
           const isUnread = unreadTabs.includes(tab);
+          const isPrivate = !tab.startsWith('#');
+          // Özel mesaj geldiğinde sekmeyi yanıp söndür
           return (
             <div 
               key={tab} 
@@ -199,7 +201,7 @@ const App: React.FC<ChatModuleProps> = () => {
                 onClick={() => setActiveTab(tab)} 
                 className={`pl-3 pr-1 py-1.5 text-[9px] font-black uppercase whitespace-nowrap ${activeTab === tab ? 'text-[#000080]' : (isUnread ? 'text-white' : 'text-white/40 hover:text-white')}`}
               >
-                {tab}
+                {isPrivate && '👤 '}{tab}
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); closeTab(tab); }}
@@ -258,13 +260,6 @@ const App: React.FC<ChatModuleProps> = () => {
                 allowFullScreen
                 className="shadow-[8px_8px_0px_rgba(0,0,0,0.1)] border-2 border-[#000080] bg-white"
               ></iframe>
-
-              {activeTab === '#radyo' && (
-                <div className="mt-8 p-4 bg-blue-50 border-2 border-blue-200 text-[10px] text-blue-900 font-bold italic leading-relaxed text-center max-w-sm shadow-inner">
-                  [ Bilgi ]: Radyo oynatıcısı bir kez başlatıldıktan sonra odalar arası geçiş yapsanız dahi 
-                  kesintisiz olarak arka planda çalmaya devam eder. Diğer odalara dönmek için yukarıdaki sekmeleri kullanın.
-                </div>
-              )}
             </div>
           )}
         </main>
@@ -275,7 +270,7 @@ const App: React.FC<ChatModuleProps> = () => {
         )}
       </div>
 
-      <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
+      <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0 chat-footer">
         <div className="flex flex-col gap-1 w-full max-w-4xl mx-auto">
           
           {showColorPicker && (
@@ -306,18 +301,12 @@ const App: React.FC<ChatModuleProps> = () => {
             <button 
               onClick={() => setIsBold(!isBold)} 
               className={`w-9 h-9 flex items-center justify-center rounded-lg text-lg font-black border transition-all ${isBold ? 'bg-[#000080] text-white border-[#000080] scale-110 shadow-md' : 'bg-white/50 hover:bg-white text-gray-700 border-gray-300'}`}
-              title="Kalın"
-            >
-              B
-            </button>
+            >B</button>
             
             <button 
               onClick={() => setIsItalic(!isItalic)} 
               className={`w-9 h-9 flex items-center justify-center rounded-lg text-lg italic font-black border transition-all ${isItalic ? 'bg-[#000080] text-white border-[#000080] scale-110 shadow-md' : 'bg-white/50 hover:bg-white text-gray-700 border-gray-300'}`}
-              title="Eğik"
-            >
-              I
-            </button>
+            >I</button>
             
             {showEmojiPicker && (
               <div className="absolute bottom-12 left-0 z-[3000]">
@@ -344,7 +333,7 @@ const App: React.FC<ChatModuleProps> = () => {
                   textDecoration: isUnderline ? 'underline' : 'none',
                   color: selectedColor || 'black'
                 }}
-                placeholder={`${activeTab} kanalına mesaj gönder...`}
+                placeholder={`${activeTab} odasına mesaj yaz...`}
                 autoComplete="off"
               />
             </div>

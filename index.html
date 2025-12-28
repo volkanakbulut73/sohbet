@@ -19,7 +19,7 @@
       margin: 0;
       padding: 0;
       background-color: #0b0f14;
-      /* overflow: hidden kaldırıldı; ana sayfa kaydırılabilir olmalı */
+      /* Landing page için scroll serbest bırakıldı, chat fixed duracak */
     }
     
     #root {
@@ -44,18 +44,21 @@
       animation: cursor-blink 1s step-end infinite;
     }
 
-    /* Kırmızı Yanıp Sönme Animasyonu */
+    /* Kırmızı Yanıp Sönme Animasyonu - Özel Mesaj Bildirimi */
     @keyframes blink-red {
-      0%, 100% { background-color: rgba(220, 38, 38, 0); }
-      50% { background-color: rgba(220, 38, 38, 1); color: white; }
+      0%, 100% { background-color: #ff0000; color: #ffffff; }
+      50% { background-color: transparent; color: inherit; }
     }
     .blink-red {
-      animation: blink-red 1s ease-in-out infinite;
+      animation: blink-red 0.8s ease-in-out infinite;
     }
 
-    /* Mobil tarayıcı zoom engelleme */
+    /* Klavye açıldığında sayfanın kaymasını engellemek için mobil optimizasyonu */
     @media screen and (max-width: 768px) {
       input, select, textarea { font-size: 16px !important; }
+      .chat-footer {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
     }
   </style>
 <script type="importmap">
