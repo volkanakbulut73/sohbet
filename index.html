@@ -19,7 +19,6 @@
       margin: 0;
       padding: 0;
       background-color: #0b0f14;
-      /* Landing page için scroll serbest bırakıldı, chat fixed duracak */
     }
     
     #root {
@@ -31,7 +30,6 @@
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
     
-    /* Klasik mIRC Görünümü */
     .mirc-window { border: 2px solid; border-color: #fff #808080 #808080 #fff; }
     .mirc-inset { border: 2px solid; border-color: #808080 #fff #fff #808080; }
     
@@ -44,7 +42,6 @@
       animation: cursor-blink 1s step-end infinite;
     }
 
-    /* Kırmızı Yanıp Sönme Animasyonu - Özel Mesaj Bildirimi */
     @keyframes blink-red {
       0%, 100% { background-color: #ff0000; color: #ffffff; }
       50% { background-color: transparent; color: inherit; }
@@ -53,7 +50,6 @@
       animation: blink-red 0.8s ease-in-out infinite;
     }
 
-    /* Klavye açıldığında sayfanın kaymasını engellemek için mobil optimizasyonu */
     @media screen and (max-width: 768px) {
       input, select, textarea { font-size: 16px !important; }
       .chat-footer {

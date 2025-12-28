@@ -7,13 +7,7 @@ import { geminiService } from '../services/geminiService';
 const toErrorString = (e: any): string => {
   if (!e) return "Bilinmeyen hata";
   if (typeof e === 'string') return e;
-  if (e.message) return e.message;
-  try {
-    const str = JSON.stringify(e);
-    return str === '{}' ? e.toString() : str;
-  } catch {
-    return String(e);
-  }
+  return e.message || String(e);
 };
 
 export const useChatCore = (initialUserName: string) => {
@@ -40,32 +34,20 @@ export const useChatCore = (initialUserName: string) => {
 
   const fetchUsers = useCallback(async () => {
     if (!storageService.isConfigured() || !navigator.onLine) return;
-    
     try {
       const regs = await storageService.getAllRegistrations();
-      if (regs && regs.length > 0) {
-        const approvedNicks = regs
-          .filter(r => 
-            r.status === 'approved' && 
-            !r.nickname.toLowerCase().includes('bot') &&
-            r.nickname !== 'Workigom AI'
-          )
-          .map(r => r.nickname);
-        
-        // Gemini AI'yı listeye sabit ekle
-        const list = Array.from(new Set([...approvedNicks, 'Admin', 'Gemini AI']));
-        setOnlineUsers(list);
-      }
-    } catch (e: any) {
-      if (navigator.onLine) {
-        console.warn("Kullanıcı listesi güncellenirken geçici bir sorun oluştu.");
-      }
+      const approvedNicks = regs
+        .filter(r => r.status === 'approved' && !r.nickname.toLowerCase().includes('bot'))
+        .map(r => r.nickname);
+      setOnlineUsers(Array.from(new Set([...approvedNicks, 'Admin', 'Gemini AI'])));
+    } catch (e) {
+      console.warn("User list fetch partial error.");
     }
   }, []);
 
   useEffect(() => {
     fetchUsers();
-    const interval = setInterval(fetchUsers, 20000);
+    const interval = setInterval(fetchUsers, 15000);
     return () => clearInterval(interval);
   }, [fetchUsers]);
 
@@ -78,60 +60,40 @@ export const useChatCore = (initialUserName: string) => {
     const parts = text.split(' ');
     const cmd = parts[0].toLowerCase();
     const args = parts.slice(1);
-
-    switch (cmd) {
-      case '/nick':
-        if (args[0]) {
-          const old = userName;
-          setUserName(args[0]);
-          localStorage.setItem('mirc_nick', args[0]);
-          await storageService.saveMessage({ 
-            sender: 'SYSTEM', 
-            text: `* ${old} ismini ${args[0]} olarak güncelledi.`, 
-            type: MessageType.SYSTEM, 
-            channel: activeTab 
-          });
-        }
-        break;
-      case '/query':
-        if (args[0]) initiatePrivateChat(args[0]);
-        break;
-      case '/close':
-        closeTab(activeTab);
-        break;
-      default:
-        console.warn("Komut tanınmadı:", cmd);
+    if (cmd === '/nick' && args[0]) {
+      const old = userName;
+      setUserName(args[0]);
+      localStorage.setItem('mirc_nick', args[0]);
+      await storageService.saveMessage({ 
+        sender: 'SYSTEM', 
+        text: `* ${old} ismini ${args[0]} olarak güncelledi.`, 
+        type: MessageType.SYSTEM, 
+        channel: activeTab 
+      });
+    } else if (cmd === '/query' && args[0]) {
+      initiatePrivateChat(args[0]);
     }
   };
 
   const toggleBlock = (nick: string) => {
-    setBlockedUsers(prev => 
-      prev.includes(nick) ? prev.filter(u => u !== nick) : [...prev, nick]
-    );
+    setBlockedUsers(prev => prev.includes(nick) ? prev.filter(u => u !== nick) : [...prev, nick]);
   };
 
   const closeTab = async (tabName: string) => {
     if (openTabs.length <= 1) return;
-
     if (!tabName.startsWith('#')) {
       const channelId = getPrivateChannelId(userName, tabName);
       await storageService.deleteMessagesByChannel(channelId);
     }
-
     setOpenTabs(prev => {
       const newTabs = prev.filter(t => t !== tabName);
       if (activeTab === tabName) setActiveTab(newTabs[0]);
       return newTabs;
     });
-    setUnreadTabs(prev => prev.filter(t => t !== tabName));
   };
 
   const initiatePrivateChat = (u: string) => {
     if (u === userName) return;
-    if (!allowPrivateMessages) {
-      alert("Özel mesajlarınız kapalı.");
-      return;
-    }
     setOpenTabs(prev => prev.includes(u) ? prev : [...prev, u]);
     setActiveTab(u);
     setUnreadTabs(prev => prev.filter(t => t !== u));
@@ -139,122 +101,78 @@ export const useChatCore = (initialUserName: string) => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-    if (!navigator.onLine) {
-      alert("Çevrimdışısınız. Mesaj gönderilemez.");
-      return;
-    }
+    if (!isOnline) { alert("Bağlantı yok."); return; }
     
     if (text.startsWith('/')) {
       await handleCommand(text);
       return;
     }
 
-    const channel = activeTab.startsWith('#')
-      ? activeTab 
-      : getPrivateChannelId(userName, activeTab);
+    const channel = activeTab.startsWith('#') ? activeTab : getPrivateChannelId(userName, activeTab);
 
     try {
-      // 1. Kullanıcının mesajını kaydet
+      // 1. Kullanıcı mesajını kaydet
       await storageService.saveMessage({
         sender: userName,
-        text: text,
+        text,
         type: MessageType.USER,
-        channel: channel
+        channel
       });
 
-      // 2. Gemini AI Tetikleyici: Mesajda "gemini", "ai" geçiyorsa veya direkt Gemini'ye özel mesajsa
+      // 2. Gemini Tetikleyici
       const lowerText = text.toLowerCase();
-      const isDirectedToAI = lowerText.includes('gemini') || lowerText.includes(' ai') || lowerText === 'ai' || activeTab === 'Gemini AI';
+      const isAITarget = lowerText.includes('gemini') || lowerText.includes(' ai') || lowerText === 'ai' || activeTab === 'Gemini AI';
 
-      if (isDirectedToAI && userName !== 'Gemini AI') {
-        // AI'nın düşündüğünü belli etmek için sistem mesajı (opsiyonel)
-        // Gemini'den cevap al
+      if (isAITarget && userName !== 'Gemini AI') {
+        // AI Yanıtı
         const aiResponse = await geminiService.getChatResponse(text);
-        
-        // AI cevabını kaydet
         await storageService.saveMessage({
           sender: 'Gemini AI',
           text: aiResponse,
           type: MessageType.USER,
-          channel: channel
+          channel
         });
       }
-    } catch (err: any) { 
-      const errorStr = toErrorString(err);
-      if (errorStr.includes("Failed to fetch")) {
-        alert("Bağlantı hatası: Sunucuya ulaşılamadı.");
-      } else {
-        console.error("Mesaj gönderme hatası:", errorStr);
-      }
+    } catch (err) {
+      console.error("SendMessage error:", toErrorString(err));
     }
   };
+
+  useEffect(() => {
+    if (!userName || !storageService.isConfigured()) return;
+    const currentChannel = activeTab.startsWith('#') ? activeTab : getPrivateChannelId(userName, activeTab);
+    storageService.getMessagesByChannel(currentChannel).then(setMessages);
+
+    const sub = supabase
+      .channel(`chat_${activeTab.replace(/[^a-zA-Z0-9]/g, '_')}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const newMsg = payload.new;
+        if (newMsg.channel === currentChannel) {
+          if (!blockedUsers.includes(newMsg.sender)) {
+            const m = { ...newMsg, id: newMsg.id.toString(), timestamp: new Date(newMsg.created_at) } as Message;
+            setMessages(prev => (prev.some(x => x.id === m.id) ? prev : [...prev, m]));
+          }
+        }
+        // Unread logic
+        if (newMsg.channel !== currentChannel && (newMsg.channel.startsWith('#') || newMsg.channel.includes(userName))) {
+          const tabLabel = newMsg.channel.startsWith('#') ? newMsg.channel : newMsg.sender;
+          if (tabLabel !== userName) {
+            setUnreadTabs(prev => Array.from(new Set([...prev, tabLabel])));
+          }
+        }
+      })
+      .subscribe();
+    return () => { sub.unsubscribe(); };
+  }, [activeTab, userName, blockedUsers, isOnline]);
 
   useEffect(() => {
     setUnreadTabs(prev => prev.filter(t => t !== activeTab));
   }, [activeTab]);
 
-  useEffect(() => {
-    if (!userName || !storageService.isConfigured()) return;
-
-    const currentChannel = activeTab.startsWith('#')
-      ? activeTab
-      : getPrivateChannelId(userName, activeTab);
-    
-    storageService.getMessagesByChannel(currentChannel)
-      .then(setMessages)
-      .catch(e => {
-         if (navigator.onLine) console.error("Mesajlar çekilemedi:", toErrorString(e));
-      });
-    
-    const channelName = `realtime_${activeTab.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    const sub = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        const newMsg = payload.new;
-        const msgChannel = newMsg.channel as string;
-
-        if (msgChannel === currentChannel) {
-          if (!blockedUsers.includes(newMsg.sender)) {
-            const m = { ...newMsg, id: newMsg.id.toString(), timestamp: new Date(newMsg.created_at) } as Message;
-            setMessages(prev => {
-              const exists = prev.some(x => x.id === m.id);
-              return exists ? prev : [...prev, m];
-            });
-          }
-        }
-
-        if (msgChannel.startsWith('private:') && msgChannel.includes(userName)) {
-          const parts = msgChannel.split(':');
-          const otherUser = parts.find(part => part !== 'private' && part !== userName);
-
-          if (otherUser && !blockedUsers.includes(otherUser)) {
-            setOpenTabs(prev => prev.includes(otherUser) ? prev : [...prev, otherUser]);
-            if (activeTab !== otherUser) {
-              setUnreadTabs(prev => prev.includes(otherUser) ? prev : [...prev, otherUser]);
-            }
-          }
-        }
-
-        if (msgChannel.startsWith('#') && msgChannel !== activeTab) {
-           setUnreadTabs(prev => prev.includes(msgChannel) ? prev : [...prev, msgChannel]);
-        }
-      })
-      .subscribe();
-    
-    return () => { sub?.unsubscribe(); };
-  }, [activeTab, userName, blockedUsers, isOnline]);
-
   return {
-    userName, setUserName,
-    openTabs, setOpenTabs,
-    unreadTabs,
-    activeTab, setActiveTab,
-    messages, sendMessage,
-    blockedUsers, toggleBlock,
-    closeTab,
-    allowPrivateMessages, setAllowPrivateMessages,
-    initiatePrivateChat,
-    onlineUsers,
-    isOnline
+    userName, setUserName, openTabs, unreadTabs, activeTab, setActiveTab,
+    messages, sendMessage, initiatePrivateChat, onlineUsers,
+    blockedUsers, toggleBlock, closeTab, isOnline,
+    allowPrivateMessages, setAllowPrivateMessages
   };
 };
