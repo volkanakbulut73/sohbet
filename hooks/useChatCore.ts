@@ -60,6 +60,7 @@ export const useChatCore = (initialUserName: string) => {
     const parts = text.split(' ');
     const cmd = parts[0].toLowerCase();
     const args = parts.slice(1);
+    
     if (cmd === '/nick' && args[0]) {
       const old = userName;
       setUserName(args[0]);
@@ -72,6 +73,29 @@ export const useChatCore = (initialUserName: string) => {
       });
     } else if (cmd === '/query' && args[0]) {
       initiatePrivateChat(args[0]);
+    } else if (cmd === '/gemini') {
+      // Doğrudan Gemini komutu
+      const prompt = args.join(' ');
+      if (!prompt) return; // Boşsa işlem yapma
+      
+      const channel = activeTab.startsWith('#') ? activeTab : getPrivateChannelId(userName, activeTab);
+      
+      // Kullanıcı mesajını ekle (eğer kanalda yazıldıysa)
+      await storageService.saveMessage({
+        sender: userName,
+        text: text, // /gemini ... şeklinde görünür
+        type: MessageType.USER,
+        channel
+      });
+
+      // AI Cevabı
+      const aiResponse = await geminiService.getChatResponse(prompt);
+      await storageService.saveMessage({
+        sender: 'Gemini AI',
+        text: aiResponse,
+        type: MessageType.USER,
+        channel
+      });
     }
   };
 
@@ -103,6 +127,7 @@ export const useChatCore = (initialUserName: string) => {
     if (!text.trim()) return;
     if (!isOnline) { alert("Bağlantı yok."); return; }
     
+    // Komut kontrolü (/nick, /gemini vb.)
     if (text.startsWith('/')) {
       await handleCommand(text);
       return;
@@ -119,7 +144,7 @@ export const useChatCore = (initialUserName: string) => {
         channel
       });
 
-      // 2. Gemini Tetikleyici
+      // 2. Gemini Otomatik Tetikleyici (Regex/Kelime bazlı)
       const lowerText = text.toLowerCase();
       const isAITarget = lowerText.includes('gemini') || lowerText.includes(' ai') || lowerText === 'ai' || activeTab === 'Gemini AI';
 

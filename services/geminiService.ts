@@ -8,38 +8,48 @@ import { GoogleGenAI } from "@google/genai";
 export const geminiService = {
   async getChatResponse(prompt: string) {
     try {
-      // Create a new GoogleGenAI instance right before making an API call 
-      // to ensure it uses the most up-to-date API key from the environment/dialog.
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // API Key'in çalışma anında mevcut olup olmadığını kontrol et
+      const apiKey = process.env.API_KEY;
+      
+      if (!apiKey) {
+        console.warn("Gemini API Key bulunamadı.");
+        return "Sistem: API anahtarı henüz seçilmedi veya yüklenemedi. Lütfen sağ üstteki 'AI KEY SEÇ' butonuna bas.";
+      }
+
+      // Her çağrıda yeni instance (Google AI Studio gereksinimi)
+      const ai = new GoogleGenAI({ apiKey });
       
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
-          systemInstruction: `Sen Workigom Chat (workigomchat.online) platformunun resmi AI asistanısın. 
-          Adın: Gemini. 
-          Karakterin: Eski mIRC kanallarındaki bilge ve samimi kanal operatörleri (OP) gibisin. 
-          Tarzın: Kısa, öz, bazen mIRC jargonunu (slm, as, nbr, tmm, kib vb.) kullanan, yardımsever ama otoriter olmayan bir tarz.
-          Kurallar: 
-          1. Siyasi ve dini tartışmalara girme.
-          2. Kullanıcılara mIRC komutları ( /nick, /query vb.) hakkında bilgi verebilirsin.
-          3. Çok fazla emoji kullanma, mIRC estetiğini koru.
-          4. Birisi sana 'Gemini' veya 'AI' diye seslendiğinde ya da özelden yazdığında cevap ver.`,
-          temperature: 0.7,
+          systemInstruction: `Sen Workigom Chat (eski mIRC sunucusu) üzerindeki 'Gemini' nickli global operatörsün.
+          
+          Kişilik Özelliklerin:
+          - Tamamen Türkçe konuş.
+          - Eski internet (90'lar sonu, 2000'ler başı) jargonu kullan.
+          - Çok resmi olma, "siz" yerine "sen" veya "hocam", "kardeş" de.
+          - Cevapların kısa ve net olsun (Chat ortamı olduğu için).
+          - Büyük harf çok kullanma (bağırmak sayılır).
+          - Teknik sorunlarda "lag var galiba", "ping yüksek" gibi bahaneler üret.
+          - Kullanıcı '/gemini' komutu ile sana ulaştı.
+          
+          Örnek Cevap Tarzı:
+          "selam hoşgeldin", "bi saniye bakıyorum..", "valla o konuda bilgim yok hocam", "admin'e sormak lazım"`,
+          temperature: 0.8,
           topP: 0.95,
         },
       });
 
-      return response.text || "Pardon, bağlantıda bir sorun oluştu sanırım.";
+      return response.text || "lag var sanırım, mesaj gelmedi.";
     } catch (error: any) {
       console.error("Gemini AI Error:", error);
       
-      // Handle specific API errors
-      if (error?.message?.includes("Requested entity was not found")) {
-        return "Sistem: API anahtarı yetkilendirme hatası (404). Lütfen anahtarı kontrol edin.";
+      if (error?.message?.includes("Requested entity was not found") || error?.toString().includes("404")) {
+        return "Sistem: API Projesi bulunamadı. Lütfen sol panelden doğru Google Cloud projesini seçtiğine emin ol.";
       }
       
-      return "Sistem: AI servisine şu an ulaşılamıyor. Lütfen daha sonra tekrar deneyin.";
+      return `Sistem: AI servisi hata verdi (Ping timeout).`;
     }
   }
 };
