@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Bot } from 'lucide-react';
 
 interface UserListProps {
   users: string[];
@@ -14,6 +15,7 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, curren
 
   const getRankInfo = (user: string) => {
     if (user === 'Admin') return { prefix: '&', color: 'text-red-700' };
+    if (user === 'Gemini AI') return { prefix: '🤖', color: 'text-purple-700' };
     return { prefix: '%', color: 'text-[#000080]' };
   };
 
@@ -23,18 +25,22 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, curren
         {uniqueUsers.map((user, idx) => {
           const rank = getRankInfo(user);
           const isMe = user === currentUser;
+          const isAI = user === 'Gemini AI';
           
           return (
             <div 
               key={`${user}-${idx}`} 
               className={`flex items-center gap-0.5 px-1 py-1 hover:bg-blue-50 cursor-pointer border-b border-gray-50 group ${isMe ? 'bg-blue-50' : ''}`}
               onDoubleClick={() => onUserClick?.(user)}
-              title={`${user} ile özel sohbet (Query) başlatmak için çift tıkla`}
+              title={`${user} ile özel sohbet başlatmak için çift tıkla`}
             >
-              <span className={`text-[10px] md:text-[11px] font-bold w-3 shrink-0 text-center ${rank.color}`}>{rank.prefix}</span>
+              <span className={`text-[10px] md:text-[11px] font-bold w-4 shrink-0 text-center ${rank.color}`}>
+                {rank.prefix}
+              </span>
               <span className={`text-[10px] md:text-[11px] font-bold truncate flex-1 ${isMe ? 'text-black' : rank.color} group-hover:underline`}>
                 {user}
               </span>
+              {isAI && <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse mr-1"></div>}
             </div>
           );
         })}

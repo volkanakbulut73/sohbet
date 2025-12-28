@@ -2,10 +2,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Message, MessageType } from '../types';
 import { storageService, supabase } from '../services/storageService';
+import { geminiService } from '../services/geminiService';
 
-/**
- * Helper to convert any error into a readable string
- */
 const toErrorString = (e: any): string => {
   if (!e) return "Bilinmeyen hata";
   if (typeof e === 'string') return e;
@@ -20,15 +18,13 @@ const toErrorString = (e: any): string => {
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
-  
-  // Arayüz yapısı aynen korundu: #sohbet, #yardim ve #radyo mevcut.
   const [openTabs, setOpenTabs] = useState<string[]>(['#sohbet', '#yardim', '#radyo']);
   const [unreadTabs, setUnreadTabs] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<string>('#sohbet');
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [allowPrivateMessages, setAllowPrivateMessages] = useState(true);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>(['Admin']);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>(['Admin', 'Gemini AI']);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -48,17 +44,16 @@ export const useChatCore = (initialUserName: string) => {
     try {
       const regs = await storageService.getAllRegistrations();
       if (regs && regs.length > 0) {
-        // Kullanıcı listesinden AI, Bot veya Workigom AI içeren her şeyi filtrele
         const approvedNicks = regs
           .filter(r => 
             r.status === 'approved' && 
-            !r.nickname.toLowerCase().includes('ai') && 
             !r.nickname.toLowerCase().includes('bot') &&
             r.nickname !== 'Workigom AI'
           )
           .map(r => r.nickname);
         
-        const list = Array.from(new Set([...approvedNicks, 'Admin']));
+        // Gemini AI'yı listeye sabit ekle
+        const list = Array.from(new Set([...approvedNicks, 'Admin', 'Gemini AI']));
         setOnlineUsers(list);
       }
     } catch (e: any) {
@@ -159,16 +154,35 @@ export const useChatCore = (initialUserName: string) => {
       : getPrivateChannelId(userName, activeTab);
 
     try {
+      // 1. Kullanıcının mesajını kaydet
       await storageService.saveMessage({
         sender: userName,
         text: text,
         type: MessageType.USER,
         channel: channel
       });
+
+      // 2. Gemini AI Tetikleyici: Mesajda "gemini", "ai" geçiyorsa veya direkt Gemini'ye özel mesajsa
+      const lowerText = text.toLowerCase();
+      const isDirectedToAI = lowerText.includes('gemini') || lowerText.includes(' ai') || lowerText === 'ai' || activeTab === 'Gemini AI';
+
+      if (isDirectedToAI && userName !== 'Gemini AI') {
+        // AI'nın düşündüğünü belli etmek için sistem mesajı (opsiyonel)
+        // Gemini'den cevap al
+        const aiResponse = await geminiService.getChatResponse(text);
+        
+        // AI cevabını kaydet
+        await storageService.saveMessage({
+          sender: 'Gemini AI',
+          text: aiResponse,
+          type: MessageType.USER,
+          channel: channel
+        });
+      }
     } catch (err: any) { 
       const errorStr = toErrorString(err);
       if (errorStr.includes("Failed to fetch")) {
-        alert("Bağlantı hatası: Sunucuya ulaşılamadı. İnternetinizi kontrol edin.");
+        alert("Bağlantı hatası: Sunucuya ulaşılamadı.");
       } else {
         console.error("Mesaj gönderme hatası:", errorStr);
       }
