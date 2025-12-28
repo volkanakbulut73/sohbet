@@ -10,7 +10,8 @@ interface UserListProps {
 }
 
 const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, currentUser }) => {
-  const uniqueUsers = Array.from(new Set(users)).sort((a, b) => a.localeCompare(b));
+  // Fix: Explicitly type as string[] to resolve 'unknown' type errors for localeCompare on line 13
+  const uniqueUsers = (Array.from(new Set(users)) as string[]).sort((a, b) => a.localeCompare(b));
 
   const getRankInfo = (user: string) => {
     if (user === 'Admin') return { prefix: '&', color: 'text-red-700', bg: 'bg-red-50' };
@@ -26,6 +27,7 @@ const UserList: React.FC<UserListProps> = ({ users, onClose, onUserClick, curren
       </div>
       <div className="flex flex-col">
         {uniqueUsers.map((user, idx) => {
+          // Fix: user is now correctly inferred as string to satisfy getRankInfo argument requirement on line 29
           const rank = getRankInfo(user);
           const isMe = user === currentUser;
           const isAI = user === 'Gemini AI';

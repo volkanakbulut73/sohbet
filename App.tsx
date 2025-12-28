@@ -18,7 +18,8 @@ import {
   ShieldBan,
   MessageSquareOff,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Cpu
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -40,8 +41,8 @@ const App: React.FC<ChatModuleProps> = () => {
   const [dbConnected, setDbConnected] = useState(true);
   const [radioActive, setRadioActive] = useState(false);
   
-  // AI Key Status
-  const [hasAiKey, setHasAiKey] = useState(true);
+  // AI Key Status - Default false to show button if not selected
+  const [hasAiKey, setHasAiKey] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -53,21 +54,31 @@ const App: React.FC<ChatModuleProps> = () => {
     allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
-  // Check for API Key on mount (for environments requiring key selection)
+  // Check for API Key
   useEffect(() => {
     const checkKey = async () => {
-      if ((window as any).aistudio?.hasSelectedApiKey) {
-        const selected = await (window as any).aistudio.hasSelectedApiKey();
+      const aistudio = (window as any).aistudio;
+      if (aistudio?.hasSelectedApiKey) {
+        const selected = await aistudio.hasSelectedApiKey();
         setHasAiKey(selected);
+      } else {
+        // Fallback for environments where key is pre-injected
+        setHasAiKey(!!process.env.API_KEY);
       }
     };
     checkKey();
+    // Re-check periodically or on view change
+    const interval = setInterval(checkKey, 5000);
+    return () => clearInterval(interval);
   }, [view]);
 
   const handleOpenKey = async () => {
-    if ((window as any).aistudio?.openSelectKey) {
-      await (window as any).aistudio.openSelectKey();
-      setHasAiKey(true); // Assume success per guidelines
+    const aistudio = (window as any).aistudio;
+    if (aistudio?.openSelectKey) {
+      await aistudio.openSelectKey();
+      setHasAiKey(true); 
+    } else {
+      alert("Bu ortamda manuel anahtar seçimi desteklenmiyor. Lütfen platform ayarlarını kontrol edin.");
     }
   };
 
@@ -185,14 +196,18 @@ const App: React.FC<ChatModuleProps> = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {!hasAiKey && (
+          {!hasAiKey ? (
             <button 
               onClick={handleOpenKey}
-              className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-[9px] font-black uppercase px-2 py-1 rounded-sm shadow-sm animate-pulse border border-purple-400 transition-all"
+              className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-[9px] font-black uppercase px-2 py-1 rounded-sm shadow-sm animate-bounce border border-purple-400 transition-all"
             >
               <AlertCircle size={12} />
-              AI Key Seç
+              AI KEY SEÇ
             </button>
+          ) : (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-green-600/20 border border-green-500/30 rounded-sm text-[8px] font-black text-green-400 uppercase">
+              <Cpu size={12} /> AI AKTİF
+            </div>
           )}
           {!isOnline && <WifiOff size={16} className="text-red-400 animate-pulse" />}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1 hover:bg-white/20 rounded transition-colors" title="Ayarlar"><Settings size={18} /></button>
@@ -208,6 +223,8 @@ const App: React.FC<ChatModuleProps> = () => {
                 </span>
                 <div className={`w-2.5 h-2.5 rounded-full ${allowPrivateMessages ? 'bg-green-500' : 'bg-red-500'}`}></div>
               </button>
+              <div className="h-px bg-gray-300 my-1"></div>
+              <button onClick={handleOpenKey} className="w-full text-left p-2 hover:bg-purple-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase transition-colors"><Cpu size={14} /> Proje Değiştir</button>
               <div className="h-px bg-gray-300 my-1"></div>
               <button onClick={handleLogout} className="w-full text-left p-2 hover:bg-red-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase transition-colors"><LogOut size={14} /> Oturumu Kapat</button>
             </div>
