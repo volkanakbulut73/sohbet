@@ -18,7 +18,7 @@ export const useChatCore = (initialUserName: string) => {
   const [activeTab, setActiveTab] = useState<string>('#sohbet');
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [allowPrivateMessages, setAllowPrivateMessages] = useState(true);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>(['Admin', 'Gemini AI']);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>(['Admin', 'Gemini AI', 'Lara']);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export const useChatCore = (initialUserName: string) => {
       const approvedNicks = regs
         .filter(r => r.status === 'approved' && !r.nickname.toLowerCase().includes('bot'))
         .map(r => r.nickname);
-      setOnlineUsers(Array.from(new Set([...approvedNicks, 'Admin', 'Gemini AI'])));
+      setOnlineUsers(Array.from(new Set([...approvedNicks, 'Admin', 'Gemini AI', 'Lara'])));
     } catch (e) {
       console.warn("User list fetch partial error.");
     }
@@ -73,25 +73,24 @@ export const useChatCore = (initialUserName: string) => {
       });
     } else if (cmd === '/query' && args[0]) {
       initiatePrivateChat(args[0]);
-    } else if (cmd === '/gemini') {
-      // Doğrudan Gemini komutu
+    } else if (cmd === '/gemini' || cmd === '/lara') {
+      const botType = cmd === '/lara' ? 'lara' : 'gemini';
+      const botNick = botType === 'lara' ? 'Lara' : 'Gemini AI';
       const prompt = args.join(' ');
-      if (!prompt) return; // Boşsa işlem yapma
+      if (!prompt) return;
       
       const channel = activeTab.startsWith('#') ? activeTab : getPrivateChannelId(userName, activeTab);
       
-      // Kullanıcı mesajını ekle (eğer kanalda yazıldıysa)
       await storageService.saveMessage({
         sender: userName,
-        text: text, // /gemini ... şeklinde görünür
+        text: text,
         type: MessageType.USER,
         channel
       });
 
-      // AI Cevabı
-      const aiResponse = await geminiService.getChatResponse(prompt);
+      const aiResponse = await geminiService.getChatResponse(prompt, botType);
       await storageService.saveMessage({
-        sender: 'Gemini AI',
+        sender: botNick,
         text: aiResponse,
         type: MessageType.USER,
         channel
@@ -127,7 +126,6 @@ export const useChatCore = (initialUserName: string) => {
     if (!text.trim()) return;
     if (!isOnline) { alert("Bağlantı yok."); return; }
     
-    // Komut kontrolü (/nick, /gemini vb.)
     if (text.startsWith('/')) {
       await handleCommand(text);
       return;
@@ -136,7 +134,6 @@ export const useChatCore = (initialUserName: string) => {
     const channel = activeTab.startsWith('#') ? activeTab : getPrivateChannelId(userName, activeTab);
 
     try {
-      // 1. Kullanıcı mesajını kaydet
       await storageService.saveMessage({
         sender: userName,
         text,
@@ -144,15 +141,26 @@ export const useChatCore = (initialUserName: string) => {
         channel
       });
 
-      // 2. Gemini Otomatik Tetikleyici (Regex/Kelime bazlı)
       const lowerText = text.toLowerCase();
-      const isAITarget = lowerText.includes('gemini') || lowerText.includes(' ai') || lowerText === 'ai' || activeTab === 'Gemini AI';
+      
+      // AI Tetikleyiciler
+      const isGeminiTarget = lowerText.includes('gemini') || activeTab === 'Gemini AI';
+      const isLaraTarget = lowerText.includes('lara') || activeTab === 'Lara' || lowerText.includes('yardım') || lowerText === 'selam' || lowerText === 'slm';
 
-      if (isAITarget && userName !== 'Gemini AI') {
-        // AI Yanıtı
-        const aiResponse = await geminiService.getChatResponse(text);
+      if (userName === 'Gemini AI' || userName === 'Lara') return;
+
+      if (isGeminiTarget) {
+        const aiResponse = await geminiService.getChatResponse(text, 'gemini');
         await storageService.saveMessage({
           sender: 'Gemini AI',
+          text: aiResponse,
+          type: MessageType.USER,
+          channel
+        });
+      } else if (isLaraTarget) {
+        const aiResponse = await geminiService.getChatResponse(text, 'lara');
+        await storageService.saveMessage({
+          sender: 'Lara',
           text: aiResponse,
           type: MessageType.USER,
           channel
@@ -178,7 +186,6 @@ export const useChatCore = (initialUserName: string) => {
             setMessages(prev => (prev.some(x => x.id === m.id) ? prev : [...prev, m]));
           }
         }
-        // Unread logic
         if (newMsg.channel !== currentChannel && (newMsg.channel.startsWith('#') || newMsg.channel.includes(userName))) {
           const tabLabel = newMsg.channel.startsWith('#') ? newMsg.channel : newMsg.sender;
           if (tabLabel !== userName) {

@@ -19,8 +19,13 @@ import {
   MessageSquareOff,
   MessageSquare,
   AlertCircle,
-  Cpu
+  Cpu,
+  ExternalLink,
+  Chrome,
+  Clock
 } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = "567190649892-qtn4q7lufvacdpmfbooamtcc4i92nnmv.apps.googleusercontent.com";
 
 const App: React.FC<ChatModuleProps> = () => {
   const [view, setView] = useState<'landing' | 'register' | 'login' | 'chat' | 'admin' | 'pending'>('landing');
@@ -41,7 +46,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const [dbConnected, setDbConnected] = useState(true);
   const [radioActive, setRadioActive] = useState(false);
   
-  // AI Key Status - Default false to show button if not selected
+  // AI Key Durumu
   const [hasAiKey, setHasAiKey] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,33 +59,93 @@ const App: React.FC<ChatModuleProps> = () => {
     allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
 
-  // Check for API Key
+  // AI Key seçimini kontrol et
+  const checkKey = async () => {
+    const aistudio = (window as any).aistudio;
+    if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
+      const selected = await aistudio.hasSelectedApiKey();
+      setHasAiKey(selected);
+    } else {
+      setHasAiKey(!!process.env.API_KEY);
+    }
+  };
+
   useEffect(() => {
-    const checkKey = async () => {
-      const aistudio = (window as any).aistudio;
-      if (aistudio?.hasSelectedApiKey) {
-        const selected = await aistudio.hasSelectedApiKey();
-        setHasAiKey(selected);
-      } else {
-        // Fallback for environments where key is pre-injected
-        setHasAiKey(!!process.env.API_KEY);
-      }
-    };
     checkKey();
-    // Re-check periodically or on view change
     const interval = setInterval(checkKey, 5000);
     return () => clearInterval(interval);
-  }, [view]);
+  }, []);
 
   const handleOpenKey = async () => {
     const aistudio = (window as any).aistudio;
-    if (aistudio?.openSelectKey) {
+    if (aistudio && typeof aistudio.openSelectKey === 'function') {
       await aistudio.openSelectKey();
-      setHasAiKey(true); 
+      setHasAiKey(true);
     } else {
-      alert("Bu ortamda manuel anahtar seçimi desteklenmiyor. Lütfen platform ayarlarını kontrol edin.");
+      alert("API Anahtarı seçiciye şu an ulaşılamıyor.");
     }
   };
+
+  // Google Login Hazırlığı
+  useEffect(() => {
+    if (view === 'login' && (window as any).google) {
+      (window as any).google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+      (window as any).google.accounts.id.renderButton(
+        document.getElementById("google-login-btn"),
+        { theme: "outline", size: "large", text: "continue_with", shape: "rectangular" }
+      );
+    }
+  }, [view]);
+
+  const handleGoogleResponse = async (response: any) => {
+    setIsLoggingIn(true);
+    try {
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      const email = payload.email;
+      const fullName = payload.name;
+
+      // Supabase'den bu e-postaya sahip onaylı kullanıcıyı kontrol et
+      const { data, error } = await (storageService as any).supabase
+        .from('registrations')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        if (data.status === 'approved') {
+          setUserName(data.nickname);
+          setView('chat');
+        } else if (data.status === 'pending') {
+          setView('pending');
+        } else {
+          alert('Üzgünüz, başvurunuz reddedilmiş. Lütfen yönetici ile iletişime geçin.');
+        }
+      } else {
+        // Kullanıcı bulunamadı, kayıt formuna yönlendir ama bilgileri önceden doldurma imkanımız yok şu anki yapıda.
+        // Kullanıcıya bir uyarı verip kayda yönlendirebiliriz.
+        if (confirm('Sistemde bu e-posta ile onaylı bir kayıt bulunamadı. Kayıt sayfasına gitmek ister misiniz?')) {
+          setView('register');
+        }
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      alert('Google ile giriş yapılırken bir hata oluştu.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.sender === 'Gemini AI' && lastMsg.text.includes("SİSTEM HATASI")) {
+      handleOpenKey();
+    }
+  }, [messages]);
 
   useEffect(() => {
     const handleUnload = () => {
@@ -157,6 +222,23 @@ const App: React.FC<ChatModuleProps> = () => {
 
   if (view === 'landing') return <LandingPage onEnter={() => setView('login')} onRegisterClick={() => setView('register')} />;
   if (view === 'register') return <RegistrationForm onClose={() => setView('login')} onSuccess={() => setView('pending')} />;
+  
+  if (view === 'pending') {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-[#0b0f14] fixed inset-0 z-[2000] p-4">
+        <div className="w-full max-w-[320px] bg-[#d4dce8] border-2 border-white shadow-[8px_8px_0px_rgba(0,0,0,0.5)] p-6 text-center space-y-4">
+          {/* Fix: Replaced missing Clock with imported Clock from lucide-react */}
+          <Clock className="mx-auto text-[#000080]" size={48} />
+          <h2 className="font-black text-xs uppercase tracking-tighter">BAŞVURUNUZ İNCELENİYOR</h2>
+          <p className="text-[10px] font-bold text-gray-700 leading-relaxed uppercase">
+            Sistem operatörlerimiz belgelerinizi inceliyor. Onaylandığında e-posta ile bilgilendirileceksiniz.
+          </p>
+          <button onClick={() => setView('landing')} className="w-full bg-[#000080] text-white py-2 text-[10px] font-black uppercase">Ana Sayfaya Dön</button>
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'login') {
     return (
       <div className="flex-1 flex items-center justify-center bg-[#0b0f14] fixed inset-0 z-[2000] p-4">
@@ -169,8 +251,21 @@ const App: React.FC<ChatModuleProps> = () => {
             <form onSubmit={async (e) => { e.preventDefault(); setIsLoggingIn(true); try { const user = await storageService.loginUser(loginForm.email, loginForm.password); if (user && user.status === 'approved') { setUserName(user.nickname); setView('chat'); } else if (user?.status === 'pending') { setView('pending'); } else { alert('Hatalı giriş veya onay bekleyen hesap.'); } } catch(e:any) { alert(e.message); } finally { setIsLoggingIn(false); } }} className="space-y-3">
               <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full p-2 border border-gray-400 text-xs outline-none focus:border-[#000080]" placeholder="E-posta" />
               <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2 border border-gray-400 text-xs outline-none focus:border-[#000080]" placeholder="Şifre" />
-              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-2.5 font-bold uppercase text-[10px] shadow-md">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş Yap'}</button>
+              <button disabled={isLoggingIn} className="w-full bg-[#000080] text-white py-2.5 font-bold uppercase text-[10px] shadow-md transition-all active:scale-95">{isLoggingIn ? 'Bağlanıyor...' : 'Giriş Yap'}</button>
             </form>
+            
+            <div className="relative flex items-center py-2">
+              <div className="flex-grow border-t border-gray-400"></div>
+              <span className="flex-shrink mx-4 text-[8px] font-black text-gray-500 uppercase italic">Veya</span>
+              <div className="flex-grow border-t border-gray-400"></div>
+            </div>
+
+            <div className="space-y-2">
+              <div id="google-login-btn" className="w-full flex justify-center"></div>
+              <p className="text-[8px] text-gray-500 text-center font-bold uppercase tracking-widest mt-2 italic">
+                Sadece onaylı üyeler giriş yapabilir.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -260,6 +355,37 @@ const App: React.FC<ChatModuleProps> = () => {
       </nav>
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
+        {/* AI Key Missing Overlay */}
+        {!hasAiKey && (
+          <div className="absolute inset-0 z-[50] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+            <div className="w-full max-w-[340px] bg-[#d4dce8] border-2 border-white shadow-2xl p-6 space-y-4 mirc-window animate-in zoom-in-95">
+              <div className="flex items-center gap-3 text-purple-700 mb-2">
+                <Cpu size={32} className="animate-pulse" />
+                <h3 className="font-black text-xs uppercase italic tracking-tighter">AI AKTİVASYONU GEREKLİ</h3>
+              </div>
+              <p className="text-[10px] text-gray-700 font-bold leading-relaxed">
+                Gemini AI'ın çalışabilmesi için bir API projesi seçmelisiniz. Lütfen ödemesi aktif (paid) bir proje seçtiğinizden emin olun.
+              </p>
+              <div className="space-y-2">
+                <button 
+                  onClick={handleOpenKey}
+                  className="w-full bg-purple-600 text-white py-3 text-[10px] font-black uppercase shadow-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-2"
+                >
+                  <Key size={14} /> BİR PROJE SEÇ
+                </button>
+                <a 
+                  href="https://ai.google.dev/gemini-api/docs/billing" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-1 text-[9px] font-black text-[#000080] hover:underline uppercase py-1"
+                >
+                  Billing Bilgisi <ExternalLink size={10} />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         <main className="flex-1 relative flex flex-col overflow-hidden bg-[#f0f0f0]">
           {!activeTab.startsWith('#') && (
             <div className="bg-[#f8f9fa] border-b border-gray-200 px-4 py-1.5 flex justify-between items-center shrink-0 shadow-sm">
