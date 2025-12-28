@@ -19,12 +19,12 @@
       margin: 0;
       padding: 0;
       background-color: #0b0f14;
-      /* Scroll artık serbest, App.tsx içinde chat için özel kilitlenecek */
+      overflow: hidden; /* Klavye zıplamasını önlemek için body scroll kilitlendi */
     }
     
     #root {
       width: 100%;
-      min-height: 100dvh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
     }
@@ -42,6 +42,15 @@
     .cursor-blink::after {
       content: '_';
       animation: cursor-blink 1s step-end infinite;
+    }
+
+    /* Kırmızı Yanıp Sönme Animasyonu */
+    @keyframes blink-red {
+      0%, 100% { background-color: rgba(220, 38, 38, 0); }
+      50% { background-color: rgba(220, 38, 38, 1); color: white; }
+    }
+    .blink-red {
+      animation: blink-red 1s ease-in-out infinite;
     }
 
     /* Mobil tarayıcı zoom engelleme */

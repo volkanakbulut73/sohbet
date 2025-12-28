@@ -44,7 +44,7 @@ const App: React.FC<ChatModuleProps> = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { 
-    userName, setUserName, activeTab, setActiveTab, openTabs,
+    userName, setUserName, activeTab, setActiveTab, openTabs, unreadTabs,
     messages, sendMessage, initiatePrivateChat, onlineUsers,
     blockedUsers, toggleBlock, closeTab, isOnline,
     allowPrivateMessages, setAllowPrivateMessages
@@ -67,22 +67,13 @@ const App: React.FC<ChatModuleProps> = () => {
     }
   }, [activeTab]);
 
+  // Mobil Klavye Uyumluluğu - Sadece Resize üzerinden kontrol, height ataması kaldırıldı (zıplamayı önler)
   useEffect(() => {
-    const handleViewportChange = () => {
-      if (containerRef.current && window.visualViewport) {
-        containerRef.current.style.height = `${window.visualViewport.height}px`;
-      }
+    const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-
-    window.visualViewport?.addEventListener('resize', handleViewportChange);
-    window.visualViewport?.addEventListener('scroll', handleViewportChange);
-    handleViewportChange();
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleViewportChange);
-      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
-    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -197,32 +188,33 @@ const App: React.FC<ChatModuleProps> = () => {
       </header>
 
       <nav className="bg-[#000080]/90 px-1 py-0.5 flex gap-0.5 overflow-x-auto no-scrollbar border-b border-white/20">
-        {openTabs.map(tab => (
-          <div 
-            key={tab} 
-            className={`flex items-center transition-all border-t-2 border-x-2 ${activeTab === tab ? 'bg-[#d4dce8] border-white' : 'border-transparent'}`}
-          >
-            <button 
-              onClick={() => setActiveTab(tab)} 
-              className={`pl-3 pr-1 py-1.5 text-[9px] font-black uppercase whitespace-nowrap ${activeTab === tab ? 'text-[#000080]' : 'text-white/40 hover:text-white'}`}
+        {openTabs.map(tab => {
+          const isUnread = unreadTabs.includes(tab);
+          return (
+            <div 
+              key={tab} 
+              className={`flex items-center transition-all border-t-2 border-x-2 ${activeTab === tab ? 'bg-[#d4dce8] border-white' : 'border-transparent'} ${isUnread && activeTab !== tab ? 'blink-red' : ''}`}
             >
-              {tab}
-            </button>
-            {/* Odayı Kapatma Butonu */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); closeTab(tab); }}
-              className={`p-1 mr-1 rounded hover:bg-black/10 ${activeTab === tab ? 'text-red-700' : 'text-white/20'}`}
-              title="Kapat"
-            >
-              <X size={10} strokeWidth={4} />
-            </button>
-          </div>
-        ))}
+              <button 
+                onClick={() => setActiveTab(tab)} 
+                className={`pl-3 pr-1 py-1.5 text-[9px] font-black uppercase whitespace-nowrap ${activeTab === tab ? 'text-[#000080]' : (isUnread ? 'text-white' : 'text-white/40 hover:text-white')}`}
+              >
+                {tab}
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); closeTab(tab); }}
+                className={`p-1 mr-1 rounded hover:bg-black/10 ${activeTab === tab ? 'text-red-700' : (isUnread ? 'text-white' : 'text-white/20')}`}
+                title="Kapat"
+              >
+                <X size={10} strokeWidth={4} />
+              </button>
+            </div>
+          );
+        })}
       </nav>
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 mirc-inset relative">
         <main className="flex-1 relative flex flex-col overflow-hidden bg-[#f0f0f0]">
-          {/* Özel Sohbet Başlığı ve Engelleme Butonu */}
           {!activeTab.startsWith('#') && (
             <div className="bg-[#f8f9fa] border-b border-gray-200 px-4 py-1.5 flex justify-between items-center shrink-0 shadow-sm">
               <div className="flex items-center gap-2">
