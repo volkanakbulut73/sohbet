@@ -46,8 +46,13 @@ export const useChatCore = (initialUserName: string) => {
     try {
       const regs = await storageService.getAllRegistrations();
       if (regs && regs.length > 0) {
+        // AI veya Bot isimlerini kullanıcı listesinden filtrele
         const approvedNicks = regs
-          .filter(r => r.status === 'approved')
+          .filter(r => 
+            r.status === 'approved' && 
+            !r.nickname.toLowerCase().includes('ai') && 
+            !r.nickname.toLowerCase().includes('bot')
+          )
           .map(r => r.nickname);
         
         const list = Array.from(new Set([...approvedNicks, 'Admin']));
