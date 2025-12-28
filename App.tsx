@@ -4,6 +4,8 @@ import LandingPage from './components/LandingPage';
 import RegistrationForm from './components/RegistrationForm';
 import MessageList from './components/MessageList';
 import UserList from './components/UserList';
+import EmojiPicker from './components/EmojiPicker';
+import ColorPicker from './components/ColorPicker';
 import { useChatCore } from './hooks/useChatCore';
 import { storageService } from './services/storageService';
 import { ChatModuleProps } from './types';
@@ -11,7 +13,8 @@ import {
   X, LogOut, Key,
   Smile, Settings, 
   Loader2, WifiOff,
-  Radio
+  Radio,
+  Palette
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -19,11 +22,13 @@ const App: React.FC<ChatModuleProps> = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [inputText, setInputText] = useState('');
   
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
+  const [selectedColor, setSelectedColor] = useState('');
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -92,10 +97,12 @@ const App: React.FC<ChatModuleProps> = () => {
     if (isBold) formattedText = `<b>${formattedText}</b>`;
     if (isItalic) formattedText = `<i>${formattedText}</i>`;
     if (isUnderline) formattedText = `<u>${formattedText}</u>`;
+    if (selectedColor) formattedText = `<span style="color: ${selectedColor}">${formattedText}</span>`;
 
     sendMessage(formattedText);
     setInputText('');
     setShowEmojiPicker(false);
+    setShowColorPicker(false);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
@@ -228,11 +235,32 @@ const App: React.FC<ChatModuleProps> = () => {
 
       <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0">
         <div className="flex flex-col gap-1 w-full max-w-4xl mx-auto">
-          <div className="flex items-center gap-1 mb-0.5">
-            <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-1 hover:bg-white rounded"><Smile size={18} className="text-yellow-600" /></button>
+          
+          {/* Renk Paleti (Açık olduğunda gösterilir) */}
+          {showColorPicker && (
+            <div className="relative">
+               <ColorPicker selectedColor={selectedColor} onSelect={(c) => setSelectedColor(c)} />
+            </div>
+          )}
+
+          <div className="flex items-center gap-1 mb-0.5 relative">
+            <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-1 hover:bg-white rounded" title="Emoji Seç"><Smile size={18} className="text-yellow-600" /></button>
+            <button onClick={() => setShowColorPicker(!showColorPicker)} className={`p-1 hover:bg-white rounded ${showColorPicker ? 'bg-white shadow-inner' : ''}`} title="Yazı Rengi Seç">
+              <Palette size={18} style={{ color: selectedColor || '#555' }} />
+            </button>
             <div className="h-4 w-px bg-gray-400 mx-0.5"></div>
             <button onClick={() => setIsBold(!isBold)} className={`px-1.5 py-0.5 rounded text-[10px] font-black border ${isBold ? 'bg-[#000080] text-white border-[#000080]' : 'hover:bg-white text-gray-600 border-transparent'}`}>B</button>
             <button onClick={() => setIsItalic(!isItalic)} className={`px-1.5 py-0.5 rounded text-[10px] italic font-black border ${isItalic ? 'bg-[#000080] text-white border-[#000080]' : 'hover:bg-white text-gray-600 border-transparent'}`}>I</button>
+            
+            {/* Emoji Seçici Panel */}
+            {showEmojiPicker && (
+              <div className="absolute bottom-10 left-0 z-[3000]">
+                <EmojiPicker 
+                  onSelect={(emoji) => setInputText(prev => prev + emoji)} 
+                  onClose={() => setShowEmojiPicker(false)} 
+                />
+              </div>
+            )}
           </div>
           <form onSubmit={handleSend} className="flex gap-1">
             <div className="flex-1 bg-white border-2 border-gray-500 px-2 flex items-center py-1 focus-within:border-[#000080] shadow-inner">
@@ -243,7 +271,12 @@ const App: React.FC<ChatModuleProps> = () => {
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 outline-none text-xs bg-transparent resize-none h-5 pt-0.5 font-medium overflow-hidden"
-                style={{ fontWeight: isBold ? 'bold' : 'normal', fontStyle: isItalic ? 'italic' : 'normal', textDecoration: isUnderline ? 'underline' : 'none' }}
+                style={{ 
+                  fontWeight: isBold ? 'bold' : 'normal', 
+                  fontStyle: isItalic ? 'italic' : 'normal', 
+                  textDecoration: isUnderline ? 'underline' : 'none',
+                  color: selectedColor || 'black'
+                }}
                 placeholder={`${activeTab} odaya yaz...`}
                 autoComplete="off"
               />
