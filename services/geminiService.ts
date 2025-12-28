@@ -13,7 +13,9 @@ export const geminiService = {
       const apiKey = process.env.API_KEY;
       
       if (!apiKey) {
-        return "SİSTEM HATASI: API anahtarı seçilmedi. Lütfen sağ üstteki 'AI KEY SEÇ' butonuna tıklayarak bir proje seçin.";
+        return `[BİLGİ]: Üzgünüm, şu an sana cevap veremiyorum çünkü sistemimde bir API ANAHTARI tanımlı değil. 
+        Google AI Studio'dan alacağın ÜCRETSİZ bir anahtar ile beni tekrar aktif edebilirsin. 
+        Sağ üstteki "AI OFF" butonuna tıkla ve projeni seç! (Google AI Studio Free Tier ile tamamen ücretsizdir).`;
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -44,6 +46,9 @@ export const geminiService = {
       return response.text || "Şu an cevap veremiyorum, lag var galiba...";
     } catch (error: any) {
       console.error(`Gemini API Error [${botType}]:`, error);
+      if (error.message?.includes('429')) {
+        return "Sistem Mesajı: Çok fazla soru sordun aslanım, biraz dinlen (Quota Exceeded). Ücretsiz kota doldu.";
+      }
       return "Sistem Mesajı: Bağlantı sorunu yaşanıyor (Lag/Ping).";
     }
   }
