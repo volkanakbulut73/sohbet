@@ -8,15 +8,9 @@ import { GoogleGenAI } from "@google/genai";
 export const geminiService = {
   async getChatResponse(prompt: string) {
     try {
-      const apiKey = process.env.API_KEY;
-      
-      // API Key kontrolü (Sistem tarafından sağlanmalıdır)
-      if (!apiKey) {
-        console.error("Gemini API Key is missing in process.env");
-        return "Sistem Mesajı: AI servisi şu an devre dışı (Konfigürasyon eksik).";
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
+      // Create a new GoogleGenAI instance right before making an API call 
+      // to ensure it uses the most up-to-date API key from the environment/dialog.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -36,10 +30,16 @@ export const geminiService = {
         },
       });
 
-      return response.text || "Pardon, bağlantı koptu sanırım. Ne demiştin?";
-    } catch (error) {
+      return response.text || "Pardon, bağlantıda bir sorun oluştu sanırım.";
+    } catch (error: any) {
       console.error("Gemini AI Error:", error);
-      return "Sistem: Şu an yoğunum, biraz sonra tekrar dener misin? (Ping error)";
+      
+      // Handle specific API errors
+      if (error?.message?.includes("Requested entity was not found")) {
+        return "Sistem: API anahtarı yetkilendirme hatası (404). Lütfen anahtarı kontrol edin.";
+      }
+      
+      return "Sistem: AI servisine şu an ulaşılamıyor. Lütfen daha sonra tekrar deneyin.";
     }
   }
 };

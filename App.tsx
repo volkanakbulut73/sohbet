@@ -17,7 +17,8 @@ import {
   Palette,
   ShieldBan,
   MessageSquareOff,
-  MessageSquare
+  MessageSquare,
+  AlertCircle
 } from 'lucide-react';
 
 const App: React.FC<ChatModuleProps> = () => {
@@ -37,8 +38,10 @@ const App: React.FC<ChatModuleProps> = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [dbConnected, setDbConnected] = useState(true);
-  
   const [radioActive, setRadioActive] = useState(false);
+  
+  // AI Key Status
+  const [hasAiKey, setHasAiKey] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -49,6 +52,24 @@ const App: React.FC<ChatModuleProps> = () => {
     blockedUsers, toggleBlock, closeTab, isOnline,
     allowPrivateMessages, setAllowPrivateMessages
   } = useChatCore('');
+
+  // Check for API Key on mount (for environments requiring key selection)
+  useEffect(() => {
+    const checkKey = async () => {
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        const selected = await (window as any).aistudio.hasSelectedApiKey();
+        setHasAiKey(selected);
+      }
+    };
+    checkKey();
+  }, [view]);
+
+  const handleOpenKey = async () => {
+    if ((window as any).aistudio?.openSelectKey) {
+      await (window as any).aistudio.openSelectKey();
+      setHasAiKey(true); // Assume success per guidelines
+    }
+  };
 
   useEffect(() => {
     const handleUnload = () => {
@@ -69,8 +90,6 @@ const App: React.FC<ChatModuleProps> = () => {
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
-      // Keyboard zıplamasını engellemek için viewport yüksekliğini manuel sabitlemiyoruz, 
-      // tailwind "fixed inset-0" ve css "100dvh" kullanıyoruz.
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -166,6 +185,15 @@ const App: React.FC<ChatModuleProps> = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {!hasAiKey && (
+            <button 
+              onClick={handleOpenKey}
+              className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-[9px] font-black uppercase px-2 py-1 rounded-sm shadow-sm animate-pulse border border-purple-400 transition-all"
+            >
+              <AlertCircle size={12} />
+              AI Key Seç
+            </button>
+          )}
           {!isOnline && <WifiOff size={16} className="text-red-400 animate-pulse" />}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1 hover:bg-white/20 rounded transition-colors" title="Ayarlar"><Settings size={18} /></button>
           {isMenuOpen && (
@@ -191,7 +219,6 @@ const App: React.FC<ChatModuleProps> = () => {
         {openTabs.map(tab => {
           const isUnread = unreadTabs.includes(tab);
           const isPrivate = !tab.startsWith('#');
-          // Özel mesaj geldiğinde sekmeyi yanıp söndür
           return (
             <div 
               key={tab} 
@@ -272,7 +299,6 @@ const App: React.FC<ChatModuleProps> = () => {
 
       <footer className="bg-[#d4dce8] border-t-2 border-white p-2 shrink-0 chat-footer">
         <div className="flex flex-col gap-1 w-full max-w-4xl mx-auto">
-          
           {showColorPicker && (
             <div className="relative">
                <ColorPicker selectedColor={selectedColor} onSelect={(c) => setSelectedColor(c)} />
