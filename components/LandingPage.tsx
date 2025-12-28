@@ -1,20 +1,17 @@
 
 import React from 'react';
 import { 
-  ShieldCheck, 
   Users, 
   Briefcase, 
   MessageSquare, 
-  ArrowRight, 
   Lock, 
   ChevronRight, 
   FileText, 
   CheckCircle2, 
-  Info,
   Shield,
-  Settings,
   LogIn,
-  UserPlus
+  UserPlus,
+  Settings
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -79,7 +76,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onRegisterClick, onA
               { 
                 icon: <Users size={32} className="text-[#00ff99]" />, 
                 title: "Gerçek Kişiler", 
-                points: ["Kimlik doğrulama zorunlu", "Sahte hesaplara geçit yok", "Aktif moderasyon ve denetim"] 
+                points: ["Kimlik doğrulama zorunlu", "Sahte hesaplara geçit yok", "7/24 Aktif Moderasyon"] 
               },
               { 
                 icon: <FileText size={32} className="text-[#00ff99]" />, 
