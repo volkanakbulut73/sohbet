@@ -14,12 +14,7 @@ import {
   Smile, Settings, 
   Loader2, WifiOff,
   Radio,
-  Palette,
-  Cpu,
-  ExternalLink,
-  Clock,
-  Zap,
-  ZapOff
+  Palette
 } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = "567190649892-qtn4q7lufvacdpmfbooamtcc4i92nnmv.apps.googleusercontent.com";
@@ -38,13 +33,8 @@ const App: React.FC<ChatModuleProps> = () => {
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [dbConnected, setDbConnected] = useState(true);
   const [radioActive, setRadioActive] = useState(false);
-  
-  // AI Key Durumu
-  const [hasAiKey, setHasAiKey] = useState(false);
-  const [showAiOverlay, setShowAiOverlay] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -52,50 +42,25 @@ const App: React.FC<ChatModuleProps> = () => {
   const { 
     userName, setUserName, activeTab, setActiveTab, openTabs, unreadTabs,
     messages, sendMessage, initiatePrivateChat, onlineUsers,
-    blockedUsers, toggleBlock, closeTab, isOnline,
-    allowPrivateMessages, setAllowPrivateMessages
+    blockedUsers, toggleBlock, closeTab, isOnline
   } = useChatCore('');
 
-  const checkKey = async () => {
-    const aistudio = (window as any).aistudio;
-    if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
-      const selected = await aistudio.hasSelectedApiKey();
-      setHasAiKey(selected);
-      if (selected) setShowAiOverlay(false);
-    } else {
-      const envKey = !!process.env.API_KEY;
-      setHasAiKey(envKey);
-      if (envKey) setShowAiOverlay(false);
-    }
-  };
-
   useEffect(() => {
-    checkKey();
-    const interval = setInterval(checkKey, 5000);
-    return () => clearInterval(interval);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleOpenKey = async () => {
-    const aistudio = (window as any).aistudio;
-    if (aistudio && typeof aistudio.openSelectKey === 'function') {
-      await aistudio.openSelectKey();
-      checkKey();
-    }
-  };
+  useEffect(() => {
+    setDbConnected(storageService.isConfigured());
+  }, [isOnline]);
 
-  const handleGoogleResponse = async (response: any) => {
-    setIsLoggingIn(true);
-    try {
-      const payload = JSON.parse(atob(response.credential.split('.')[1]));
-      const { data, error } = await (storageService as any).supabase
-        .from('registrations').select('*').eq('email', payload.email).maybeSingle();
-      if (data?.status === 'approved') {
-        setUserName(data.nickname);
-        setView('chat');
-      } else if (data?.status === 'pending') setView('pending');
-      else alert('Kayıt bulunamadı veya onaylanmadı.');
-    } catch (err) { alert('Hata oluştu.'); }
-    finally { setIsLoggingIn(false); }
+  const handleLogout = async () => {
+    if (!confirm('Güvenli çıkış yapılsın mı?')) return;
+    localStorage.removeItem('mirc_nick');
+    window.location.reload();
   };
 
   const handleSend = (e?: React.FormEvent) => {
@@ -143,14 +108,13 @@ const App: React.FC<ChatModuleProps> = () => {
           <span className="text-[12px] font-black italic truncate uppercase">{activeTab}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => { if (!hasAiKey) setShowAiOverlay(true); else handleOpenKey(); }}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-sm text-[8px] font-black border ${hasAiKey ? 'bg-green-600/30 border-green-500 text-green-400' : 'bg-gray-700/50 border-gray-500 text-gray-400'}`}
-          >
-            {hasAiKey ? <Zap size={12} fill="currentColor" /> : <ZapOff size={12} />}
-            AI {hasAiKey ? 'ON' : 'OFF'}
-          </button>
+          {!isOnline && <WifiOff size={16} className="text-red-400 animate-pulse" />}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1 hover:bg-white/20 rounded transition-colors"><Settings size={18} /></button>
+          {isMenuOpen && (
+            <div className="absolute top-8 right-2 w-48 bg-[#f0f2f5] border-2 border-[#000080] shadow-2xl z-[2000] text-black p-1 mirc-window">
+              <button onClick={handleLogout} className="w-full text-left p-2 hover:bg-red-600 hover:text-white text-[9px] font-black flex items-center gap-2 uppercase"><LogOut size={14} /> Çıkış</button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -166,25 +130,6 @@ const App: React.FC<ChatModuleProps> = () => {
       </nav>
       
       <div className="flex-1 flex overflow-hidden bg-white border-2 border-gray-400 m-1 relative mirc-inset">
-        {/* Kapatılabilir AI Aktivasyon Kartı */}
-        {!hasAiKey && showAiOverlay && (
-          <div className="absolute inset-0 z-[500] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
-            <div className="w-full max-w-[340px] bg-[#d4dce8] border-2 border-white shadow-2xl mirc-window">
-              <div className="bg-[#000080] text-white px-3 py-1.5 text-[10px] font-black flex justify-between items-center">
-                <span className="flex items-center gap-2 uppercase tracking-tighter"><Cpu size={12} /> AI AKTİVASYONU GEREKLİ</span>
-                <X size={16} className="cursor-pointer hover:bg-red-600" onClick={() => setShowAiOverlay(false)} />
-              </div>
-              <div className="p-6 space-y-4">
-                <p className="text-[10px] text-gray-700 font-bold leading-relaxed uppercase">
-                  Lara ve Gemini operatör botlarının çalışabilmesi için bir API projesi seçmelisiniz. Google AI Studio ile tamamen ücretsizdir.
-                </p>
-                <button onClick={handleOpenKey} className="w-full bg-purple-600 text-white py-3 text-[10px] font-black uppercase shadow-lg">BİR PROJE SEÇ</button>
-                <button onClick={() => setShowAiOverlay(false)} className="w-full border-2 border-gray-400 text-gray-600 py-2 text-[10px] font-black uppercase">AI OLMADAN DEVAM ET</button>
-              </div>
-            </div>
-          </div>
-        )}
-
         <main className="flex-1 relative flex flex-col overflow-hidden bg-[#f0f0f0]">
           <MessageList messages={messages} currentUser={userName} blockedUsers={blockedUsers} onNickClick={(e, n) => initiatePrivateChat(n)} />
         </main>
