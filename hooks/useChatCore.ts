@@ -20,7 +20,8 @@ const toErrorString = (e: any): string => {
 
 export const useChatCore = (initialUserName: string) => {
   const [userName, setUserName] = useState(() => localStorage.getItem('mirc_nick') || initialUserName);
-  // Arayüzdeki odalar (#radyo dahil) aynen korundu
+  
+  // Arayüz yapısı aynen korundu: #sohbet, #yardim ve #radyo mevcut.
   const [openTabs, setOpenTabs] = useState<string[]>(['#sohbet', '#yardim', '#radyo']);
   const [unreadTabs, setUnreadTabs] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,7 +48,7 @@ export const useChatCore = (initialUserName: string) => {
     try {
       const regs = await storageService.getAllRegistrations();
       if (regs && regs.length > 0) {
-        // "AI", "Bot" veya "Workigom AI" gibi isimleri listeden tamamen temizle
+        // Kullanıcı listesinden AI, Bot veya Workigom AI içeren her şeyi filtrele
         const approvedNicks = regs
           .filter(r => 
             r.status === 'approved' && 

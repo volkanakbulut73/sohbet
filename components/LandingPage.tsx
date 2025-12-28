@@ -76,7 +76,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onRegisterClick, onA
               { 
                 icon: <Users size={32} className="text-[#00ff99]" />, 
                 title: "Gerçek Kişiler", 
-                points: ["Kimlik doğrulama zorunlu", "Sahte hesaplara geçit yok", "7/24 Aktif Moderasyon"] 
+                points: ["Kimlik doğrulama zorunlu", "Sahte hesaplara geçit yok", "Aktif moderasyon ve denetim"] 
               },
               { 
                 icon: <FileText size={32} className="text-[#00ff99]" />, 
