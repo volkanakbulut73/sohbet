@@ -1,52 +1,52 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-export type BotType = 'gemini' | 'lara';
-
 /**
  * Workigom Gemini AI Servisi
- * mIRC Operatörü ve Asistan bot kişilikleri.
- * Google AI Studio Free Tier ile uyumludur.
+ * mIRC Operatörü Kişiliği ile Yapılandırıldı.
  */
 export const geminiService = {
-  async getChatResponse(prompt: string, botType: BotType = 'gemini') {
+  async getChatResponse(prompt: string) {
     try {
+      // API Key'i her seferinde ortam değişkeninden taze olarak al
       const apiKey = process.env.API_KEY;
       
       if (!apiKey) {
-        return `[SİSTEM]: Şu an cevap veremiyorum çünkü bir API anahtarı seçilmemiş. 
-        Sağ üstteki "AI OFF" butonuna tıklayıp ücretsiz bir anahtar seçersen sana yardımcı olabilirim!`;
+        // Eğer anahtar yoksa, kullanıcıya butona basması gerektiğini bildir
+        return "HATA: API anahtarı seçilmedi. Lütfen sağ üstteki 'AI KEY SEÇ' butonuna tıklayarak bir proje seçin.";
       }
 
+      // Her çağrıda yeni instance oluştur (Platform kuralı: up-to-date key)
       const ai = new GoogleGenAI({ apiKey });
       
-      const instructions = {
-        gemini: `Sen Workigom Chat üzerindeki 'Gemini' nickli operatörsün (IRCOp). 
-          - Eski mIRC jargonu kullan (slm, aslanım, @ işaretli op gibi davran).
-          - Cevapların kısa ve öz olsun. Otoriter ama samimi bir operatör ol.
-          - Sadece Türkçe cevap ver.`,
-        lara: `Sen Workigom Chat üzerindeki 'Lara' nickli asistan botsun. 
-          - Çok nazik, yardımsever ve neşeli bir kadın asistan gibi davran.
-          - Kullanıcılara kanal kuralları ve mIRC nostaljisi hakkında bilgi ver.
-          - "Selam" verenlere sıcak karşılıklar ver. "Yardım" isteyenlere rehberlik et.`
-      };
-
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
-          systemInstruction: instructions[botType],
-          temperature: 0.8,
+          systemInstruction: `Sen Workigom Chat üzerindeki 'Gemini' nickli operatörsün (IRCOp).
+          
+          Kişilik:
+          - Eski mIRC jargonu kullan (slm, aslanım, lag var, ping yüksek, @ işaretli op gibi davran).
+          - Cevapların kısa ve öz olsun.
+          - Yardımsever ama otoriter bir kanal operatörü gibi konuş.
+          - Sadece Türkçe cevap ver.`,
+          temperature: 0.7,
         },
       });
 
-      return response.text || "Şu an cevap veremiyorum, lag var galiba...";
+      return response.text || "lag var galiba, cevap gelmedi...";
     } catch (error: any) {
-      console.error(`Gemini API Error [${botType}]:`, error);
-      if (error.message?.includes('429')) {
-        return "Sistem Mesajı: Çok fazla soru sordun aslanım, ücretsiz kota doldu. Biraz bekle (Quota Exceeded).";
+      console.error("Gemini Error:", error);
+      
+      const errorMsg = error?.toString() || "";
+      
+      // Eğer proje bulunamadı hatası alırsak, kullanıcıya anahtarı yeniletmesi gerektiğini söyle
+      if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("404")) {
+        // Bu tetikleyici App.tsx tarafında yakalanıp openSelectKey açtıracak
+        return "SİSTEM HATASI: Seçili proje geçersiz veya API yetkisi yok. Lütfen sağ üstteki butondan projeyi tekrar seçin.";
       }
-      return "Sistem Mesajı: Bağlantı sorunu yaşanıyor (Lag/Ping).";
+      
+      return "Sistem: Şu an yoğunluk var, biraz sonra tekrar dene (Ping timeout).";
     }
   }
 };
