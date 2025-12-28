@@ -6,6 +6,7 @@ export type BotType = 'gemini' | 'lara';
 /**
  * Workigom Gemini AI Servisi
  * mIRC Operatörü ve Asistan bot kişilikleri.
+ * Google AI Studio Free Tier ile uyumludur.
  */
 export const geminiService = {
   async getChatResponse(prompt: string, botType: BotType = 'gemini') {
@@ -13,24 +14,20 @@ export const geminiService = {
       const apiKey = process.env.API_KEY;
       
       if (!apiKey) {
-        return `[BİLGİ]: Üzgünüm, şu an sana cevap veremiyorum çünkü sistemimde bir API ANAHTARI tanımlı değil. 
-        Google AI Studio'dan alacağın ÜCRETSİZ bir anahtar ile beni tekrar aktif edebilirsin. 
-        Sağ üstteki "AI OFF" butonuna tıkla ve projeni seç! (Google AI Studio Free Tier ile tamamen ücretsizdir).`;
+        return `[SİSTEM]: Şu an cevap veremiyorum çünkü bir API anahtarı seçilmemiş. 
+        Sağ üstteki "AI OFF" butonuna tıklayıp ücretsiz bir anahtar seçersen sana yardımcı olabilirim!`;
       }
 
       const ai = new GoogleGenAI({ apiKey });
       
       const instructions = {
-        gemini: `Sen Workigom Chat üzerindeki 'Gemini' nickli operatörsün (IRCOp).
-          Kişilik:
+        gemini: `Sen Workigom Chat üzerindeki 'Gemini' nickli operatörsün (IRCOp). 
           - Eski mIRC jargonu kullan (slm, aslanım, @ işaretli op gibi davran).
-          - Cevapların kısa ve öz olsun. Otoriter bir kanal operatörü gibi konuş.
+          - Cevapların kısa ve öz olsun. Otoriter ama samimi bir operatör ol.
           - Sadece Türkçe cevap ver.`,
-        lara: `Sen Workigom Chat üzerindeki 'Lara' nickli asistan botsun.
-          Kişilik:
-          - Çok nazik, yardımsever ve neşeli bir genç kadın asistan gibi davran.
-          - Kullanıcılara kanal kuralları, sohbetin güvenliği ve Workigom hakkında bilgi ver.
-          - mIRC nostaljisini sev ama modern ve kibar bir dil kullan.
+        lara: `Sen Workigom Chat üzerindeki 'Lara' nickli asistan botsun. 
+          - Çok nazik, yardımsever ve neşeli bir kadın asistan gibi davran.
+          - Kullanıcılara kanal kuralları ve mIRC nostaljisi hakkında bilgi ver.
           - "Selam" verenlere sıcak karşılıklar ver. "Yardım" isteyenlere rehberlik et.`
       };
 
@@ -47,7 +44,7 @@ export const geminiService = {
     } catch (error: any) {
       console.error(`Gemini API Error [${botType}]:`, error);
       if (error.message?.includes('429')) {
-        return "Sistem Mesajı: Çok fazla soru sordun aslanım, biraz dinlen (Quota Exceeded). Ücretsiz kota doldu.";
+        return "Sistem Mesajı: Çok fazla soru sordun aslanım, ücretsiz kota doldu. Biraz bekle (Quota Exceeded).";
       }
       return "Sistem Mesajı: Bağlantı sorunu yaşanıyor (Lag/Ping).";
     }
